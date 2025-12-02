@@ -1,0 +1,134 @@
+/* Footer.css */
+.footer {
+  background-color: #222;
+  color: #ddd;
+  margin-top: 40px; /* separation from previous content */
+  padding: 50px 20px 20px;
+  width: 100%;
+  box-sizing: border-box;
+  z-index: 10;
+}
+
+.footer-content {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.footer-section {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.footer-section.about h1 {
+  font-size: 2rem;
+  color: #fff;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+
+.footer-section.about p {
+  font-size: 0.95rem;
+  color: #aaa;
+  line-height: 1.6;
+}
+
+.footer-section.about .contact-info span {
+  display: inline-block;
+  font-size: 0.85rem;
+  margin-top: 5px;
+  color: #bbb;
+}
+
+.socials {
+  display: flex;
+  gap: 15px;
+  margin-top: 15px;
+}
+
+.socials a {
+  font-size: 1.5rem;
+  color: #aaa;
+  transition: transform 0.2s ease, color 0.3s ease;
+}
+
+.socials a:hover {
+  color: #fff;
+  transform: scale(1.1);
+}
+
+.footer-section h2 {
+  font-size: 1.4rem;
+  color: #fff;
+  margin-bottom: 10px;
+}
+
+.footer-section.contact form {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.contact-input {
+  background: #333;
+  border: 1px solid #444;
+  color: #eee;
+  padding: 10px;
+  border-radius: 6px;
+  font-size: 0.9rem;
+}
+
+.contact-input:focus {
+  outline: none;
+  border-color: #777;
+}
+
+.contact-btn {
+  background: #555;
+  color: #fff;
+  padding: 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: none;
+  font-size: 1rem;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.contact-btn:hover {
+  background-color: #666;
+  transform: translateY(-2px);
+}
+
+.form-status {
+  font-size: 0.85rem;
+  margin-top: 8px;
+  color: #aaa;
+}
+
+.footer-bottom {
+  text-align: center;
+  margin-top: 30px;
+  padding-top: 15px;
+  border-top: 1px solid #333;
+  color: #888;
+  font-size: 0.8rem;
+}
+
+/* Responsive Fixes */
+@media (max-width: 768px) {
+  .footer-content {
+    text-align: center;
+  }
+
+  .socials {
+    justify-content: center;
+  }
+
+  .footer-section.contact form {
+    max-width: 350px;
+    margin: 0 auto;
+  }
+}

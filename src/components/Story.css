@@ -1,0 +1,62 @@
+.app-container {
+  font-family: Arial, sans-serif;
+  text-align: center;
+  background-color: #f0f0f0;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.stories-container {
+  display: flex;
+  gap: 10px;
+  padding: 20px;
+  overflow-x: auto;
+}
+
+.story-card {
+  width: 100px;
+  height: 150px;
+  background-size: cover;
+  background-position: center;
+  border-radius: 10px;
+  color: white;
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  padding: 10px;
+  font-weight: bold;
+  cursor: pointer;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.story-view {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  background-color: white;
+  padding: 20px;
+}
+
+.options-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.option-button {
+  padding: 10px 20px;
+  font-size: 16px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  background-color: #ff8c00;
+  color: white;
+  transition: background-color 0.3s ease;
+}
+
+.option-button:hover {
+  background-color: #ff4500;
+}

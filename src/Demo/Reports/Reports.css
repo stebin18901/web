@@ -1,0 +1,151 @@
+.reports-wrapper {
+  padding: 30px;
+  font-family: "Montserrat", sans-serif;
+  background: #f3f5ff;
+}
+
+.reports-title {
+  font-size: 32px;
+  font-weight: 900;
+  color: #1f2b6c;
+  margin-bottom: 25px;
+}
+
+/* DASHBOARD CARDS */
+.report-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+  margin-bottom: 35px;
+}
+
+.rep-card {
+  background: white;
+  padding: 20px;
+  border-radius: 18px;
+  border: 2px solid #e0e5ff;
+  text-align: center;
+  box-shadow: 0 6px 16px rgba(50, 60, 120, 0.08);
+  transition: 0.2s;
+}
+
+.rep-card:hover {
+  transform: translateY(-4px);
+  border-color: #4154f1;
+}
+
+.rep-card h3 {
+  color: #23306a;
+  font-size: 16px;
+  margin-bottom: 10px;
+}
+
+.rep-value {
+  font-size: 26px;
+  font-weight: 800;
+  color: #4154f1;
+}
+
+/* TOP PERFORMERS */
+.top-section h2 {
+  font-size: 24px;
+  font-weight: 800;
+  color: #23306a;
+  margin-bottom: 12px;
+}
+
+.top-list {
+  background: white;
+  padding: 20px;
+  border-radius: 18px;
+  border: 2px solid #e0e5ff;
+  box-shadow: 0 6px 16px rgba(40, 50, 110, 0.08);
+}
+
+.top-item {
+  display: grid;
+  grid-template-columns: 40px 1fr 200px 60px;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #eef1ff;
+}
+
+.rank {
+  font-size: 22px;
+  font-weight: 900;
+  color: #4154f1;
+}
+
+.top-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.top-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #1f2b6c;
+}
+
+.top-class {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+/* bar chart */
+.top-bar {
+  background: #eef1ff;
+  border-radius: 10px;
+  height: 10px;
+  width: 100%;
+}
+
+.top-bar-fill {
+  background: #4154f1;
+  height: 10px;
+  border-radius: 10px;
+  transition: width 0.5s ease;
+}
+
+.top-score {
+  font-weight: 800;
+  color: #23306a;
+}
+
+/* FULL TABLE */
+.full-report {
+  margin-top: 35px;
+}
+
+.rep-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.rep-table th {
+  background: #eef1ff;
+  padding: 12px;
+  cursor: pointer;
+  color: #4154f1;
+  font-weight: 800;
+}
+
+.rep-table td {
+  padding: 12px;
+  border-bottom: 1px solid #edf0ff;
+}
+
+.rep-table tr:hover {
+  background: #f5f7ff;
+}
+
+.csv-btn {
+  padding: 10px 16px;
+  background: #4154f1;
+  color: white;
+  border-radius: 12px;
+  border: none;
+  font-weight: 700;
+  cursor: pointer;
+}

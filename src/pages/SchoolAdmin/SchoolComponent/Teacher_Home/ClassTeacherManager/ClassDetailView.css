@@ -1,0 +1,216 @@
+.class-detail-container {
+  background: #fff;
+  border-radius: 14px;
+  padding: 18px;
+  font-family: "Inter", sans-serif;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+}
+
+/* Header */
+.detail-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.detail-header h2 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+.back-btn {
+  background: #eef2ff;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 10px;
+  cursor: pointer;
+  color: #334155;
+  font-weight: 500;
+}
+
+/* Info Card */
+.info-card {
+  background: #f8fafc;
+  padding: 10px 14px;
+  border-radius: 8px;
+  margin-bottom: 14px;
+  font-size: 0.9rem;
+  color: #374151;
+}
+
+/* Subjects */
+.subjects-card {
+  background: #fff;
+  border: 1px solid #f1f5f9;
+  padding: 12px;
+  border-radius: 10px;
+  margin-bottom: 14px;
+}
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.add-btn {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 10px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+.subject-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+}
+.subject-tag {
+  background: #f3f4f6;
+  color: #1e293b;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.del-btn {
+  background: none;
+  border: none;
+  color: #e11d48;
+  cursor: pointer;
+}
+
+/* Team Section */
+.team-area {
+  background: #fff;
+  border: 1px solid #f1f5f9;
+  padding: 12px;
+  border-radius: 10px;
+}
+.team-area.drag-active {
+  border: 2px dashed #6366f1;
+  background: #f9fafb;
+}
+.team-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 10px;
+}
+.team-card {
+  background: #f9fafb;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 10px;
+  width: 220px;
+  transition: all 0.2s ease;
+}
+.team-card:hover {
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
+  transform: translateY(-2px);
+}
+.team-top {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+}
+.meta {
+  flex: 1;
+}
+.name {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.email {
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+.remove-btn {
+  background: none;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+}
+.team-subjects {
+  margin-top: 6px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.subject-pill {
+  background: #4f46e5;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+}
+.no-subjects {
+  color: #9ca3af;
+  font-size: 0.8rem;
+}
+
+/* Empty State */
+.empty-team {
+  color: #9ca3af;
+  text-align: center;
+  padding: 10px;
+}
+
+/* Dialog */
+.confirm-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.confirm-box {
+  background: white;
+  padding: 16px;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+.confirm-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 10px;
+}
+.confirm-yes {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+/* Misc */
+.saving-banner {
+  position: fixed;
+  bottom: 16px;
+  right: 20px;
+  background: #111827;
+  color: white;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.2);
+  opacity: 0.95;
+}

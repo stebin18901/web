@@ -1,0 +1,121 @@
+/* === TOP SCHOOLS (Container) === */
+.top-schools-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: auto;
+  background: rgba(30, 30, 30, 0.5);
+  border-radius: 12px;
+  padding: 15px 20px;
+  margin-bottom: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.25);
+  animation: floatIn 0.6s ease forwards;
+  opacity: 0;
+  overflow-x: auto;
+}
+
+/* --- Title --- */
+.top-schools-title {
+  font-size: 1.4rem;
+  font-weight: 800;
+  margin-bottom: 12px;
+  text-align: center;
+  background: #fff;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* --- Podium Container --- */
+.top-schools-podium {
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  gap: 12px;
+  width: 100%;
+  max-width: 700px;
+}
+
+/* --- Podium Item --- */
+.podium-item {
+  flex: 1 1 30%;
+  min-width: 120px;
+  background: #2a2a2a;
+  border-radius: 10px;
+  padding: 15px 12px;
+  text-align: center;
+  font-size: 0.9rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  word-wrap: break-word;
+}
+
+.podium-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.3);
+}
+
+/* --- Podium Content --- */
+.podium-rank {
+  font-size: 1.2rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+  color: #00c6ff;
+}
+
+.podium-name {
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 6px;
+  white-space: normal;
+  word-break: break-word;
+}
+
+.podium-stats {
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.85);
+}
+
+/* --- Special Styling for Top 3 --- */
+.podium-item.first {
+  border: 2px solid gold;
+  transform: scale(1.05);
+}
+
+.podium-item.second {
+  border: 2px solid silver;
+}
+
+.podium-item.third {
+  border: 2px solid #cd7f32;
+}
+
+/* === RESPONSIVENESS === */
+@media (max-width: 900px) {
+  .top-schools-podium {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+  }
+  .podium-item {
+    flex: 1 1 45%;
+    min-width: 140px;
+  }
+}
+
+@media (max-width: 600px) {
+  .top-schools-title {
+    font-size: 1.2rem;
+  }
+  .podium-item {
+    flex: 1 1 80%;
+    padding: 12px 10px;
+  }
+  .podium-name {
+    font-size: 0.9rem;
+  }
+  .podium-rank {
+    font-size: 1.1rem;
+  }
+}

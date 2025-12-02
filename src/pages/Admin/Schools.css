@@ -1,0 +1,223 @@
+/* Schools.css */
+:root {
+  --primary-color: #4361ee;
+  --primary-hover: #3a56d4;
+  --success-color: #4cc9f0;
+  --success-hover: #38b6db;
+  --danger-color: #f72585;
+  --danger-hover: #e5177b;
+  --text-color: #2b2d42;
+  --text-light: #8d99ae;
+  --bg-color: #f8f9fa;
+  --card-bg: #ffffff;
+  --border-color: #e9ecef;
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.1);
+  --transition: all 0.3s ease;
+}
+
+.schools-container {
+  max-width: 800px;
+  margin: 2rem auto;
+  padding: 2rem;
+  font-family: 'Segoe UI', Roboto, 'Helvetica Neue', sans-serif;
+  background-color: var(--card-bg);
+  border-radius: 12px;
+  box-shadow: var(--shadow-md);
+  color: var(--text-color);
+}
+
+.schools-container h1 {
+  text-align: center;
+  color: var(--primary-color);
+  margin-bottom: 1.5rem;
+  font-weight: 600;
+  font-size: 2rem;
+}
+
+.school-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.form-group label {
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.school-form input {
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: var(--transition);
+}
+
+.school-form input:focus {
+  border-color: var(--primary-color);
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+}
+
+.school-form button {
+  padding: 0.75rem;
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition);
+  margin-top: 0.5rem;
+}
+
+.school-form button:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.search-bar {
+  margin-bottom: 1.5rem;
+  position: relative;
+}
+
+.search-bar input {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  padding-left: 2.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: var(--transition);
+}
+
+.search-bar input:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.2);
+}
+
+.search-bar::before {
+  content: '🔍';
+  position: absolute;
+  left: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.6;
+}
+
+.schools-list {
+  background-color: var(--card-bg);
+  padding: 1.5rem;
+  border-radius: 12px;
+  box-shadow: var(--shadow-sm);
+}
+
+.schools-list h2 {
+  color: var(--text-color);
+  margin-bottom: 1rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.schools-list ul {
+  list-style-type: none;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.schools-list li {
+  padding: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: var(--transition);
+  border-radius: 8px;
+}
+
+.schools-list li:hover {
+  background-color: rgba(67, 97, 238, 0.05);
+  transform: translateX(2px);
+}
+
+.schools-list li:last-child {
+  border-bottom: none;
+}
+
+.schools-list li strong {
+  color: var(--primary-color);
+  font-weight: 600;
+}
+
+.schools-list p {
+  text-align: center;
+  color: var(--text-light);
+  padding: 1rem;
+}
+
+.actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.actions button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.actions button:first-child {
+  background-color: var(--success-color);
+  color: white;
+}
+
+.actions button:first-child:hover {
+  background-color: var(--success-hover);
+  transform: translateY(-1px);
+}
+
+.actions button:last-child {
+  background-color: var(--danger-color);
+  color: white;
+}
+
+.actions button:last-child:hover {
+  background-color: var(--danger-hover);
+  transform: translateY(-1px);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .schools-container {
+    padding: 1.5rem;
+    margin: 1rem;
+  }
+  
+  .schools-list li {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.75rem;
+  }
+  
+  .actions {
+    align-self: flex-end;
+  }
+}

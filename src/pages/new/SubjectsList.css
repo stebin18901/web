@@ -1,0 +1,111 @@
+/* Page Wrapper */
+.subject-page-wrapper {
+  display: flex;
+  justify-content: center;
+  padding: 2rem 1rem;
+  background: #00000079;
+}
+
+.subject-content {
+  max-width: 800px;
+  width: 100%;
+  text-align: center;
+}
+
+/* Header Section */
+.subject-header-section {
+  margin-bottom: 2rem;
+}
+
+.main-heading {
+  font-size: 2rem;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 0.5rem;
+}
+
+.sub-heading {
+  font-size: 1rem;
+  color: #ffffff;
+}
+
+/* State Messages */
+.state-message {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #374151;
+  padding: 2rem 1rem;
+}
+
+.loading-state .spin-icon {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  animation: spin 1s linear infinite;
+}
+
+.error-state .error-icon,
+.no-subjects-state .no-subjects-icon {
+  font-size: 1.5rem;
+  margin-bottom: 0.5rem;
+  color: #ef4444;
+}
+
+.action-button.retry-button {
+  margin-top: 1rem;
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  padding: 0.5rem 1.25rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: background 0.2s ease-in-out;
+}
+
+.action-button.retry-button:hover {
+  background: #1d4ed8;
+}
+
+/* Pills Container */
+.subject-pills-container {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+/* Pill Buttons */
+.subject-pill {
+  background: #e0f2fe;
+  color: #0369a1;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 999px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+}
+
+.subject-pill:hover {
+  background: #0284c7;
+  color: #fff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+}
+
+.subject-pill:active {
+  transform: scale(0.95);
+}
+
+/* Animation */
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}

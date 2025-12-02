@@ -1,0 +1,140 @@
+/* --- WRAPPER --- */
+.leaderboard-wrapper {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 20px;
+  max-width: 1200px;
+  margin: 20px auto;
+  box-sizing: border-box;
+}
+
+/* --- LEFT SIDE (LEADERBOARD) --- */
+.leaderboard-left {
+  flex: 0 0 70%;
+  width: 100%;
+  background: #1e1e1e9d;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  animation: floatIn 0.6s ease forwards;
+  opacity: 0;
+  overflow-x: auto;
+  max-width: 600px;
+  height: 500px;
+
+  /* Hide scrollbar for Firefox */
+  scrollbar-width: none; 
+
+  /* Hide scrollbar for WebKit browsers (Chrome, Safari, etc.) */
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+.leaderboard-title {
+  font-size: 1.8rem;
+  font-weight: 700;
+  margin-bottom: 15px;
+  text-align: left;
+  color: #fff;
+}
+
+/* --- LEADERBOARD TABLE --- */
+.leaderboard-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 8px;
+  color: #fff;
+  table-layout: fixed; /* Forces columns to share available space */
+  word-wrap: break-word;
+}
+
+.leaderboard-table thead tr {
+  background: linear-gradient(90deg, #0072ff, #00c6ff);
+  color: white;
+  text-transform: uppercase;
+  font-size: 0.9rem;
+}
+
+.leaderboard-table th,
+.leaderboard-table td {
+  padding: 12px 14px;
+  text-align: left;
+  vertical-align: middle;
+  white-space: normal; /* ✅ allow text to wrap */
+  word-break: break-word;
+}
+
+.leaderboard-table tbody tr {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.leaderboard-table tbody tr:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+}
+
+.rank {
+  text-align: center;
+  font-weight: bold;
+  font-size: 1.2rem;
+  min-width: 50px;
+}
+
+/* --- RIGHT SIDE --- */
+.leaderboard-right {
+  flex: 0 0 30%;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.right-card {
+  background: none;
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+  color: white;
+  word-wrap: break-word;
+  word-break: break-word;
+}
+
+/* --- ANIMATION --- */
+@keyframes floatIn {
+  0% {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* --- RESPONSIVE DESIGN --- */
+@media (max-width: 900px) {
+  .leaderboard-wrapper {
+    flex-direction: column;
+  }
+  .leaderboard-left{
+    width: 90%;
+  }
+  .leaderboard-left,
+  .leaderboard-right {
+    flex: 1 1 100%;
+  }
+}
+
+@media (max-width: 600px) {
+  .leaderboard-table th,
+  .leaderboard-table td {
+    font-size: 0.85rem;
+    padding: 10px 8px;
+  }
+  .leaderboard-title {
+    font-size: 1.5rem;
+  }
+}

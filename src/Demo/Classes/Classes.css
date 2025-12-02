@@ -1,0 +1,118 @@
+.cls-wrapper {
+  padding: 30px;
+  font-family: "Montserrat", sans-serif;
+  background: #f3f5ff;
+}
+
+.cls-title {
+  font-size: 32px;
+  font-weight: 900;
+  color: #1f2b6c;
+  margin-bottom: 20px;
+}
+
+/* CLASS CARDS */
+.cls-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 18px;
+  margin-bottom: 35px;
+}
+
+.cls-card {
+  position: relative;
+  background: white;
+  border-radius: 18px;
+  padding: 20px;
+  border: 2px solid #e3e7ff;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(80, 99, 230, 0.12);
+  transition: 0.25s;
+}
+
+.cls-card.active {
+  transform: translateY(-4px);
+  border-color: #4154f1;
+  box-shadow: 0 10px 24px rgba(65, 84, 241, 0.28);
+}
+
+.cls-card h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  color: #23306a;
+}
+
+.cls-info {
+  margin-top: 8px;
+  font-weight: 600;
+  color: #4a527a;
+}
+
+.cls-info span {
+  font-weight: 800;
+  color: #1f2b6c;
+}
+
+.cls-stripe {
+  position: absolute;
+  top: 0;
+  right: -40px;
+  width: 110px;
+  height: 100%;
+  background: linear-gradient(135deg, #4154f15c, #6c7bff4e);
+  transform: skewX(-20deg);
+}
+
+/* TIMETABLE */
+.tt-title {
+  font-size: 24px;
+  font-weight: 800;
+  color: #1f2b6c;
+  margin-bottom: 12px;
+}
+
+.tt-card {
+  background: white;
+  padding: 20px;
+  border-radius: 16px;
+  border: 2px solid #e2e6ff;
+  box-shadow: 0 6px 18px rgba(40, 60, 120, 0.08);
+  overflow-x: auto;
+}
+
+.tt-table {
+  width: 100%;
+  min-width: 850px;
+  border-collapse: collapse;
+}
+
+.tt-table th {
+  background: #eef1ff;
+  padding: 12px;
+  font-size: 14px;
+  color: #505a8f;
+  font-weight: 800;
+  border-bottom: 2px solid #dbe1ff;
+}
+
+.tt-period {
+  font-weight: 800;
+  padding: 12px;
+  color: #23306a;
+}
+
+.tt-time {
+  padding: 12px;
+  color: #23306a;
+  background: #f7f8ff;
+  font-weight: 700;
+}
+
+.tt-cell {
+  padding: 12px;
+  text-align: center;
+  font-weight: 700;
+  color: #2f3e87;
+  border-bottom: 1px solid #eef1ff;
+}

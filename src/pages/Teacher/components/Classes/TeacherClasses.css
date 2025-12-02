@@ -1,0 +1,68 @@
+.teacher-class-layout {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-top: 20px;
+  width: 100%;
+}
+
+.class-detail-section {
+  flex: 2;
+  width: 100%;
+}
+
+.teacher-list-section {
+  flex: 1;
+  width: 100%;
+}
+
+@media (max-width: 1024px) {
+  .teacher-class-layout {
+    flex-direction: column;
+  }
+  .teacher-list-section {
+    max-width: 100%;
+  }
+}
+/* ---- Roll Setup Section ---- */
+.roll-setup-container {
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.roll-setup-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  color: white;
+  padding: 1px;
+}
+
+.toggle-btn {
+  background: rgba(75, 84, 255, 0.762);
+  border: none;
+  color: white;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: background 0.3s;
+}
+
+.toggle-btn:hover {
+  background: white;
+  color: rgba(75, 84, 255, 0.762);
+}
+
+.roll-setup-content {
+  overflow: hidden;
+  transition: max-height 0.4s ease, opacity 0.3s ease;
+  max-height: 1000px;
+  opacity: 1;
+}
+
+.roll-setup-content.collapsed {
+  max-height: 0;
+  opacity: 0;
+  padding: 0;
+}

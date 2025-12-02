@@ -1,0 +1,81 @@
+.view-submissions {
+  padding: 20px;
+}
+
+.vs-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.vs-assignment-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+
+.vs-assignment-btn {
+  background: #e8f0fe;
+  border: 1px solid #c7d6ff;
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: 0.2s;
+}
+
+.vs-assignment-btn.active {
+  background: #1e88e5;
+  color: white;
+  border-color: #1e88e5;
+}
+
+.vs-students-box {
+  margin-top: 10px;
+  background: white;
+  border-radius: 10px;
+  padding: 15px;
+  border: 1px solid #e2e2e2;
+}
+
+.vs-students-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.vs-empty {
+  text-align: center;
+  color: #888;
+  padding: 10px 0;
+}
+
+.vs-student-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 12px;
+  border-bottom: 1px solid #efefef;
+}
+
+.vs-student-row:last-child {
+  border-bottom: none;
+}
+
+.vs-student-info h5 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.vs-student-class {
+  font-size: 13px;
+  color: #666;
+}
+
+.vs-status {
+  display: flex;
+  align-items: center;
+}

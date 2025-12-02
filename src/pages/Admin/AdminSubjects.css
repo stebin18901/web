@@ -1,0 +1,252 @@
+/* AdminSubjects.css */
+
+/* --- Overall Container --- */
+.admin-subjects-container {
+    display: flex;
+    flex-direction: column; /* Stack content vertically */
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f0f2f5;
+    padding: 30px 20px;
+    box-sizing: border-box;
+}
+
+.admin-subjects-card {
+    background-color: #ffffff;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    width: 100%;
+    max-width: 700px; /* Slightly narrower than questions form for simplicity */
+    box-sizing: border-box;
+    margin-bottom: 30px; /* Space before AdminQuestions if it's below */
+}
+
+/* --- Heading --- */
+.admin-subjects-card h2 {
+    font-size: 2.2em;
+    color: #333;
+    margin-bottom: 30px;
+    text-align: center;
+    font-weight: 600;
+}
+
+/* --- Form for Add/Edit Subject --- */
+.admin-subject-form {
+    margin-bottom: 40px;
+    border-bottom: 1px solid #eee; /* Separator for form and list */
+    padding-bottom: 30px;
+}
+
+.form-input-group {
+    display: flex;
+    gap: 10px; /* Space between input and buttons */
+    align-items: center;
+    flex-wrap: wrap; /* Allow wrapping on small screens */
+}
+
+.subject-input {
+    flex-grow: 1; /* Allows input to take up most space */
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    font-size: 1em;
+    color: #333;
+    box-sizing: border-box;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    min-width: 180px; /* Ensure input isn't too small */
+}
+
+.subject-input:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+    outline: none;
+}
+
+.subject-input:disabled {
+    background-color: #f5f5f5;
+    cursor: not-allowed;
+}
+
+/* --- Action Buttons (Shared Styles) --- */
+.action-button {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-size: 0.95em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease, box-shadow 0.3s ease;
+    flex-shrink: 0; /* Prevent buttons from shrinking */
+}
+
+.action-button.primary {
+    background-color: #007bff; /* Add/Update */
+    color: white;
+}
+
+.action-button.primary:hover {
+    background-color: #0056b3;
+    transform: translateY(-2px);
+}
+
+.action-button.secondary {
+    background-color: #6c757d; /* Cancel */
+    color: white;
+}
+
+.action-button.secondary:hover {
+    background-color: #5a6268;
+    transform: translateY(-2px);
+}
+
+.action-button.edit {
+    background-color: #28a745; /* Green for Edit */
+    color: white;
+    margin-right: 10px; /* Space between edit and delete */
+}
+
+.action-button.edit:hover {
+    background-color: #218838;
+}
+
+.action-button.delete {
+    background-color: #dc3545; /* Red for Delete */
+    color: white;
+}
+
+.action-button.delete:hover {
+    background-color: #c82333;
+}
+
+.action-button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+}
+
+/* --- Subject List Section --- */
+.subject-list-section {
+    margin-top: 30px;
+}
+
+.subject-list-section h3 {
+    font-size: 1.5em;
+    color: #444;
+    margin-bottom: 20px;
+    text-align: center;
+}
+
+/* --- Table Styles --- */
+.table-responsive {
+    overflow-x: auto; /* Enable horizontal scrolling on small screens */
+}
+
+.subjects-table {
+    width: 100%;
+    border-collapse: collapse; /* Remove space between borders */
+    margin-top: 15px;
+    background-color: #fff;
+    border-radius: 8px;
+    overflow: hidden; /* Ensures rounded corners apply to content */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05); /* Subtle shadow for the table */
+}
+
+.subjects-table th,
+.subjects-table td {
+    text-align: left;
+    padding: 15px 20px;
+    border-bottom: 1px solid #eee;
+}
+
+.subjects-table th {
+    background-color: #f8f9fa; /* Light grey header */
+    color: #666;
+    font-weight: 700;
+    text-transform: uppercase;
+    font-size: 0.9em;
+}
+
+.subjects-table tbody tr:last-child td {
+    border-bottom: none; /* No border on the last row */
+}
+
+.subjects-table tbody tr:nth-child(even) {
+    background-color: #fdfdfd; /* Subtle zebra striping */
+}
+
+.subjects-table tbody tr:hover {
+    background-color: #f5f5f5; /* Highlight row on hover */
+    cursor: default;
+}
+
+.subject-actions {
+    white-space: nowrap; /* Prevent buttons from wrapping */
+}
+
+/* --- Loading and Empty States --- */
+.loading-message,
+.no-subjects-message {
+    text-align: center;
+    color: #777;
+    font-style: italic;
+    padding: 20px;
+    background-color: #f9f9f9;
+    border-radius: 8px;
+    margin-top: 20px;
+}
+
+/* --- Responsive Adjustments --- */
+@media (max-width: 768px) {
+    .admin-subjects-card {
+        padding: 30px 20px;
+        margin: 15px;
+    }
+
+    .admin-subjects-card h2 {
+        font-size: 1.8em;
+    }
+
+    .form-input-group {
+        flex-direction: column; /* Stack input and buttons vertically */
+        align-items: stretch; /* Stretch items to full width */
+    }
+
+    .subject-input {
+        margin-bottom: 10px; /* Space below input when stacked */
+    }
+
+    .action-button {
+        width: 100%; /* Full width buttons when stacked */
+        margin-bottom: 10px;
+    }
+
+    .action-button.edit {
+        margin-right: 0; /* Remove right margin when stacked */
+    }
+
+    .subjects-table th,
+    .subjects-table td {
+        padding: 12px 15px;
+    }
+
+    .subjects-table th:last-child,
+    .subjects-table td:last-child {
+        text-align: center; /* Center actions on small screens if space is tight */
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-subjects-container {
+        padding: 15px;
+    }
+
+    .admin-subjects-card {
+        padding: 20px 15px;
+    }
+
+    .admin-subjects-card h2 {
+        font-size: 1.6em;
+    }
+}

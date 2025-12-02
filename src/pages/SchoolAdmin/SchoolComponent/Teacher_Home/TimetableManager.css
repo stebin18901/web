@@ -1,0 +1,118 @@
+.timetable-container {
+  font-family: "Inter", sans-serif;
+  background: #fff;
+  padding: 16px;
+  border-radius: 16px;
+  box-shadow: 0 6px 20px rgba(0,0,0,0.05);
+}
+
+/* Header */
+.tt-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+.tt-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 600;
+  color: #1e293b;
+}
+.tt-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+.class-selector {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 0.9rem;
+}
+.refresh-btn,
+.save-btn {
+  border: none;
+  padding: 6px 12px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+.refresh-btn {
+  background: #f3f4f6;
+  color: #334155;
+}
+.save-btn {
+  background: linear-gradient(135deg, #6366f1, #4f46e5);
+  color: white;
+}
+
+/* Status */
+.status-banner {
+  background: #eef2ff;
+  color: #4338ca;
+  font-size: 0.85rem;
+  padding: 6px 10px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  text-align: center;
+}
+
+/* Table */
+.timetable-grid table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+.timetable-grid th,
+.timetable-grid td {
+  border: 1px solid #e5e7eb;
+  padding: 6px;
+  text-align: center;
+}
+.timetable-grid th {
+  background: #f9fafb;
+  color: #334155;
+  font-weight: 600;
+}
+.day-col {
+  background: #f1f5f9;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+/* Dropdowns */
+.tt-subject,
+.tt-teacher {
+  width: 100%;
+  border-radius: 6px;
+  border: 1px solid #e2e8f0;
+  padding: 4px 6px;
+  margin-top: 4px;
+  font-size: 0.8rem;
+  background: #fff;
+}
+.tt-subject:focus,
+.tt-teacher:focus {
+  outline: 1px solid #6366f1;
+}
+
+/* Empty / Loader */
+.timetable-empty,
+.timetable-loader {
+  text-align: center;
+  padding: 30px;
+  color: #9ca3af;
+  font-size: 0.9rem;
+}
+.spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}

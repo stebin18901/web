@@ -1,0 +1,267 @@
+/* src/components/ChapterList.css */
+.chapter-list-container1 {
+    margin: 20px auto;
+    padding: 20px;
+    max-width: 1000px;
+    background-color: none;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+  
+  .chapter-list-container1 h2 {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+  
+  .search-bar {
+    margin-bottom: 20px;
+  }
+  
+  .search-bar input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 16px;
+  }
+  
+  .chapter-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .chapter-table th,
+  .chapter-table td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: left;
+  }
+  
+  .chapter-table th {
+    background-color: #007bff;
+    color: white;
+  }
+  
+  .chapter-table tbody tr:nth-child(even) {
+    background-color: #f2f2f2;
+  }
+  
+  .chapter-table tbody tr:hover {
+    background-color: #ddd;
+  }
+  
+  .chapter-table ul {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+  }
+  
+  .chapter-table ul li {
+    margin: 5px 0;
+  }
+  
+  .chapter-table ul li a {
+    color: #007bff;
+    text-decoration: none;
+  }
+  
+  .chapter-table ul li a:hover {
+    text-decoration: underline;
+  }
+  
+  .delete-btn {
+    padding: 5px 10px;
+    background-color: #ff4d4d;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+  }
+  
+  .delete-btn:hover {
+    background-color: #cc0000;
+  }
+  /* src/components/ChapterList.css */
+.chapter-list-container1 {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.chapter-list-container1 h2 {
+  color: #2c3e50;
+  text-align: center;
+  margin-bottom: 25px;
+  font-size: 28px;
+}
+
+.search-bar {
+  position: relative;
+  margin-bottom: 20px;
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.search-bar input {
+  width: 100%;
+  padding: 12px 20px;
+  padding-left: 40px;
+  border: 1px solid #ddd;
+  border-radius: 25px;
+  font-size: 16px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  transition: all 0.3s ease;
+}
+
+.search-bar input:focus {
+  outline: none;
+  border-color: #3498db;
+  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
+}
+
+.search-icon {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #7f8c8d;
+}
+
+.chapter-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+
+.chapter-table th {
+  background-color: #3498db;
+  color: white;
+  padding: 12px 15px;
+  text-align: left;
+}
+
+.chapter-table td {
+  padding: 12px 15px;
+  border-bottom: 1px solid #ddd;
+}
+
+.chapter-table tr:nth-child(even) {
+  background-color: #f8f9fa;
+}
+
+.chapter-table tr:hover {
+  background-color: #f1f7fd;
+}
+
+.test-links {
+  list-style-type: none;
+  padding: 0;
+  margin: 0;
+}
+
+.test-links li {
+  margin-bottom: 5px;
+}
+
+.test-links a {
+  color: #2980b9;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.test-links a:hover {
+  color: #3498db;
+  text-decoration: underline;
+}
+
+.no-links {
+  color: #95a5a6;
+  font-style: italic;
+}
+
+.actions-cell {
+  display: flex;
+  gap: 8px;
+}
+
+button {
+  padding: 8px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.edit-btn {
+  background-color: #f39c12;
+  color: white;
+}
+
+.edit-btn:hover {
+  background-color: #e67e22;
+}
+
+.delete-btn {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.delete-btn:hover {
+  background-color: #c0392b;
+}
+
+.save-btn {
+  background-color: #2ecc71;
+  color: white;
+}
+
+.save-btn:hover {
+  background-color: #27ae60;
+}
+
+.cancel-btn {
+  background-color: #95a5a6;
+  color: white;
+}
+
+.cancel-btn:hover {
+  background-color: #7f8c8d;
+}
+
+.edit-input {
+  padding: 6px 10px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  width: 100%;
+  font-size: 14px;
+}
+
+.edit-input:focus {
+  outline: none;
+  border-color: #3498db;
+}
+
+.no-chapters {
+  text-align: center;
+  padding: 40px;
+  color: #7f8c8d;
+  font-size: 18px;
+}
+
+@media (max-width: 768px) {
+  .chapter-table {
+    display: block;
+    overflow-x: auto;
+  }
+  
+  .actions-cell {
+    flex-direction: column;
+    gap: 5px;
+  }
+  
+ 
+}

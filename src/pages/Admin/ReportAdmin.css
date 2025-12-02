@@ -1,0 +1,114 @@
+.report-admin-container {
+  padding: 2rem;
+  font-family: "Segoe UI", sans-serif;
+  background: #f7f9fb;
+  min-height: 100vh;
+}
+
+.header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.selector {
+  margin-top: 10px;
+}
+
+.selector select {
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  margin-left: 10px;
+}
+
+.loading-msg,
+.info-msg {
+  font-size: 1.1rem;
+  color: #444;
+  margin-top: 20px;
+}
+
+.summary-box {
+  margin: 20px 0;
+  padding: 12px 18px;
+  background-color: #eaf6ff;
+  border-radius: 8px;
+  display: flex;
+  justify-content: space-around;
+  font-weight: 500;
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+.report-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  box-shadow: 0 0 6px rgba(0,0,0,0.05);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.report-table th,
+.report-table td {
+  padding: 14px 16px;
+  text-align: center;
+  border-bottom: 1px solid #eee;
+}
+
+.report-table th {
+  background: #f0f0f0;
+  font-weight: bold;
+}
+
+.report-table tr:hover {
+  background: #f9f9f9;
+}
+
+.tag {
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-weight: bold;
+  color: white;
+}
+
+.tag.green {
+  background-color: #28a745;
+}
+
+.tag.red {
+  background-color: #dc3545;
+}
+
+.tag.yellow {
+  background-color: #ffc107;
+  color: black;
+}
+
+.badge {
+  display: inline-block;
+  margin: 2px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.badge.green {
+  background-color: #d4edda;
+  color: #155724;
+}
+
+.badge.red {
+  background-color: #f8d7da;
+  color: #721c24;
+}
+
+.badge.gray {
+  background-color: #e2e3e5;
+  color: #383d41;
+}

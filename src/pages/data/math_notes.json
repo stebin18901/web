@@ -1,0 +1,1543 @@
+{
+  "version": "2.2",
+  "created_by": "Hepsy Enterprise Education System",
+  "last_updated": "2025-10-13",
+  "academic_year": "2025-26",
+  "description": "Notes and Quizzes for JEE/NEET/Foundation Classes 6–12",
+  "data": [
+    {
+      "class_id": "CLS_11",
+      "class_name": "Class 11",
+      "board": "CBSE/NCERT",
+      "exam_categories": ["JEE Main", "NEET Foundation", "Board Exam"],
+      "academic_stream": "Science",
+      "subjects": [
+        {
+          "subject_id": "MATH_11",
+          "subject_name": "Mathematics",
+          "description": "Comprehensive Class 11 Mathematics notes with JEE-level concepts and tagged quiz sets.",
+          "tags": ["STEM", "Problem Solving", "JEE Foundation"],
+          "difficulty_weight": "medium",
+          "chapters": [
+            {
+              "chapter_id": "CH01",
+              "chapter_name": "Sets, Relations and Functions",
+              "chapter_description": "Foundation of modern mathematics dealing with sets, relations, and mappings.",
+              "priority_level": 1,
+              "estimated_hours": 10,
+              "difficulty_level": "medium",
+              "chapter_keywords": ["sets", "relations", "functions", "domain", "range", "mapping"],
+              "learning_outcomes": [
+                "Explain and represent sets, relations, and functions using mathematical notation.",
+                "Apply set algebra and relation logic to problem-solving.",
+                "Understand mapping and functional relationships for calculus foundations."
+              ],
+              "parts": [
+                {
+                  "part_id": "PART01",
+                  "part_name": "Sets",
+                  "part_description": "Introduction to sets, their types, representations, and operations.",
+                  "learning_outcomes": [
+                    "Define and represent sets using roster and set-builder forms.",
+                    "Apply union, intersection, and complement operations.",
+                    "Use the principle of inclusion and exclusion in counting problems."
+                  ],
+                  "estimated_study_time": 90,
+                  "recommended_prerequisites": ["Basic Logic", "Number System"],
+                  "notes": {
+                    "introduction": {
+                      "definition": "A set is a well-defined collection of distinct objects, considered as an object in itself.",
+                      "notation": "Sets are usually denoted by capital letters such as \\( A, B, C \\), and elements by lowercase letters such as \\( a, b, c \\). The membership is denoted by \\( a \\in A \\) if 'a' is an element of A.",
+                      "examples": [
+                        "The set of vowels in English alphabet: \\( A = \\{ a, e, i, o, u \\} \\)",
+                        "The set of natural numbers less than 5: \\( B = \\{ 1, 2, 3, 4 \\} \\)"
+                      ],
+                      "non_examples": [
+                        "The set of all beautiful numbers — not well-defined as 'beautiful' is subjective."
+                      ]
+                    },
+                    "representation_of_sets": {
+                      "types": [
+                        {
+                          "name": "Roster or Tabular Form",
+                          "description": "All elements of the set are listed, separated by commas and enclosed in curly braces.",
+                          "example": "\\( A = \\{ 2, 4, 6, 8, 10 \\} \\)"
+                        },
+                        {
+                          "name": "Set-Builder Form",
+                          "description": "A property of elements is stated, and the set contains all elements satisfying that property.",
+                          "example": "\\( A = \\{ x \\mid x \\text{ is an even natural number less than 12} \\} \\)"
+                        }
+                      ],
+                      "key_point": "In JEE/NEET-level reasoning, converting between roster and set-builder forms is frequently tested."
+                    },
+                    "types_of_sets": {
+                      "content": [
+                        { "type": "Empty Set", "definition": "A set containing no elements, denoted by \\( \\phi \\) or \\( \\{ \\} \\)." },
+                        { "type": "Finite and Infinite Sets", "definition": "A set with countable elements is finite; otherwise, it is infinite." },
+                        { "type": "Equal Sets", "definition": "Two sets are equal if they contain exactly the same elements." },
+                        { "type": "Subset", "definition": "If every element of set \\( A \\) is in set \\( B \\), then \\( A \\subseteq B \\)." },
+                        { "type": "Proper Subset", "definition": "If \\( A \\subseteq B \\) and \\( A \\neq B \\), then \\( A \\) is a proper subset of \\( B \\)." },
+                        { "type": "Power Set", "definition": "The set of all subsets of a set \\( A \\), denoted by \\( P(A) \\)." },
+                        { "type": "Universal Set", "definition": "A set containing all elements under consideration, denoted by \\( U \\)." },
+                        { "type": "Complement of a Set", "definition": "For a universal set \\( U \\), the complement of \\( A \\) is \\( A' = U - A \\)." }
+                      ]
+                    },
+                    "venn_diagrams": {
+                      "description": "Venn diagrams visually represent relationships between sets using overlapping circles.",
+                      "example": "Two overlapping circles showing \\( A \\cap B \\), \\( A \\cup B \\), and \\( A' \\).",
+                      "jee_tip": "Common in set-theory visualization and logical reasoning in JEE Foundation questions."
+                    },
+                    "operations_on_sets": {
+                      "union": {
+                        "definition": "The set of all elements belonging to either \\( A \\) or \\( B \\), denoted by \\( A \\cup B \\).",
+                        "example": "\\( A = \\{ 1, 2, 3 \\}, B = \\{ 3, 4, 5 \\} \\Rightarrow A \\cup B = \\{ 1, 2, 3, 4, 5 \\} \\)"
+                      },
+                      "intersection": {
+                        "definition": "The set of all elements common to both \\( A \\) and \\( B \\), denoted by \\( A \\cap B \\).",
+                        "example": "\\( A \\cap B = \\{ 3 \\} \\)"
+                      },
+                      "difference": {
+                        "definition": "The set of elements in \\( A \\) that are not in \\( B \\), denoted by \\( A - B \\).",
+                        "example": "\\( A - B = \\{ 1, 2 \\} \\)"
+                      },
+                      "complement": {
+                        "definition": "All elements not belonging to \\( A \\) with respect to the universal set \\( U \\).",
+                        "example": "If \\( U = \\{ 1, 2, 3, 4, 5 \\} \\) and \\( A = \\{ 2, 4 \\} \\), then \\( A' = \\{ 1, 3, 5 \\} \\)."
+                      },
+                      "properties": [
+                        "Commutative: \\( A \\cup B = B \\cup A \\), \\( A \\cap B = B \\cap A \\)",
+                        "Associative: \\( (A \\cup B) \\cup C = A \\cup (B \\cup C) \\)",
+                        "Distributive: \\( A \\cap (B \\cup C) = (A \\cap B) \\cup (A \\cap C) \\)"
+                      ]
+                    },
+                    "laws_of_set_algebra": {
+                      "important_laws": [
+                        "Idempotent Law: \\( A \\cup A = A, A \\cap A = A \\)",
+                        "Domination Law: \\( A \\cup U = U, A \\cap \\phi = \\phi \\)",
+                        "Complement Laws: \\( A \\cup A' = U, A \\cap A' = \\phi \\)",
+                        "De Morgan's Laws: \\( (A \\cup B)' = A' \\cap B' \\) and \\( (A \\cap B)' = A' \\cup B' \\)"
+                      ],
+                      "example": "If \\( A = \\{1, 2, 3\\}, B = \\{3, 4, 5\\}, U = \\{1, 2, 3, 4, 5\\} \\), then \\( (A \\cup B)' = A' \\cap B' = \\{ \\} \\)."
+                    },
+                    "applications": {
+                      "real_world_examples": [
+                        "Classification of data in statistics or probability.",
+                        "Database query operations (union, intersection).",
+                        "Event operations in probability theory."
+                      ],
+                      "jee_example_problem": {
+                        "problem": "If \\( n(A) = 20, n(B) = 28, n(A \\cup B) = 36 \\), find \\( n(A \\cap B) \\).",
+                        "solution": "Using \\( n(A \\cup B) = n(A) + n(B) - n(A \\cap B) \\), we get \\( n(A \\cap B) = 12 \\)."
+                      }
+                    },
+                    "principle_of_inclusion_exclusion": {
+                      "formula": "\\( n(A \\cup B) = n(A) + n(B) - n(A \\cap B) \\)",
+                      "extension": "\\( n(A \\cup B \\cup C) = n(A) + n(B) + n(C) - n(A \\cap B) - n(B \\cap C) - n(C \\cap A) + n(A \\cap B \\cap C) \\)",
+                      "example": "In a class of 100 students, 60 play cricket, 45 play football, and 20 play both. Then, number of students who play at least one = \\( 60 + 45 - 20 = 85 \\).",
+                      "jee_focus_note": "This concept extends into probability, combinatorics, and counting problems in JEE."
+                    },
+                    "summary": [
+                      "Sets form the base for relations, functions, and probability.",
+                      "Understanding Venn logic simplifies many JEE questions.",
+                      "Master the conversion between verbal description ↔ symbolic form."
+                    ]
+                  },
+                  "quiz_data": {
+  "QUIZ_MATH_11_CH01_SETS_01": {
+    "quiz_id": "QUIZ_MATH_11_CH01_SETS_01",
+    "title": "Concept Builder (Basic)",
+    "level": "Easy",
+    "question_count": 12,
+    "description": "Basic conceptual quiz on Sets — roster form, types, and fundamental operations. Ideal for concept clarity before advanced problem solving.",
+    "questions": [
+      {
+        "question_id": "Q1",
+        "type": "MCQ",
+        "question_text": "Which of the following represents the set of natural numbers less than 6?",
+        "options": ["\\{1,2,3,4,5,6\\}", "\\{0,1,2,3,4,5\\}", "\\{1,2,3,4,5\\}", "\\{2,3,4,5,6\\}"],
+        "correct_answer": "\\{1,2,3,4,5\\}",
+        "concept_explanation": "Natural numbers start from 1. Hence, all natural numbers less than 6 are 1 to 5.",
+        "topic_ref": "S1 - Representation of Sets",
+        "tags": {
+          "concepts_required": ["Roster Form", "Natural Numbers"],
+          "related_topics": ["Set-builder Form"],
+          "skills_tested": ["Identification", "Concept Recall"],
+          "difficulty_level": "easy",
+          "jee_weightage": "Low"
+        }
+      },
+      {
+        "question_id": "Q2",
+        "type": "MCQ",
+        "question_text": "If \\( A = \\{1, 2, 3, 4\\} \\) and \\( B = \\{3, 4, 5, 6\\} \\), then \\( A \\cap B \\) equals:",
+        "options": ["\\{1,2\\}", "\\{3,4\\}", "\\{1,2,3,4,5,6\\}", "\\{5,6\\}"],
+        "correct_answer": "\\{3,4\\}",
+        "concept_explanation": "The intersection of two sets contains elements common to both sets.",
+        "topic_ref": "S4 - Operations on Sets",
+        "tags": {
+          "concepts_required": ["Intersection", "Common Elements"],
+          "related_topics": ["Union of Sets"],
+          "skills_tested": ["Logical Comparison"],
+          "difficulty_level": "easy",
+          "jee_weightage": "Medium"
+        }
+      },
+      {
+        "question_id": "Q3",
+        "type": "TrueFalse",
+        "question_text": "The empty set \\( \\phi \\) is a subset of every set.",
+        "correct_answer": "True",
+        "concept_explanation": "An empty set has no elements, so the subset condition (every element of \\( A \\) in \\( B \\)) holds vacuously true.",
+        "topic_ref": "S3 - Types of Sets",
+        "tags": {
+          "concepts_required": ["Subset", "Empty Set"],
+          "related_topics": ["Power Set"],
+          "skills_tested": ["Logical Deduction"],
+          "difficulty_level": "easy",
+          "jee_weightage": "Low"
+        }
+      },
+      {
+        "question_id": "Q4",
+        "type": "MCQ",
+        "question_text": "If \\( A = \\{2,4,6,8\\} \\) and \\( B = \\{4,8,12,16\\} \\), then \\( A \\cup B \\) is:",
+        "options": ["\\{2,4,6,8,12,16\\}", "\\{4,8\\}", "\\{2,6,12,16\\}", "\\{2,4,6,8\\}"],
+        "correct_answer": "\\{2,4,6,8,12,16\\}",
+        "concept_explanation": "Union combines all distinct elements from both sets.",
+        "topic_ref": "S4 - Union of Sets",
+        "tags": {
+          "concepts_required": ["Union Operation"],
+          "related_topics": ["Intersection", "Difference"],
+          "skills_tested": ["Application"],
+          "difficulty_level": "easy",
+          "jee_weightage": "Medium"
+        }
+      },
+      {
+        "question_id": "Q5",
+        "type": "FillInTheBlank",
+        "question_text": "The number of subsets of a set containing \\( n \\) elements is ______.",
+        "correct_answer": "2^n",
+        "concept_explanation": "Each element can either be included or not, leading to \\( 2^n \\) total subsets.",
+        "topic_ref": "S3 - Power Set",
+        "tags": {
+          "concepts_required": ["Power Set", "Counting Principle"],
+          "related_topics": ["Combinatorics"],
+          "skills_tested": ["Formula Application"],
+          "difficulty_level": "easy",
+          "jee_weightage": "Medium"
+        }
+      },
+      {
+        "question_id": "Q6",
+        "type": "MCQ",
+        "question_text": "If \\( U = \\{1,2,3,4,5,6\\} \\) and \\( A = \\{2,4,6\\} \\), then \\( A' \\) (complement of A) is:",
+        "options": ["\\{2,4,6\\}", "\\{1,3,5\\}", "\\{1,2,3,4,5,6\\}", "\\{\\}"],
+        "correct_answer": "\\{1,3,5\\}",
+        "concept_explanation": "Complement includes all elements of the universal set not in A.",
+        "topic_ref": "S5 - Complement of Sets",
+        "tags": {
+          "concepts_required": ["Universal Set", "Complement"],
+          "related_topics": ["Difference of Sets"],
+          "skills_tested": ["Set Operation"],
+          "difficulty_level": "easy",
+          "jee_weightage": "Low"
+        }
+      },
+      {
+        "question_id": "Q7",
+        "type": "MCQ",
+        "question_text": "Which of the following is the correct De Morgan’s Law?",
+        "options": [
+          "\\( (A \\cup B)' = A' \\cup B' \\)",
+          "\\( (A \\cap B)' = A' \\cap B' \\)",
+          "\\( (A \\cup B)' = A' \\cap B' \\)",
+          "\\( (A \\cap B)' = A' \\cup B' \\)"
+        ],
+        "correct_answer": "\\( (A \\cup B)' = A' \\cap B' \\)",
+        "concept_explanation": "De Morgan’s Laws describe complement relationships between union and intersection.",
+        "topic_ref": "S6 - Laws of Set Algebra",
+        "tags": {
+          "concepts_required": ["De Morgan’s Laws"],
+          "related_topics": ["Complement", "Intersection"],
+          "skills_tested": ["Rule Application"],
+          "difficulty_level": "easy",
+          "jee_weightage": "Medium"
+        }
+      },
+      {
+        "question_id": "Q8",
+        "type": "TrueFalse",
+        "question_text": "Two sets are equal if they have the same number of elements.",
+        "correct_answer": "False",
+        "concept_explanation": "Two sets are equal if they have exactly the same elements, not just the same count.",
+        "topic_ref": "S3 - Equal Sets",
+        "tags": {
+          "concepts_required": ["Equal Sets"],
+          "related_topics": ["Cardinality"],
+          "skills_tested": ["Conceptual Understanding"],
+          "difficulty_level": "easy",
+          "jee_weightage": "Low"
+        }
+      },
+      {
+        "question_id": "Q9",
+        "type": "MCQ",
+        "question_text": "Which of the following pairs of sets are disjoint?",
+        "options": [
+          "\\( \\{1,2,3\\}, \\{3,4,5\\} \\)",
+          "\\( \\{1,2\\}, \\{3,4\\} \\)",
+          "\\( \\{1,2,3\\}, \\{2,3,4\\} \\)",
+          "\\( \\{a,b\\}, \\{b,c\\} \\)"
+        ],
+        "correct_answer": "\\( \\{1,2\\}, \\{3,4\\} \\)",
+        "concept_explanation": "Disjoint sets have no common elements.",
+        "topic_ref": "S4 - Operations on Sets",
+        "tags": {
+          "concepts_required": ["Disjoint Sets"],
+          "related_topics": ["Intersection"],
+          "skills_tested": ["Visual Reasoning"],
+          "difficulty_level": "easy",
+          "jee_weightage": "Low"
+        }
+      },
+      {
+        "question_id": "Q10",
+        "type": "MCQ",
+        "question_text": "If \\( n(A) = 20, n(B) = 15, n(A \\cap B) = 5 \\), find \\( n(A \\cup B) \\).",
+        "options": ["30", "25", "35", "40"],
+        "correct_answer": "30",
+        "concept_explanation": "Use \\( n(A \\cup B) = n(A) + n(B) - n(A \\cap B) = 20 + 15 - 5 = 30 \\).",
+        "topic_ref": "S7 - Principle of Inclusion-Exclusion",
+        "tags": {
+          "concepts_required": ["Counting", "Union Formula"],
+          "related_topics": ["Venn Diagram"],
+          "skills_tested": ["Formula Application"],
+          "difficulty_level": "easy",
+          "jee_weightage": "Medium"
+        }
+      },
+      {
+        "question_id": "Q11",
+        "type": "MCQ",
+        "question_text": "The set \\( A = \\{ x : x \\text{ is a letter in the word ‘MATH’} \\} \\) has cardinality:",
+        "options": ["2", "3", "4", "5"],
+        "correct_answer": "4",
+        "concept_explanation": "Distinct letters are M, A, T, H ⇒ 4 elements.",
+        "topic_ref": "S1 - Representation of Sets",
+        "tags": {
+          "concepts_required": ["Roster Representation"],
+          "related_topics": ["Finite Sets"],
+          "skills_tested": ["Counting Elements"],
+          "difficulty_level": "easy",
+          "jee_weightage": "Low"
+        }
+      },
+      {
+        "question_id": "Q12",
+        "type": "TrueFalse",
+        "question_text": "For any set A, \\( A \\cup \\phi = A \\).",
+        "correct_answer": "True",
+        "concept_explanation": "Union with the empty set does not add new elements, so \\( A \\cup \\phi = A \\).",
+        "topic_ref": "S6 - Laws of Set Algebra",
+        "tags": {
+          "concepts_required": ["Union Law", "Empty Set"],
+          "related_topics": ["Set Operations"],
+          "skills_tested": ["Rule Recall"],
+          "difficulty_level": "easy",
+          "jee_weightage": "Low"
+        }
+      }
+    ],
+    "ai_metadata": {
+      "topic_weighting": {
+        "Representation of Sets": 0.2,
+        "Types of Sets": 0.15,
+        "Set Operations": 0.25,
+        "Set Laws": 0.15,
+        "Counting Principle": 0.25
+      },
+      "adaptive_hint_logic": {
+        "low_score_feedback": "Revisit NCERT examples on set operations and types of sets. Practice simple Venn problems from RD Sharma.",
+        "medium_score_feedback": "Review inclusion–exclusion and complement laws using Cengage Exercise 1.2.",
+        "high_score_feedback": "Proceed to advanced JEE-type problems involving 3-set Venn applications in MTG Foundation Course."
+      }
+    }
+  },
+  "QUIZ_MATH_11_CH01_SETS_02": {
+  "quiz_id": "QUIZ_MATH_11_CH01_SETS_02",
+  "title": "Core Logic & Properties",
+  "level": "Medium",
+  "question_count": 11,
+  "description": "Logic-based quiz focusing on set identities, Venn reasoning, inclusion–exclusion principle, and application-based problems inspired by Cengage and Arihant JEE sets.",
+  "questions": [
+    {
+      "question_id": "Q1",
+      "type": "MCQ",
+      "question_text": "If \\( A = \\{ x : x \\text{ is a prime number less than 10} \\} \\) and \\( B = \\{2, 4, 6, 8\\} \\), then \\( A - B \\) is:",
+      "options": ["\\{3,5,7\\}", "\\{2,3,5,7\\}", "\\{4,6,8\\}", "\\{\\}"],
+      "correct_answer": "\\{3,5,7\\}",
+      "concept_explanation": "Elements in A but not in B. Since 2 is common, subtract it → remaining \\{3,5,7\\}.",
+      "topic_ref": "S4 - Difference of Sets",
+      "tags": {
+        "concepts_required": ["Difference of Sets", "Prime Numbers"],
+        "related_topics": ["Intersection", "Union"],
+        "skills_tested": ["Analytical Subtraction"],
+        "difficulty_level": "medium",
+        "jee_weightage": "Medium"
+      }
+    },
+    {
+      "question_id": "Q2",
+      "type": "MCQ",
+      "question_text": "If \\( n(A) = 40, n(B) = 32, n(A \\cap B) = 8 \\), find \\( n(A' \\cap B') \\) when the universal set has 60 elements.",
+      "options": ["12", "20", "24", "28"],
+      "correct_answer": "20",
+      "concept_explanation": "Using \\( n(A' \\cap B') = n(U) - n(A \\cup B) = 60 - [40 + 32 - 8] = 20 \\).",
+      "topic_ref": "S7 - Inclusion-Exclusion Principle",
+      "tags": {
+        "concepts_required": ["Complement", "Union Formula"],
+        "related_topics": ["Venn Diagram Counting"],
+        "skills_tested": ["Algebraic Application"],
+        "difficulty_level": "medium",
+        "jee_weightage": "High"
+      }
+    },
+    {
+      "question_id": "Q3",
+      "type": "MCQ",
+      "question_text": "For sets A, B, and C, if \\( A \\subseteq B \\) and \\( B \\subseteq C \\), then:",
+      "options": [
+        "\\( A \\subseteq C \\)",
+        "\\( C \\subseteq A \\)",
+        "\\( A = B = C \\)",
+        "\\( A \\cap C = \\phi \\)"
+      ],
+      "correct_answer": "\\( A \\subseteq C \\)",
+      "concept_explanation": "Subset relation is transitive. This is a key logical property used in proofs.",
+      "topic_ref": "S3 - Subsets",
+      "tags": {
+        "concepts_required": ["Subset Relation"],
+        "related_topics": ["Transitivity"],
+        "skills_tested": ["Logical Reasoning"],
+        "difficulty_level": "medium",
+        "jee_weightage": "Medium"
+      }
+    },
+    {
+      "question_id": "Q4",
+      "type": "MCQ",
+      "question_text": "If \\( A = \\{1,2,3,4,5\\}, B = \\{2,4,6,8\\} \\), then \\( (A \\cup B)' \\) with respect to \\( U = \\{1,2,3,4,5,6,7,8\\} \\) is:",
+      "options": ["\\{7,8\\}", "\\{7\\}", "\\{5,6,7,8\\}", "\\{\\}"],
+      "correct_answer": "\\{7\\}",
+      "concept_explanation": "\\( A \\cup B = \\{1,2,3,4,5,6,8\\} \\Rightarrow \\) complement is \\{7\\}.",
+      "topic_ref": "S5 - Complement of Sets",
+      "tags": {
+        "concepts_required": ["Complement", "Union"],
+        "related_topics": ["Venn Operations"],
+        "skills_tested": ["Set Visualization"],
+        "difficulty_level": "medium",
+        "jee_weightage": "Medium"
+      }
+    },
+    {
+      "question_id": "Q5",
+      "type": "MCQ",
+      "question_text": "In a class of 60 students, 25 study Physics, 20 study Chemistry, and 10 study both. How many study neither?",
+      "options": ["25", "20", "30", "25"],
+      "correct_answer": "25",
+      "concept_explanation": "Using inclusion–exclusion: \\( n(A \\cup B) = 25 + 20 - 10 = 35 \\). So neither = 60 - 35 = 25.",
+      "topic_ref": "S7 - Inclusion-Exclusion",
+      "tags": {
+        "concepts_required": ["Counting Principle", "Venn Application"],
+        "related_topics": ["Probability Base"],
+        "skills_tested": ["Logical Deduction"],
+        "difficulty_level": "medium",
+        "jee_weightage": "High"
+      }
+    },
+    {
+      "question_id": "Q6",
+      "type": "MCQ",
+      "question_text": "If \\( A = \\{x | x \\text{ is a multiple of 3} \\} \\) and \\( B = \\{x | x \\text{ is even} \\} \\), then the common elements between A and B in \\( \\{1,2,3,4,5,6,7,8,9,10,12\\} \\) are:",
+      "options": ["\\{3,6,9\\}", "\\{6,12\\}", "\\{2,4,8,10\\}", "\\{\\}"],
+      "correct_answer": "\\{6,12\\}",
+      "concept_explanation": "Multiples of 3 ∩ even numbers = even multiples of 3 ⇒ 6 and 12.",
+      "topic_ref": "S4 - Intersection of Sets",
+      "tags": {
+        "concepts_required": ["Intersection", "Set Conditions"],
+        "related_topics": ["Multiple Conditions"],
+        "skills_tested": ["Conditional Filtering"],
+        "difficulty_level": "medium",
+        "jee_weightage": "Medium"
+      }
+    },
+    {
+      "question_id": "Q7",
+      "type": "MCQ",
+      "question_text": "If \\( n(A \\cup B \\cup C) = n(A) + n(B) + n(C) - n(A \\cap B) - n(B \\cap C) - n(C \\cap A) + n(A \\cap B \\cap C) \\), then for \\( n(A)=20, n(B)=25, n(C)=30, n(A \\cap B)=10, n(B \\cap C)=8, n(C \\cap A)=5, n(A \\cap B \\cap C)=3 \\), find \\( n(A \\cup B \\cup C) \\).",
+      "options": ["59", "55", "57", "58"],
+      "correct_answer": "59",
+      "concept_explanation": "Substitute values: \\( 20 + 25 + 30 - 10 - 8 - 5 + 3 = 59 \\).",
+      "topic_ref": "S7 - Inclusion-Exclusion (3 Sets)",
+      "tags": {
+        "concepts_required": ["Inclusion-Exclusion"],
+        "related_topics": ["Counting"],
+        "skills_tested": ["Multi-step Calculation"],
+        "difficulty_level": "medium",
+        "jee_weightage": "High"
+      }
+    },
+    {
+      "question_id": "Q8",
+      "type": "AssertionReason",
+      "question_text": "Assertion (A): \\( A \\cap (B \\cup C) = (A \\cap B) \\cup (A \\cap C) \\).  \nReason (R): Intersection distributes over union.",
+      "options": ["Both A and R are true, and R is the correct explanation.", "Both A and R are true, but R is not the correct explanation.", "A is true, R is false.", "A is false, R is true."],
+      "correct_answer": "Both A and R are true, and R is the correct explanation.",
+      "concept_explanation": "Set operations follow distributive law similar to Boolean algebra. Proven by Venn diagram.",
+      "topic_ref": "S6 - Laws of Set Algebra",
+      "tags": {
+        "concepts_required": ["Distributive Law"],
+        "related_topics": ["Venn Diagram Reasoning"],
+        "skills_tested": ["Logic Proof"],
+        "difficulty_level": "medium",
+        "jee_weightage": "High"
+      }
+    },
+    {
+      "question_id": "Q9",
+      "type": "MCQ",
+      "question_text": "If \\( n(U) = 100, n(A) = 60, n(B) = 50, n(A \\cap B) = 20 \\), find \\( n(A' \\cup B') \\).",
+      "options": ["10", "30", "70", "80"],
+      "correct_answer": "70",
+      "concept_explanation": "\\( n(A' \\cup B') = n(U) - n(A \\cap B) = 100 - 30 = 70 \\). (Since \\( n(A \\cap B) = 30 \\) → derived using \\( n(A \\cup B) = 90 \\)).",
+      "topic_ref": "S5 - Complement and Union",
+      "tags": {
+        "concepts_required": ["Complement", "Union", "Counting"],
+        "related_topics": ["De Morgan’s Law"],
+        "skills_tested": ["Indirect Logic"],
+        "difficulty_level": "medium",
+        "jee_weightage": "Medium"
+      }
+    },
+    {
+      "question_id": "Q10",
+      "type": "Numerical",
+      "question_text": "In a survey of 80 people, 50 like tea, 30 like coffee, and 10 like both. How many like neither?",
+      "correct_answer": "10",
+      "concept_explanation": "Using inclusion–exclusion: \\( 80 - (50 + 30 - 10) = 10 \\).",
+      "topic_ref": "S7 - Inclusion-Exclusion",
+      "tags": {
+        "concepts_required": ["Counting Principle"],
+        "related_topics": ["Practical Application"],
+        "skills_tested": ["Computation"],
+        "difficulty_level": "medium",
+        "jee_weightage": "Medium"
+      }
+    },
+    {
+      "question_id": "Q11",
+      "type": "MCQ",
+      "question_text": "If \\( A = \\{ x | x^2 = 4 \\} \\) and \\( B = \\{2,3,4\\} \\), find \\( A \\cup B \\).",
+      "options": ["\\{2,3,4\\}", "\\{-2,2,3,4\\}", "\\{2,4\\}", "\\{-2,2\\}"],
+      "correct_answer": "\\{-2,2,3,4\\}",
+      "concept_explanation": "Since \\( x^2=4 \\Rightarrow x = \\pm2 \\), union gives \\{-2,2,3,4\\}.",
+      "topic_ref": "S1 - Representation of Sets",
+      "tags": {
+        "concepts_required": ["Set Builder Conversion"],
+        "related_topics": ["Union of Sets"],
+        "skills_tested": ["Conversion and Logic"],
+        "difficulty_level": "medium",
+        "jee_weightage": "Medium"
+      }
+    }
+  ],
+  "ai_metadata": {
+    "topic_weighting": {
+      "Set Difference": 0.15,
+      "Complement and Venn Logic": 0.2,
+      "Inclusion–Exclusion": 0.25,
+      "Set Laws and Proofs": 0.2,
+      "Multi-Set Reasoning": 0.2
+    },
+    "adaptive_hint_logic": {
+      "low_score_feedback": "Revise De Morgan’s Laws and Inclusion–Exclusion from NCERT Ex 1.6 and MTG Foundation Level 2.",
+      "medium_score_feedback": "Practice Cengage examples on multi-set Venn diagrams and distributive proofs.",
+      "high_score_feedback": "Proceed to TMH Advanced problems involving conditional Venn constraints and logical negation."
+    }
+  }
+},
+"QUIZ_MATH_11_CH01_SETS_03": {
+  "quiz_id": "QUIZ_MATH_11_CH01_SETS_03",
+  "title": "JEE Foundation Booster",
+  "level": "Hard",
+  "question_count": 9,
+  "description": "Advanced JEE-type reasoning problems based on multi-set logic, De Morgan transformations, and conditional Venn constraints. Aligned with Cengage, Arihant, and TMH.",
+  "questions": [
+    {
+      "question_id": "Q1",
+      "type": "MCQ",
+      "question_text": "In a survey of 120 students, 65 like Mathematics, 45 like Physics, and 42 like Chemistry. 20 like both Mathematics and Physics, 25 like both Physics and Chemistry, and 15 like both Chemistry and Mathematics. If 5 like all three, find the number of students who like exactly one subject.",
+      "options": ["60", "70", "55", "65"],
+      "correct_answer": "60",
+      "concept_explanation": "Using inclusion–exclusion and exact counting logic: \\\\( n(exactly\\ one) = n(M) + n(P) + n(C) - 2[n(M \\cap P) + n(P \\cap C) + n(C \\cap M)] + 3n(M \\cap P \\cap C) = 60 \\\\).",
+      "topic_ref": "S7 - Inclusion–Exclusion (Advanced)",
+      "tags": {
+        "concepts_required": ["Three-Set Inclusion–Exclusion", "Exact Count Reasoning"],
+        "related_topics": ["Probability Mapping"],
+        "skills_tested": ["Combinatorial Logic"],
+        "difficulty_level": "hard",
+        "jee_weightage": "High"
+      }
+    },
+    {
+      "question_id": "Q2",
+      "type": "MCQ",
+      "question_text": "If \\( A \\) and \\( B \\) are two sets such that \\( n(A) = 20, n(B) = 28, n(A \\cup B) = 36 \\), then \\( n(A' \\cap B') \\) when the universal set has 50 elements equals:",
+      "options": ["14", "16", "12", "20"],
+      "correct_answer": "14",
+      "concept_explanation": "\\( n(A' \\cap B') = n(U) - n(A \\cup B) = 50 - 36 = 14 \\).",
+      "topic_ref": "S5 - Complement and Counting",
+      "tags": {
+        "concepts_required": ["Complement Operation", "Counting via Union"],
+        "related_topics": ["Venn Diagrams"],
+        "skills_tested": ["Subtractive Reasoning"],
+        "difficulty_level": "hard",
+        "jee_weightage": "Medium"
+      }
+    },
+    {
+      "question_id": "Q3",
+      "type": "MCQ",
+      "question_text": "Let \\( A = \\{1,2,3,4,5,6,7,8,9\\} \\). Define \\( B = \\{x \\in A | x \\text{ is even}\\} \\) and \\( C = \\{x \\in A | x \\text{ is a multiple of 3}\\} \\). Find \\( (B \\cup C)' \\).",
+      "options": ["\\{1,5,7\\}", "\\{1,5,7,9\\}", "\\{2,3,4,6,8,9\\}", "\\{1,7\\}"],
+      "correct_answer": "\\{1,5,7\\}",
+      "concept_explanation": "Even numbers: \\{2,4,6,8\\}, multiples of 3: \\{3,6,9\\} → union \\{2,3,4,6,8,9\\}, complement in A is \\{1,5,7\\}.",
+      "topic_ref": "S5 - Complement and Union Logic",
+      "tags": {
+        "concepts_required": ["Union", "Complement", "Conditional Filtering"],
+        "related_topics": ["Venn Logic"],
+        "skills_tested": ["Multi-step Deduction"],
+        "difficulty_level": "hard",
+        "jee_weightage": "High"
+      }
+    },
+    {
+      "question_id": "Q4",
+      "type": "AssertionReason",
+      "question_text": "Assertion (A): For any two sets \\( A \\) and \\( B \\), \\( (A - B) \\cup (B - A) = (A \\cup B) - (A \\cap B) \\).  \nReason (R): The union of their differences gives symmetric difference of sets.",
+      "options": [
+        "Both A and R are true, and R correctly explains A.",
+        "Both A and R are true, but R does not explain A.",
+        "A is true, R is false.",
+        "A is false, R is true."
+      ],
+      "correct_answer": "Both A and R are true, and R correctly explains A.",
+      "concept_explanation": "Symmetric difference is defined as \\( A \\oplus B = (A - B) \\cup (B - A) = (A \\cup B) - (A \\cap B) \\).",
+      "topic_ref": "S6 - Set Algebra Laws",
+      "tags": {
+        "concepts_required": ["Symmetric Difference"],
+        "related_topics": ["Set Operations"],
+        "skills_tested": ["Logical Equivalence"],
+        "difficulty_level": "hard",
+        "jee_weightage": "High"
+      }
+    },
+    {
+      "question_id": "Q5",
+      "type": "MCQ",
+      "question_text": "If \\( A, B, C \\) are sets such that \\( A \\subseteq B \\), then which of the following is always true?",
+      "options": [
+        "\\( A \\cap C \\subseteq B \\cap C \\)",
+        "\\( A \\cup C = B \\cup C \\)",
+        "\\( A - C = B - C \\)",
+        "\\( C - A \\subseteq C - B \\)"
+      ],
+      "correct_answer": "\\( A \\cap C \\subseteq B \\cap C \\)",
+      "concept_explanation": "Intersection preserves subset relation, while union may add extra elements from C.",
+      "topic_ref": "S3 - Subset and Operations",
+      "tags": {
+        "concepts_required": ["Subset Logic"],
+        "related_topics": ["Intersection Law"],
+        "skills_tested": ["Logical Implication"],
+        "difficulty_level": "hard",
+        "jee_weightage": "Medium"
+      }
+    },
+    {
+      "question_id": "Q6",
+      "type": "Numerical",
+      "question_text": "In a class of 100 students, 70 passed Mathematics, 60 passed Physics, and 50 passed Chemistry. 30 passed both Math and Physics, 25 passed both Physics and Chemistry, and 20 passed both Math and Chemistry. 10 passed all three. How many failed in all three?",
+      "correct_answer": "5",
+      "concept_explanation": "Using inclusion–exclusion for 3 sets: \\\\( n(A \\cup B \\cup C) = 70 + 60 + 50 - 30 - 25 - 20 + 10 = 115 \\). Those who failed all = 100 - 95 = 5.\\\\",
+      "topic_ref": "S7 - Inclusion–Exclusion (Advanced)",
+      "tags": {
+        "concepts_required": ["3-Set Counting"],
+        "related_topics": ["Complement Counting"],
+        "skills_tested": ["Combinatorial Reasoning"],
+        "difficulty_level": "hard",
+        "jee_weightage": "High"
+      }
+    },
+    {
+      "question_id": "Q7",
+      "type": "MCQ",
+      "question_text": "If \\( A, B, C \\) are any three sets, then \\( A \\cap (B - C) \\) is equal to:",
+      "options": [
+        "\\( (A \\cap B) - C \\)",
+        "\\( (A - C) \\cap B \\)",
+        "\\( (A \\cap B) \\cup C \\)",
+        "\\( (A - B) \\cap C \\)"
+      ],
+      "correct_answer": "\\( (A \\cap B) - C \\)",
+      "concept_explanation": "Only elements common to A and B but not in C — follows set operation hierarchy from Cengage problem set 1.4.",
+      "topic_ref": "S4 - Operations on Sets",
+      "tags": {
+        "concepts_required": ["Intersection", "Set Difference"],
+        "related_topics": ["Hierarchical Set Operations"],
+        "skills_tested": ["Transformational Reasoning"],
+        "difficulty_level": "hard",
+        "jee_weightage": "High"
+      }
+    },
+    {
+      "question_id": "Q8",
+      "type": "MCQ",
+      "question_text": "Let \\( A = \\{1, 2, 3, 4, 5\\} \\) and \\( R \\) be a relation on A defined by \\( R = \\{(x, y) | x - y \\text{ is even}\\} \\). Find the number of distinct elements in \\( R \\).",
+      "options": ["13", "12", "15", "17"],
+      "correct_answer": "13",
+      "concept_explanation": "x - y even ⇒ both odd or both even. Odds: \\{1,3,5\\}, Evens: \\{2,4\\}. Pairs = 3² + 2² = 13.",
+      "topic_ref": "S8 - Connection to Relations",
+      "tags": {
+        "concepts_required": ["Even–Odd Logic", "Relation as Subset of Cartesian Product"],
+        "related_topics": ["Functions Foundation"],
+        "skills_tested": ["Analytical Counting"],
+        "difficulty_level": "hard",
+        "jee_weightage": "High"
+      }
+    },
+    {
+      "question_id": "Q9",
+      "type": "MCQ",
+      "question_text": "If \\( (A \\cup B)' = A' \\cap B' \\) and \\( (A \\cap B)' = A' \\cup B' \\), then find \\( (A' \\cup B')' \\) in simplest form.",
+      "options": ["A ∩ B", "A' ∩ B'", "A ∪ B", "A − B"],
+      "correct_answer": "A ∩ B",
+      "concept_explanation": "Using De Morgan’s Law twice: complement of union of complements gives intersection of originals.",
+      "topic_ref": "S6 - De Morgan’s Transformation",
+      "tags": {
+        "concepts_required": ["Complement Laws", "Transformation Logic"],
+        "related_topics": ["Boolean Equivalence"],
+        "skills_tested": ["Abstract Reasoning"],
+        "difficulty_level": "hard",
+        "jee_weightage": "High"
+      }
+    }
+  ],
+  "ai_metadata": {
+    "topic_weighting": {
+      "Multi-Set Counting": 0.25,
+      "Set Algebra and Laws": 0.2,
+      "Complement Logic": 0.15,
+      "Conditional Operations": 0.2,
+      "Symmetric and Advanced Relations": 0.2
+    },
+    "adaptive_hint_logic": {
+      "low_score_feedback": "Revisit Cengage Level 2 & 3 examples for multi-set operations. Focus on De Morgan and Symmetric Difference transformations.",
+      "medium_score_feedback": "Review TMH Chapter 1 section on combinatorial Venn analysis and apply Boolean reasoning to simplify.",
+      "high_score_feedback": "Advance to Cengage’s JEE Advanced Problem Set – Conditional mapping and function-based set problems."
+    }
+  }
+}
+
+
+}
+
+                },
+                {
+                  "part_id": "PART02",
+                  "part_name": "Relations",
+                  "part_description": "Relations as subsets of Cartesian products and their properties including reflexive, symmetric, transitive, and equivalence relations.",
+                  "learning_outcomes": [
+                    "Define and represent relations as subsets of Cartesian products.",
+                    "Identify reflexive, symmetric, transitive, and equivalence relations.",
+                    "Determine domain, co-domain, and range of relations.",
+                    "Apply relation properties in problem-solving and mapping analysis."
+                  ],
+                  "estimated_study_time": 120,
+                  "recommended_prerequisites": ["Sets and Operations"],
+                  "notes": {
+                    "introduction": {
+                      "definition": "A relation describes a connection between elements of two sets, expressed as ordered pairs.",
+                      "notation": "If \\( A \\) and \\( B \\) are two non-empty sets, then any subset of their Cartesian product \\( A \\times B \\) is called a relation from \\( A \\) to \\( B \\).",
+                      "examples": [
+                        "Let \\( A = \\{1,2,3\\}, B = \\{a,b\\} \\). Then \\( R = \\{(1,a), (2,b)\\} \\) is a relation from \\( A \\) to \\( B \\)."
+                      ],
+                      "non_examples": [
+                        "The set of all beautiful numbers — not well-defined as 'beautiful' is subjective."
+                      ]
+                    },
+                    "representation_of_relations": {
+                      "types": [
+                        {
+                          "name": "Roster Form",
+                          "description": "All ordered pairs belonging to the relation are listed.",
+                          "example": "For \\( A = \\{1,2,3\\}, B = \\{4,5\\}, R = \\{(1,4),(2,5)\\} \\)."
+                        },
+                        {
+                          "name": "Set-Builder Form",
+                          "description": "Express using a property shared by the related pairs.",
+                          "example": "\\( R = \\{(x,y) | y = x + 3, x \\in A, y \\in B \\} \\)"
+                        },
+                        {
+                          "name": "Arrow Diagram",
+                          "description": "Use arrows from elements of \\( A \\) to \\( B \\) to depict the pairing.",
+                          "example": "If \\( R = \\{(1,2),(2,3),(3,4)\\} \\), draw arrows from 1→2, 2→3, 3→4."
+                        },
+                        {
+                          "name": "Matrix Representation",
+                          "description": "A binary relation on a finite set \\( A = \\{a_1, a_2, ..., a_n\\} \\) can be represented by an \\( n \\times n \\) matrix \\( M_R \\) with entries \\( m_{ij} = 1 \\) if \\( (a_i, a_j) \\in R \\), otherwise 0.",
+                          "example": "If \\( A = \\{1,2,3\\} \\) and \\( R = \\{(1,2),(2,3)\\} \\), then \\( M_R = \\begin{bmatrix} 0 & 1 & 0 \\\\ 0 & 0 & 1 \\\\ 0 & 0 & 0 \\end{bmatrix} \\)."
+                        }
+                      ],
+                      "key_point": "Matrix and arrow representations are powerful for checking reflexive, symmetric, and transitive properties quickly in JEE problems."
+                    },
+                    "types_of_relations": {
+                      "content": [
+                        {
+                          "type": "Reflexive Relation",
+                          "definition": "A relation \\( R \\) on set \\( A \\) is reflexive if \\( (a,a) \\in R \\) for every \\( a \\in A \\).",
+                          "example": "If \\( A = \\{1,2,3\\} \\) and \\( R = \\{(1,1),(2,2),(3,3)\\} \\), then R is reflexive."
+                        },
+                        {
+                          "type": "Symmetric Relation",
+                          "definition": "A relation \\( R \\) is symmetric if \\( (a,b) \\in R \\Rightarrow (b,a) \\in R \\).",
+                          "example": "For \\( A = \\{1,2\\}, R = \\{(1,2),(2,1)\\} \\), R is symmetric."
+                        },
+                        {
+                          "type": "Transitive Relation",
+                          "definition": "A relation \\( R \\) is transitive if \\( (a,b) \\in R \\) and \\( (b,c) \\in R \\Rightarrow (a,c) \\in R \\).",
+                          "example": "If \\( R = \\{(1,2),(2,3),(1,3)\\} \\), it is transitive."
+                        },
+                        {
+                          "type": "Antisymmetric Relation",
+                          "definition": "If \\( (a,b) \\in R \\) and \\( (b,a) \\in R \\Rightarrow a = b \\), then R is antisymmetric.",
+                          "example": "The relation '≤' on real numbers is antisymmetric."
+                        },
+                        {
+                          "type": "Equivalence Relation",
+                          "definition": "A relation is an equivalence relation if it is reflexive, symmetric, and transitive.",
+                          "example": "The relation 'is congruent modulo n' on integers is an equivalence relation.",
+                          "jee_tip": "Equivalence relations partition a set into disjoint equivalence classes — a common JEE reasoning type."
+                        }
+                      ]
+                    },
+                    "venn_diagrams": {
+                      "description": "While primarily used for sets, Venn-like reasoning helps visualize relation properties and equivalence classes.",
+                      "example": "Visual representation of equivalence classes as disjoint circles covering the entire set.",
+                      "jee_tip": "Understanding partition logic through Venn-type diagrams aids in modular arithmetic problems."
+                    },
+                    "operations_on_relations": {
+                      "union": {
+                        "definition": "The union of two relations \\( R \\) and \\( S \\) from A to B is \\( R \\cup S = \\{(a,b) | (a,b) \\in R \\text{ or } (a,b) \\in S\\} \\).",
+                        "example": "If \\( R = \\{(1,2),(2,3)\\} \\) and \\( S = \\{(2,3),(3,4)\\} \\), then \\( R \\cup S = \\{(1,2),(2,3),(3,4)\\} \\)."
+                      },
+                      "intersection": {
+                        "definition": "The intersection of two relations \\( R \\) and \\( S \\) from A to B is \\( R \\cap S = \\{(a,b) | (a,b) \\in R \\text{ and } (a,b) \\in S\\} \\).",
+                        "example": "If \\( R = \\{(1,2),(2,3)\\} \\) and \\( S = \\{(2,3),(3,4)\\} \\), then \\( R \\cap S = \\{(2,3)\\} \\)."
+                      },
+                      "composition": {
+                        "definition": "If \\( R \\subseteq A \\times B \\) and \\( S \\subseteq B \\times C \\), then composition \\( S \\circ R = \\{(a,c) | \\exists b \\in B \\text{ such that } (a,b) \\in R \\text{ and } (b,c) \\in S\\} \\).",
+                        "example": "If \\( R = \\{(1,2)\\} \\) and \\( S = \\{(2,3)\\} \\), then \\( S \\circ R = \\{(1,3)\\} \\)."
+                      },
+                      "properties": [
+                        "Composition is associative: \\( (R \\circ S) \\circ T = R \\circ (S \\circ T) \\)",
+                        "Composition with identity relation preserves the relation",
+                        "For equivalence relations, composition maintains equivalence properties"
+                      ]
+                    },
+                    "laws_of_relation_algebra": {
+                      "important_laws": [
+                        "Identity Law: \\( R \\circ I_A = R \\) and \\( I_B \\circ R = R \\)",
+                        "Associative Law: \\( (R \\circ S) \\circ T = R \\circ (S \\circ T) \\)",
+                        "Distributive Law: \\( R \\circ (S \\cup T) = (R \\circ S) \\cup (R \\circ T) \\)"
+                      ],
+                      "example": "For relations on \\( A = \\{1,2,3\\} \\), these laws help simplify complex relation expressions."
+                    },
+                    "applications": {
+                      "real_world_examples": [
+                        "In computer science, relations model databases — tuples correspond to rows.",
+                        "In geometry, congruence and similarity are equivalence relations.",
+                        "In number theory, modular arithmetic uses equivalence relations for remainder classes."
+                      ],
+                      "jee_example_problem": {
+                        "problem": "Let R be a relation on A = {1,2,3,4} defined as R = {(a,b) | a divides b}. Test if R is reflexive, symmetric, and transitive.",
+                        "solution": "Reflexive: True (a divides itself). Symmetric: False (2 divides 4, but 4 doesn't divide 2). Transitive: True (2 divides 4, 4 divides 8 ⇒ 2 divides 8). So R is reflexive and transitive but not symmetric."
+                      }
+                    },
+                    "principle_of_equivalence_partition": {
+                      "formula": "If R is an equivalence relation on A, then A is partitioned into disjoint equivalence classes.",
+                      "extension": "Each element belongs to exactly one equivalence class, and classes don't overlap.",
+                      "example": "For congruence modulo 3 on integers: [0] = {..., -3, 0, 3, 6, ...}, [1] = {..., -2, 1, 4, 7, ...}, [2] = {..., -1, 2, 5, 8, ...}",
+                      "jee_focus_note": "This concept is fundamental in modular arithmetic, group theory, and function analysis in JEE."
+                    },
+                    "summary": [
+                      "Relations define structured connections between elements of sets.",
+                      "Every relation is a subset of a Cartesian product.",
+                      "Understanding relation properties helps in identifying functions and equivalence logic.",
+                      "Equivalence relations naturally partition sets — core JEE concept."
+                    ]
+                  },
+                  "quiz_data": {
+  "QUIZ_MATH_11_CH01_RELATIONS_01": {
+    "quiz_id": "QUIZ_MATH_11_CH01_RELATIONS_01",
+    "title": "Concept Builder (Basic)",
+    "level": "Easy",
+    "question_count": 12,
+    "description": "Basic conceptual quiz on Relations — Cartesian product, representation, domain, range, and basic property identification. Ideal for foundational understanding before JEE-type logic problems.",
+    "questions": [
+      {
+        "question_id": "Q1",
+        "type": "MCQ",
+        "question_text": "If \\( A = \\{1,2\\} \\) and \\( B = \\{x,y,z\\} \\), find \\( n(A \\times B) \\).",
+        "options": ["2", "3", "5", "6"],
+        "correct_answer": "6",
+        "concept_explanation": "Number of ordered pairs in \\( A \\times B = n(A) \\times n(B) = 2 \\times 3 = 6.\\)",
+        "topic_ref": "R1 - Cartesian Product",
+        "tags": {
+          "concepts_required": ["Cartesian Product"],
+          "related_topics": ["Ordered Pair Counting"],
+          "skills_tested": ["Direct Application"],
+          "difficulty_level": "easy",
+          "jee_weightage": "Low"
+        }
+      },
+      {
+        "question_id": "Q2",
+        "type": "MCQ",
+        "question_text": "If \\( A = \\{1,2,3\\} \\) and \\( B = \\{2,4,6\\} \\), then \\( R = \\{(x,y) | y = 2x \\} \\) is a relation from:",
+        "options": ["B to A", "A to B", "A to A", "B to B"],
+        "correct_answer": "A to B",
+        "concept_explanation": "The first element is from A and second from B; hence relation is from A to B.",
+        "topic_ref": "R2 - Relation Definition",
+        "tags": {
+          "concepts_required": ["Relation from A to B"],
+          "related_topics": ["Mapping Identification"],
+          "skills_tested": ["Concept Understanding"],
+          "difficulty_level": "easy",
+          "jee_weightage": "Low"
+        }
+      },
+      {
+        "question_id": "Q3",
+        "type": "TrueFalse",
+        "question_text": "Every subset of \\( A \\times B \\) is a relation from A to B.",
+        "correct_answer": "True",
+        "concept_explanation": "By definition, any subset of \\( A \\times B \\) is a relation from A to B.",
+        "topic_ref": "R2 - Subset Definition of Relation",
+        "tags": {
+          "concepts_required": ["Relation as Subset"],
+          "related_topics": ["Cartesian Product"],
+          "skills_tested": ["Definition Recall"],
+          "difficulty_level": "easy",
+          "jee_weightage": "Low"
+        }
+      },
+      {
+        "question_id": "Q4",
+        "type": "MCQ",
+        "question_text": "If \\( R = \\{(1,2),(2,4),(3,6)\\} \\), then the domain of R is:",
+        "options": ["\\{1,2,3\\}", "\\{2,4,6\\}", "\\{1,4,6\\}", "\\{1,2,3,4,6\\}"],
+        "correct_answer": "\\{1,2,3\\}",
+        "concept_explanation": "Domain is the set of all first elements in ordered pairs.",
+        "topic_ref": "R3 - Domain and Range",
+        "tags": {
+          "concepts_required": ["Domain", "Ordered Pairs"],
+          "related_topics": ["Co-domain and Range"],
+          "skills_tested": ["Basic Extraction"],
+          "difficulty_level": "easy",
+          "jee_weightage": "Low"
+        }
+      },
+      {
+        "question_id": "Q5",
+        "type": "MCQ",
+        "question_text": "If \\( R = \\{(x,y) | y = x^2, x \\in \\{1,2,3\\} \\} \\), then the range of R is:",
+        "options": ["\\{1,4,9\\}", "\\{1,2,3\\}", "\\{1,3,5,7\\}", "\\{2,4,6\\}"],
+        "correct_answer": "\\{1,4,9\\}",
+        "concept_explanation": "By squaring x-values: 1²=1, 2²=4, 3²=9 ⇒ range = \\{1,4,9\\}.",
+        "topic_ref": "R3 - Domain and Range",
+        "tags": {
+          "concepts_required": ["Range Calculation"],
+          "related_topics": ["Functions Intro"],
+          "skills_tested": ["Substitution"],
+          "difficulty_level": "easy",
+          "jee_weightage": "Medium"
+        }
+      },
+      {
+        "question_id": "Q6",
+        "type": "FillInTheBlank",
+        "question_text": "The total number of possible relations from a set A with 3 elements to a set B with 2 elements is ______.",
+        "correct_answer": "2^6",
+        "concept_explanation": "Total elements in \\( A \\times B = 3 \\times 2 = 6 \\); each can be included or not ⇒ \\( 2^6 = 64 \\).",
+        "topic_ref": "R1 - Counting of Relations",
+        "tags": {
+          "concepts_required": ["Counting Logic"],
+          "related_topics": ["Binary Decisions"],
+          "skills_tested": ["Formula Application"],
+          "difficulty_level": "easy",
+          "jee_weightage": "Medium"
+        }
+      },
+      {
+        "question_id": "Q7",
+        "type": "TrueFalse",
+        "question_text": "If \\( (a,b) \\in R \\) and \\( (b,a) \\in R \\), then R is symmetric.",
+        "correct_answer": "True",
+        "concept_explanation": "Definition of symmetry: presence of both (a,b) and (b,a).",
+        "topic_ref": "R4 - Symmetric Relation",
+        "tags": {
+          "concepts_required": ["Symmetric Property"],
+          "related_topics": ["Reflexivity and Transitivity"],
+          "skills_tested": ["Definition Recognition"],
+          "difficulty_level": "easy",
+          "jee_weightage": "Low"
+        }
+      },
+      {
+        "question_id": "Q8",
+        "type": "MCQ",
+        "question_text": "Which of the following relations on \\( A = \\{1,2,3\\} \\) is reflexive?",
+        "options": [
+          "\\{(1,1),(2,2),(3,3)\\}",
+          "\\{(1,2),(2,3),(3,1)\\}",
+          "\\{(1,1),(2,2)\\}",
+          "\\{(2,3),(3,2)\\}"
+        ],
+        "correct_answer": "\\{(1,1),(2,2),(3,3)\\}",
+        "concept_explanation": "All elements (a,a) present ⇒ reflexive.",
+        "topic_ref": "R4 - Reflexive Relation",
+        "tags": {
+          "concepts_required": ["Reflexivity"],
+          "related_topics": ["Equivalence Relation"],
+          "skills_tested": ["Property Testing"],
+          "difficulty_level": "easy",
+          "jee_weightage": "Low"
+        }
+      },
+      {
+        "question_id": "Q9",
+        "type": "MCQ",
+        "question_text": "For \\( A = \\{1,2,3\\} \\), which of the following relations is symmetric but not reflexive?",
+        "options": [
+          "\\{(1,2),(2,1)\\}",
+          "\\{(1,1),(2,2),(3,3)\\}",
+          "\\{(1,2),(2,3)\\}",
+          "\\{(1,3),(3,1),(2,2)\\}"
+        ],
+        "correct_answer": "\\{(1,2),(2,1)\\}",
+        "concept_explanation": "Both pairs reversed exist ⇒ symmetric. Missing (a,a) ⇒ not reflexive.",
+        "topic_ref": "R4 - Symmetric vs Reflexive",
+        "tags": {
+          "concepts_required": ["Symmetry Logic"],
+          "related_topics": ["Relation Properties"],
+          "skills_tested": ["Comparative Property"],
+          "difficulty_level": "easy",
+          "jee_weightage": "Medium"
+        }
+      },
+      {
+        "question_id": "Q10",
+        "type": "MCQ",
+        "question_text": "If \\( R = \\{(1,2),(2,3),(1,3)\\} \\), then R is:",
+        "options": ["Reflexive", "Symmetric", "Transitive", "Antisymmetric"],
+        "correct_answer": "Transitive",
+        "concept_explanation": "(1,2) and (2,3) ⇒ (1,3) present, satisfying transitivity.",
+        "topic_ref": "R4 - Transitive Relation",
+        "tags": {
+          "concepts_required": ["Transitivity"],
+          "related_topics": ["Equivalence Relation"],
+          "skills_tested": ["Property Deduction"],
+          "difficulty_level": "easy",
+          "jee_weightage": "Medium"
+        }
+      },
+      {
+        "question_id": "Q11",
+        "type": "MCQ",
+        "question_text": "Which of the following is NOT an equivalence relation?",
+        "options": [
+          "‘is equal to’ on real numbers",
+          "‘has same remainder when divided by 3’ on integers",
+          "‘is father of’ on set of people",
+          "‘is congruent to’ on triangles"
+        ],
+        "correct_answer": "‘is father of’ on set of people",
+        "concept_explanation": "‘is father of’ is not symmetric or reflexive.",
+        "topic_ref": "R5 - Equivalence Relation",
+        "tags": {
+          "concepts_required": ["Equivalence Properties"],
+          "related_topics": ["Relation Properties"],
+          "skills_tested": ["Classification"],
+          "difficulty_level": "easy",
+          "jee_weightage": "Low"
+        }
+      },
+      {
+        "question_id": "Q12",
+        "type": "MCQ",
+        "question_text": "If \\( R = \\{(x,y) | x - y \\text{ is divisible by 3}\\} \\), then R is:",
+        "options": ["Reflexive only", "Symmetric and Transitive only", "Equivalence Relation", "Neither"],
+        "correct_answer": "Equivalence Relation",
+        "concept_explanation": "Divisibility by 3 satisfies reflexivity, symmetry, and transitivity ⇒ equivalence.",
+        "topic_ref": "R5 - Modular Relation",
+        "tags": {
+          "concepts_required": ["Congruence Mod n", "Equivalence Relation"],
+          "related_topics": ["Modular Arithmetic"],
+          "skills_tested": ["Logical Analysis"],
+          "difficulty_level": "easy",
+          "jee_weightage": "High"
+        }
+      }
+    ],
+    "ai_metadata": {
+      "topic_weighting": {
+        "Cartesian Product": 0.15,
+        "Relation Definition": 0.25,
+        "Domain & Range": 0.2,
+        "Properties of Relations": 0.25,
+        "Equivalence & Counting": 0.15
+      },
+      "adaptive_hint_logic": {
+        "low_score_feedback": "Revise NCERT examples 2.1 to 2.3 and MTG Foundation L1 exercises on Cartesian product and domain–range.",
+        "medium_score_feedback": "Practice Cengage Level 1 & 2 relation property problems — focus on identifying reflexive and symmetric relations.",
+        "high_score_feedback": "Proceed to Arihant JEE Vol. 1 exercises involving relation matrices and advanced equivalence examples."
+      }
+    }
+  },
+  "QUIZ_MATH_11_CH01_RELATIONS_02": {
+  "quiz_id": "QUIZ_MATH_11_CH01_RELATIONS_02",
+  "title": "Core Logic & Properties",
+  "level": "Medium",
+  "question_count": 11,
+  "description": "Logic-based quiz on relations: testing properties (reflexive, symmetric, transitive, antisymmetric), matrix representation, and reasoning patterns inspired by Cengage and TMH examples.",
+  "questions": [
+    {
+      "question_id": "Q1",
+      "type": "MCQ",
+      "question_text": "If \\( R = \\{(1,2),(2,3),(1,3),(3,3)\\} \\) on \\( A = \\{1,2,3\\} \\), then R is:",
+      "options": ["Reflexive", "Transitive", "Symmetric", "Antisymmetric"],
+      "correct_answer": "Transitive",
+      "concept_explanation": "For (1,2) and (2,3), (1,3) is present ⇒ transitive; not reflexive as (1,1) and (2,2) are missing.",
+      "topic_ref": "R4 - Transitive Relation",
+      "tags": {
+        "concepts_required": ["Transitivity"],
+        "related_topics": ["Reflexive vs Transitive"],
+        "skills_tested": ["Property Identification"],
+        "difficulty_level": "medium",
+        "jee_weightage": "Medium"
+      }
+    },
+    {
+      "question_id": "Q2",
+      "type": "MCQ",
+      "question_text": "If \\( A = \\{1,2,3\\} \\) and relation \\( R = \\{(1,1),(2,2)\\} \\), then which property is violated?",
+      "options": ["Reflexive", "Symmetric", "Transitive", "All of these"],
+      "correct_answer": "Reflexive",
+      "concept_explanation": "Reflexive requires (3,3), missing here. Symmetry and transitivity are satisfied for given pairs.",
+      "topic_ref": "R4 - Reflexive Property",
+      "tags": {
+        "concepts_required": ["Reflexive Definition"],
+        "related_topics": ["Property Violation"],
+        "skills_tested": ["Logic Evaluation"],
+        "difficulty_level": "medium",
+        "jee_weightage": "Low"
+      }
+    },
+    {
+      "question_id": "Q3",
+      "type": "MCQ",
+      "question_text": "Consider the relation \\( R = \\{(a,b) | a,b \\in \\mathbb{Z}, a - b \\text{ is even}\\} \\). Which properties does R satisfy?",
+      "options": [
+        "Reflexive and Transitive only",
+        "Reflexive, Symmetric, Transitive",
+        "Symmetric only",
+        "None"
+      ],
+      "correct_answer": "Reflexive, Symmetric, Transitive",
+      "concept_explanation": "Even difference ⇒ satisfies all three properties ⇒ equivalence relation (Cengage Example 1.12).",
+      "topic_ref": "R5 - Equivalence Relation",
+      "tags": {
+        "concepts_required": ["Parity Relation", "Equivalence"],
+        "related_topics": ["Congruence Logic"],
+        "skills_tested": ["Proof-based Classification"],
+        "difficulty_level": "medium",
+        "jee_weightage": "High"
+      }
+    },
+    {
+      "question_id": "Q4",
+      "type": "TrueFalse",
+      "question_text": "If R is symmetric and transitive but not reflexive, then R can still be an equivalence relation.",
+      "correct_answer": "False",
+      "concept_explanation": "All three properties — reflexive, symmetric, and transitive — are required for equivalence.",
+      "topic_ref": "R5 - Equivalence Rule",
+      "tags": {
+        "concepts_required": ["Equivalence Properties"],
+        "related_topics": ["Transitivity and Symmetry"],
+        "skills_tested": ["Conceptual Clarity"],
+        "difficulty_level": "medium",
+        "jee_weightage": "Medium"
+      }
+    },
+    {
+      "question_id": "Q5",
+      "type": "MCQ",
+      "question_text": "Let \\( R \\) be a relation on \\( A = \\{1,2,3\\} \\) given by matrix \\( M_R = \\begin{bmatrix} 1 & 0 & 0 \\\\ 0 & 1 & 1 \\\\ 0 & 0 & 1 \\end{bmatrix} \\). Which of the following is true?",
+      "options": [
+        "R is Reflexive and Symmetric",
+        "R is Reflexive and Transitive",
+        "R is Symmetric and Antisymmetric",
+        "R is only Reflexive"
+      ],
+      "correct_answer": "R is Reflexive and Transitive",
+      "concept_explanation": "Diagonal entries are 1 ⇒ reflexive. Since (2,3) present but not (3,2), not symmetric; check transitivity ⇒ holds (TMH Example 2.3).",
+      "topic_ref": "R6 - Matrix Representation",
+      "tags": {
+        "concepts_required": ["Matrix Form of Relations"],
+        "related_topics": ["Relation Properties"],
+        "skills_tested": ["Interpretation"],
+        "difficulty_level": "medium",
+        "jee_weightage": "High"
+      }
+    },
+    {
+      "question_id": "Q6",
+      "type": "MCQ",
+      "question_text": "If \\( R = \\{(a,b) | a \\le b, a,b \\in \\mathbb{R}\\} \\), then R is:",
+      "options": [
+        "Reflexive and Antisymmetric",
+        "Reflexive, Transitive, and Antisymmetric",
+        "Only Symmetric",
+        "None"
+      ],
+      "correct_answer": "Reflexive, Transitive, and Antisymmetric",
+      "concept_explanation": "For ‘≤’: (a,a) holds, transitivity holds, but not symmetric (Cengage Vol.1, Ex.1.4).",
+      "topic_ref": "R4 - Partial Order Relation",
+      "tags": {
+        "concepts_required": ["Order Relation"],
+        "related_topics": ["Partial Order Set"],
+        "skills_tested": ["Logical Testing"],
+        "difficulty_level": "medium",
+        "jee_weightage": "High"
+      }
+    },
+    {
+      "question_id": "Q7",
+      "type": "MCQ",
+      "question_text": "On \\( A = \\{1,2,3\\} \\), define \\( R = \\{(1,2),(2,3)\\} \\). Is R transitive?",
+      "options": ["Yes", "No", "Cannot be determined", "Depends on symmetry"],
+      "correct_answer": "No",
+      "concept_explanation": "For transitivity, (1,3) must be present. Missing ⇒ not transitive.",
+      "topic_ref": "R4 - Transitive Test",
+      "tags": {
+        "concepts_required": ["Transitive Property"],
+        "related_topics": ["Missing Pairs Logic"],
+        "skills_tested": ["Reasoning"],
+        "difficulty_level": "medium",
+        "jee_weightage": "Medium"
+      }
+    },
+    {
+      "question_id": "Q8",
+      "type": "AssertionReason",
+      "question_text": "Assertion (A): Every reflexive and symmetric relation on a finite set is transitive.  \nReason (R): Symmetric and reflexive together imply equivalence.",
+      "options": [
+        "A and R both true, and R explains A",
+        "A true, R false",
+        "A false, R true",
+        "Both false"
+      ],
+      "correct_answer": "Both false",
+      "concept_explanation": "Counterexample: R = \\{(1,1),(1,2),(2,1)\\} is reflexive and symmetric but not transitive.",
+      "topic_ref": "R4 - Property Interdependence",
+      "tags": {
+        "concepts_required": ["Logical Dependencies"],
+        "related_topics": ["Counterexamples"],
+        "skills_tested": ["Critical Thinking"],
+        "difficulty_level": "medium",
+        "jee_weightage": "High"
+      }
+    },
+    {
+      "question_id": "Q9",
+      "type": "MCQ",
+      "question_text": "If \\( R = \\{(x,y) | x,y \\in \\{1,2,3,4\\}, x \\text{ divides } y\\} \\), find the number of ordered pairs in R.",
+      "options": ["8", "10", "12", "14"],
+      "correct_answer": "8",
+      "concept_explanation": "Pairs satisfying divisibility: (1,1),(1,2),(1,3),(1,4),(2,2),(2,4),(3,3),(4,4).",
+      "topic_ref": "R2 - Relation Definition",
+      "tags": {
+        "concepts_required": ["Divisibility Relation"],
+        "related_topics": ["Set Builder Logic"],
+        "skills_tested": ["Application"],
+        "difficulty_level": "medium",
+        "jee_weightage": "Medium"
+      }
+    },
+    {
+      "question_id": "Q10",
+      "type": "MCQ",
+      "question_text": "If \\( R = \\{(a,b) | |a - b| \\le 1, a,b \\in \\{1,2,3,4\\} \\} \\), then the relation R is:",
+      "options": [
+        "Reflexive and Symmetric only",
+        "Reflexive, Symmetric, and Transitive",
+        "Only Transitive",
+        "Neither Reflexive nor Symmetric"
+      ],
+      "correct_answer": "Reflexive and Symmetric only",
+      "concept_explanation": "Fails transitivity: (1,2) and (2,3) hold but (1,3) not ⇒ not transitive (Arihant JEE Example 1.6).",
+      "topic_ref": "R4 - Property Testing",
+      "tags": {
+        "concepts_required": ["Absolute Difference Relation"],
+        "related_topics": ["Transitivity Test"],
+        "skills_tested": ["Logical Proof"],
+        "difficulty_level": "medium",
+        "jee_weightage": "High"
+      }
+    },
+    {
+      "question_id": "Q11",
+      "type": "Numerical",
+      "question_text": "Total number of reflexive relations on a set of 3 elements is ______.",
+      "correct_answer": "64",
+      "concept_explanation": "Total pairs = 3² = 9. Diagonal 3 must be included. Remaining 6 pairs may be chosen freely ⇒ \\( 2^6 = 64 \\).",
+      "topic_ref": "R7 - Counting Relations",
+      "tags": {
+        "concepts_required": ["Counting Reflexive Relations"],
+        "related_topics": ["Combinatorics"],
+        "skills_tested": ["Formula Derivation"],
+        "difficulty_level": "medium",
+        "jee_weightage": "High"
+      }
+    }
+  ],
+  "ai_metadata": {
+    "topic_weighting": {
+      "Property Identification": 0.25,
+      "Matrix Representation": 0.15,
+      "Equivalence & Order": 0.25,
+      "Counting & Logic": 0.2,
+      "Assertion Reasoning": 0.15
+    },
+    "adaptive_hint_logic": {
+      "low_score_feedback": "Revisit Cengage Vol.1 examples on symmetric and transitive logic; focus on counterexamples.",
+      "medium_score_feedback": "Review TMH Ch.2 problems using matrix and property tests to strengthen reasoning.",
+      "high_score_feedback": "Advance to Arihant JEE mixed concept problems (Reflexive + Order + Counting hybrid)."
+    }
+  }
+},
+"QUIZ_MATH_11_CH01_RELATIONS_03": {
+  "quiz_id": "QUIZ_MATH_11_CH01_RELATIONS_03",
+  "title": "JEE Foundation Booster",
+  "level": "Hard",
+  "question_count": 9,
+  "description": "Advanced JEE-type reasoning problems on relations — combining reflexivity, symmetry, and transitivity tests; proof-based property logic; and modular equivalence reasoning. Based on Cengage, TMH, and Arihant Advanced patterns.",
+  "questions": [
+    {
+      "question_id": "Q1",
+      "type": "MCQ",
+      "question_text": "If \\( R = \\{(a,b) | a,b \\in \\mathbb{Z}, 2a + 3b \\text{ is even}\\} \\), then R is:",
+      "options": ["Reflexive and Symmetric only", "Transitive only", "Equivalence Relation", "Antisymmetric only"],
+      "correct_answer": "Equivalence Relation",
+      "concept_explanation": "If 2a+3b is even ⇒ a,b have same parity ⇒ satisfies reflexive, symmetric, and transitive (Cengage Example 2.11).",
+      "topic_ref": "R5 - Equivalence Relation",
+      "tags": {
+        "concepts_required": ["Parity-Based Relation", "Property Proof"],
+        "related_topics": ["Congruence Class"],
+        "skills_tested": ["Property Deduction"],
+        "difficulty_level": "hard",
+        "jee_weightage": "High"
+      }
+    },
+    {
+      "question_id": "Q2",
+      "type": "MCQ",
+      "question_text": "Define a relation \\( R \\) on \\( \\mathbb{Z} \\) as \\( aRb \\Leftrightarrow a - b \\text{ is divisible by } 4 \\). Then number of distinct equivalence classes under R in the set \\( \\{0,1,2,3,4,5,6,7,8\\} \\) is:",
+      "options": ["2", "3", "4", "5"],
+      "correct_answer": "4",
+      "concept_explanation": "Modulo 4 classes: [0]=\\{0,4,8\\}, [1]=\\{1,5\\}, [2]=\\{2,6\\}, [3]=\\{3,7\\} ⇒ 4 classes.",
+      "topic_ref": "R5 - Modular Equivalence",
+      "tags": {
+        "concepts_required": ["Equivalence Class", "Congruence mod n"],
+        "related_topics": ["Partition of Set"],
+        "skills_tested": ["Classification"],
+        "difficulty_level": "hard",
+        "jee_weightage": "High"
+      }
+    },
+    {
+      "question_id": "Q3",
+      "type": "MCQ",
+      "question_text": "If \\( A = \\{1,2,3,4\\} \\) and relation \\( R = \\{(x,y) | x \\le y \\} \\), then total number of elements in R is:",
+      "options": ["10", "8", "12", "14"],
+      "correct_answer": "10",
+      "concept_explanation": "All pairs where x ≤ y: (1,1),(1,2),(1,3),(1,4),(2,2),(2,3),(2,4),(3,3),(3,4),(4,4).",
+      "topic_ref": "R4 - Partial Order Relation",
+      "tags": {
+        "concepts_required": ["Partial Order", "Counting"],
+        "related_topics": ["Matrix Visualization"],
+        "skills_tested": ["Combinatorial Logic"],
+        "difficulty_level": "hard",
+        "jee_weightage": "Medium"
+      }
+    },
+    {
+      "question_id": "Q4",
+      "type": "AssertionReason",
+      "question_text": "Assertion (A): The relation ‘is parallel to’ among lines in a plane is an equivalence relation.  \nReason (R): ‘Is parallel to’ is reflexive, symmetric, and transitive.",
+      "options": [
+        "A and R are true, and R is the correct explanation.",
+        "A is true, R is false.",
+        "A is false, R is true.",
+        "Both A and R are false."
+      ],
+      "correct_answer": "A and R are true, and R is the correct explanation.",
+      "concept_explanation": "Parallelism satisfies all three properties; hence equivalence relation (TMH Ch. 2 Example).",
+      "topic_ref": "R5 - Real-World Equivalence",
+      "tags": {
+        "concepts_required": ["Equivalence Relation"],
+        "related_topics": ["Geometry Mapping"],
+        "skills_tested": ["Assertion Reasoning"],
+        "difficulty_level": "hard",
+        "jee_weightage": "Medium"
+      }
+    },
+    {
+      "question_id": "Q5",
+      "type": "MCQ",
+      "question_text": "Relation R defined on \\( \\mathbb{R} \\) as \\( aRb \\iff |a - b| \\le 2 \\). Which of the following is true?",
+      "options": [
+        "R is reflexive and symmetric only",
+        "R is symmetric and transitive only",
+        "R is reflexive and transitive only",
+        "R is an equivalence relation"
+      ],
+      "correct_answer": "R is reflexive and symmetric only",
+      "concept_explanation": "Fails transitivity: (1,2) and (2,3) ∈ R but (1,3) ∉ R ⇒ not transitive (Arihant Example 1.7).",
+      "topic_ref": "R4 - Property Testing",
+      "tags": {
+        "concepts_required": ["Absolute Difference Relation"],
+        "related_topics": ["Symmetry and Transitivity"],
+        "skills_tested": ["Counterexample Identification"],
+        "difficulty_level": "hard",
+        "jee_weightage": "High"
+      }
+    },
+    {
+      "question_id": "Q6",
+      "type": "Numerical",
+      "question_text": "How many symmetric relations exist on a set of 3 elements?",
+      "correct_answer": "512",
+      "concept_explanation": "For symmetric: 3 diagonal pairs fixed; 3 unordered off-diagonal pairs ⇒ 2³ × 2³ = 512 (Cengage Proof Example).",
+      "topic_ref": "R7 - Counting Relations",
+      "tags": {
+        "concepts_required": ["Combinatorial Logic", "Symmetric Condition"],
+        "related_topics": ["Relation Counting"],
+        "skills_tested": ["Formula Application"],
+        "difficulty_level": "hard",
+        "jee_weightage": "High"
+      }
+    },
+    {
+      "question_id": "Q7",
+      "type": "MCQ",
+      "question_text": "If relation R on A = {1,2,3} is defined by \\( R = \\{(a,b) | a + b = 4\\} \\), then which properties does it satisfy?",
+      "options": [
+        "Reflexive and Symmetric",
+        "Symmetric only",
+        "Transitive only",
+        "None"
+      ],
+      "correct_answer": "Symmetric only",
+      "concept_explanation": "R = {(1,3),(2,2),(3,1)} ⇒ (a,b) implies (b,a) ⇒ symmetric; not reflexive for (1,1),(3,3) missing.",
+      "topic_ref": "R4 - Property Logic",
+      "tags": {
+        "concepts_required": ["Property Testing"],
+        "related_topics": ["Summation Condition"],
+        "skills_tested": ["Analytical Verification"],
+        "difficulty_level": "hard",
+        "jee_weightage": "Medium"
+      }
+    },
+    {
+      "question_id": "Q8",
+      "type": "MCQ",
+      "question_text": "For a finite set A with n elements, total number of reflexive and symmetric relations possible is:",
+      "options": [
+        "2^(n(n−1)/2)",
+        "2^(n²)",
+        "2^(n(n+1)/2)",
+        "2^(n²−n)"
+      ],
+      "correct_answer": "2^(n(n−1)/2)",
+      "concept_explanation": "Diagonal fixed (reflexive), unordered off-diagonal pairs (n(n−1)/2) → 2^(n(n−1)/2) combinations (Cengage Result).",
+      "topic_ref": "R7 - Counting Properties",
+      "tags": {
+        "concepts_required": ["Combinatorics", "Symmetric Logic"],
+        "related_topics": ["Relation Property Counting"],
+        "skills_tested": ["Derivation"],
+        "difficulty_level": "hard",
+        "jee_weightage": "High"
+      }
+    },
+    {
+      "question_id": "Q9",
+      "type": "MCQ",
+      "question_text": "Let \\( A = \\{1,2,3,4,5,6\\} \\) and define R by \\( aRb \\iff \\gcd(a,b) = 1 \\). Which properties does R satisfy?",
+      "options": [
+        "Symmetric only",
+        "Reflexive and Symmetric",
+        "Symmetric and Transitive",
+        "Equivalence Relation"
+      ],
+      "correct_answer": "Symmetric only",
+      "concept_explanation": "Coprimality is symmetric but not transitive: (2,3) and (3,4) are coprime, but (2,4) are not ⇒ fails transitivity (TMH Example 2.7).",
+      "topic_ref": "R4 - Coprime Relation",
+      "tags": {
+        "concepts_required": ["Number Theory Relation"],
+        "related_topics": ["Transitivity Failure"],
+        "skills_tested": ["Property Proof"],
+        "difficulty_level": "hard",
+        "jee_weightage": "High"
+      }
+    }
+  ],
+  "ai_metadata": {
+    "topic_weighting": {
+      "Modular & Equivalence Logic": 0.25,
+      "Property Proofs & Counterexamples": 0.25,
+      "Counting Logic": 0.2,
+      "Real-World Equivalence": 0.15,
+      "Partial Order & Divisibility": 0.15
+    },
+    "adaptive_hint_logic": {
+      "low_score_feedback": "Revisit modular and parity-based equivalence problems from Cengage Vol.1 (Level 2). Practice constructing counterexamples.",
+      "medium_score_feedback": "Work through TMH Ch.2 relation counting proofs and focus on distinguishing symmetric vs transitive cases.",
+      "high_score_feedback": "Advance to Arihant and Cengage mixed proofs combining counting + logic (e.g., symmetric equivalence under constraints)."
+    }
+  }
+}
+
+}
+
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

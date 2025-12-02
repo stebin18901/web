@@ -1,0 +1,254 @@
+/* Gmail-style layout */
+.ann-view-container {
+  display: flex;
+  background: #f5f6fa55;
+  height: 85vh;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid #e2e8f0;
+  font-family: "Inter", system-ui, sans-serif;
+}
+
+/* Sidebar */
+.ann-sidebar {
+  width: 320px;
+  background: #ffffff;
+  border-right: 1px solid #e4e7ec;
+  display: flex;
+  flex-direction: column;
+}
+
+.ann-sidebar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 14px 16px;
+  border-bottom: 1px solid #e4e7ec;
+}
+
+.ann-sidebar-header h2 {
+  font-size: 17px;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* Sidebar Items */
+.ann-list {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.ann-item {
+  padding: 12px 16px;
+  border-bottom: 1px solid #f1f3f6;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ann-item:hover {
+  background: #f8fafc;
+}
+
+.ann-item.active {
+  background: #eef2ff;
+  border-left: 3px solid #4f46e5;
+}
+
+.ann-item-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ann-item-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: #111827;
+}
+
+.ann-item-msg {
+  font-size: 13px;
+  color: #4b5563;
+  margin-top: 4px;
+}
+
+.ann-item-time {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+.aud-tag {
+  font-size: 11px;
+  background: #e0e7ff;
+  color: #4338ca;
+  padding: 2px 6px;
+  border-radius: 999px;
+}
+
+/* Right Pane */
+.ann-detail {
+  flex: 1;
+  background: #fff;
+  padding: 20px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+}
+
+.ann-placeholder {
+  text-align: center;
+  color: #6b7280;
+  margin-top: auto;
+  margin-bottom: auto;
+}
+
+.ann-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ann-form-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ann-form-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: #111827;
+}
+
+/* Inputs */
+.ann-input,
+.ann-textarea,
+.ann-select {
+  width: 100%;
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 10px;
+  font-size: 14px;
+  outline: none;
+  background: white;
+}
+
+.ann-input:focus,
+.ann-textarea:focus,
+.ann-select:focus {
+  border-color: #4f46e5;
+  box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15);
+}
+
+.ann-textarea {
+  min-height: 300px;
+  resize: vertical;
+}
+
+/* Buttons - Isolated Styles */
+.ann-btn-primary,
+.ann-btn-outline,
+.ann-btn-danger,
+.ann-btn-icon {
+  all: unset;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.ann-btn-primary {
+  background: #4f46e5;
+  color: #fff;
+}
+
+.ann-btn-primary:hover {
+  background: #4338ca;
+}
+
+.ann-btn-outline {
+  border: 1px solid #cbd5e1;
+  color: #374151;
+  background: #f9fafb;
+}
+
+.ann-btn-outline:hover {
+  background: #f3f4f6;
+}
+
+.ann-btn-danger {
+  background: #ef4444;
+  color: #fff;
+}
+
+.ann-btn-danger:hover {
+  background: #dc2626;
+}
+
+.ann-btn-icon {
+  padding: 6px;
+  color: #6b7280;
+}
+
+.ann-btn-icon:hover {
+  background: #f3f4f6;
+}
+
+/* Attachments */
+.ann-attachments {
+  border: 1px dashed #d1d5db;
+  padding: 10px;
+  border-radius: 8px;
+  background: #fafafa;
+}
+
+.ann-attach-list {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.ann-file-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+}
+
+.ann-file-item a {
+  color: #4f46e5;
+  text-decoration: none;
+}
+
+.ann-file-item a:hover {
+  text-decoration: underline;
+}
+
+/* Utility */
+.ann-loading {
+  text-align: center;
+  padding: 40px 0;
+  color: #666;
+}
+
+.ann-empty {
+  text-align: center;
+  padding: 40px;
+  color: #777;
+}
+
+.spin {
+  animation: spin 1s linear infinite;
+}
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

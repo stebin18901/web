@@ -1,0 +1,113 @@
+/* Base container */
+.tutor-view-container {
+  display: flex;
+  gap: 20px;
+  padding: 20px;
+  font-family: "Segoe UI", Arial, sans-serif;
+  min-height: 100vh;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* Light mode */
+.tutor-view-container.light {
+  background: #fafafa;
+  color: #222;
+}
+
+/* Dark mode */
+.tutor-view-container.dark {
+  background: #1e1e1e;
+  color: #ddd;
+}
+
+/* Theme toggle */
+.theme-toggle {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+}
+
+.theme-toggle button {
+  background: #007acc;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.theme-toggle button:hover {
+  background: #005fa3;
+}
+
+/* Left panel */
+.tutor-view-container .tutor-content {
+  flex: 1;
+  background: var(--content-bg, #fff);
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  overflow-y: auto;
+  max-height: 90vh;
+  transition: background 0.3s;
+}
+
+.tutor-view-container.dark .tutor-content {
+  background: #2a2a2a;
+  border-color: #444;
+}
+
+/* Right panel */
+.tutor-view-container .tutor-testing {
+  flex: 1;
+  background: var(--test-bg, #fff);
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  transition: background 0.3s;
+}
+
+.tutor-view-container.dark .tutor-testing {
+  background: #2a2a2a;
+  border-color: #444;
+}
+
+/* Options */
+.options-list .option {
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  margin: 6px 0;
+  padding: 10px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.tutor-view-container.dark .options-list .option {
+  background: #333;
+  border-color: #555;
+  color: #ddd;
+}
+
+.options-list .option.correct {
+  background: #d4edda;
+  border-color: #28a745;
+}
+
+.options-list .option.wrong {
+  background: #f8d7da;
+  border-color: #dc3545;
+}
+
+/* Explanation */
+.explanation {
+  margin-top: 10px;
+  padding: 10px;
+  background: #eef5ff;
+  border-left: 3px solid #007bff;
+}
+
+.tutor-view-container.dark .explanation {
+  background: #2e3a4d;
+  border-left: 3px solid #66aaff;
+  color: #ddd;
+}

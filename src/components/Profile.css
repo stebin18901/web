@@ -1,0 +1,211 @@
+/* Profile.css */
+
+/* --- Layout --- */
+.profile-container {
+  max-width: 1100px;
+  margin: 20px auto;
+  padding: 20px;
+  font-family: "Poppins", sans-serif;
+  color: #222;
+}
+
+/* --- Loading Spinner --- */
+.loading-spinner {
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid #4a90e2;
+  border-radius: 50%;
+  width: 50px;
+  height: 50px;
+  margin: 60px auto;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0); }
+  100% { transform: rotate(360deg); }
+}
+
+/* --- Profile Card --- */
+.profile-card {
+  background: #ffffff86;
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 25px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  transition: transform 0.2s ease;
+}
+.profile-card:hover {
+  transform: translateY(-3px);
+}
+.profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.profile-header h3 {
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+.profile-details {
+  margin-top: 12px;
+  line-height: 1.6;
+}
+.detail-icon {
+  margin-right: 8px;
+}
+
+/* --- Stats Section --- */
+.stats-section {
+  display: flex;
+  justify-content: space-around;
+  margin: 25px 0;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.stat-box {
+  flex: 1;
+  min-width: 150px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: #ffffff86;
+  padding: 12px 18px;
+  border-radius: 12px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+.stat-icon {
+  font-size: 1.6rem;
+}
+.stat-value {
+  font-size: 1.2rem;
+  font-weight: 600;
+}
+
+/* --- Progress Section --- */
+.progress-section {
+  margin: 30px 0;
+}
+.section-title {
+  font-size: 1.2rem;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+.progress-container {
+  width: 100%;
+  background: #ffffff86;
+  border-radius: 20px;
+  overflow: hidden;
+}
+.progress-bar {
+  height: 22px;
+  position: relative;
+}
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4a90e2, #50c878);
+  border-radius: 20px;
+  transition: width 0.4s ease;
+}
+.progress-fill::after {
+  content: attr(data-label);
+  position: absolute;
+  right: 8px;
+  color: #ffffff86;
+  font-size: 0.8rem;
+  font-weight: bold;
+}
+
+/* --- Weak Areas --- */
+.weak-section {
+  background: #ffffff86;
+  border: 1px solid #ffdada;
+  padding: 15px;
+  border-radius: 12px;
+  margin-bottom: 25px;
+}
+.weak-list li {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px dashed #f0c2c2;
+}
+.weak-list li:last-child {
+  border-bottom: none;
+}
+.weak-score {
+  font-weight: bold;
+  color: #d9534f;
+}
+
+/* --- Report Section (NEW Layout) --- */
+.report-section {
+  margin-top: 25px;
+}
+.report-header {
+  display: flex;
+  justify-content: space-between;
+  cursor: pointer;
+  background: #f3f6fa;
+  padding: 12px 16px;
+  border-radius: 10px;
+  align-items: center;
+  transition: background 0.2s;
+}
+.report-header:hover {
+  background: #e8eef7;
+}
+.dropdown-icon {
+  font-size: 1rem;
+}
+
+/* --- Responsive Card Grid --- */
+.report-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); /* fills row efficiently */
+  gap: 16px;
+  margin-top: 15px;
+}
+
+/* --- Individual Quiz Card --- */
+.report-card {
+  background: #ffffff86;
+  border-radius: 14px;
+  padding: 14px 16px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.06);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.report-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 16px rgba(0,0,0,0.08);
+}
+.report-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.score-badge {
+  padding: 4px 8px;
+  border-radius: 8px;
+  font-size: 0.85rem;
+  font-weight: bold;
+  background: #50c878;
+  color: white;
+}
+.score-badge.low-score {
+  background: #d9534f;
+}
+.report-details {
+  font-size: 0.85rem;
+  margin-top: 6px;
+  color: #555;
+}
+.date {
+  font-size: 0.75rem;
+  color: #777;
+  margin-top: auto;
+}

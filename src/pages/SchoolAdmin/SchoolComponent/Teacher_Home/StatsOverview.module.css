@@ -1,0 +1,293 @@
+
+/* PROMO WRAPPER (MAIN CONTAINER) */
+.promoWrapper {
+  background: none;
+  display: flex;
+  flex-direction: column;
+  gap: 60px; /* Increased gap for better separation */
+  color: #fff;
+  padding: 20px; /* Added some padding for small screens */
+  max-width: 1200px; /* Added max-width for content centering (if used) */
+  margin: 0 auto;
+}
+
+/* --- HERO --- */
+.promoHero {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: linear-gradient(145deg, #5d5ffc, #3d92ff);
+  padding: 60px; /* Increased padding */
+  border-radius: 30px; /* Slightly larger border-radius */
+  box-shadow: 0 20px 50px rgba(0,0,0,0.3); /* Stronger shadow */
+}
+
+.promoHeroText { 
+  max-width: 55%; /* Slightly reduced max-width to give image more space */
+}
+
+.promoHeroText h1 {
+  font-size: 42px; /* Increased font size for impact */
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.promoHeroText p {
+  font-size: 18px; /* Increased paragraph font size for readability */
+  margin: 18px 0 30px; /* Adjusted margins */
+  opacity: 0.9;
+}
+
+.promoCta {
+  display: inline-block; /* Essential for padding to work correctly */
+  background: linear-gradient(145deg, #5d5ffc, #3d92ff);
+  color: #2135ff;
+  padding: 14px 30px; /* Increased padding */
+  border-radius: 16px;
+  font-weight: 700; /* Slightly reduced weight for balance */
+  cursor: pointer;
+  text-decoration: none; /* In case it's an <a> tag */
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.promoCta:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.promoHeroImg { 
+  width: 200px; /* Increased image size */
+  max-width: 40%;
+  flex-shrink: 0; /* Prevents image from shrinking in flex layout */
+}
+
+/* --- STATS --- */
+.promoStats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 25px; /* Increased gap */
+}
+
+.promoStatCard {
+  background: linear-gradient(145deg, #5d5ffc, #3d92ff);
+  padding: 30px; /* Increased padding */
+  border-radius: 24px; /* Larger border-radius */
+  text-align: center;
+  backdrop-filter: blur(15px); /* Stronger blur */
+  transition: transform 0.3s ease, background 0.3s ease;
+}
+
+.promoStatCard:hover { 
+  transform: translateY(-8px); /* Stronger hover lift */
+  background: linear-gradient(145deg, #5d5ffc, #3d92ff);
+}
+
+.promoStatCard h2 {
+  font-size: 40px; /* Increased size for number impact */
+  font-weight: 900;
+  margin-bottom: 5px;
+}
+
+.promoStatCard p {
+  opacity: 0.8;
+}
+
+.positive { 
+  color: #67f3bd; 
+}
+
+/* --- PROGRAMS --- */
+.sectionTitle {
+  font-size: 32px; /* Increased size */
+  font-weight: 900;
+  margin-bottom: 25px; /* Increased margin */
+}
+
+.programGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 25px;
+}
+
+.programCard {
+  background: linear-gradient(145deg, #5d5ffc, #3d92ff);
+  border-radius: 20px;
+  padding: 30px 20px; /* Increased vertical padding */
+  text-align: center;
+  transition: transform 0.3s ease, background 0.3s ease;
+}
+
+.programCard:hover { 
+  transform: translateY(-8px); 
+  background: linear-gradient(145deg, #5d5ffc, #3d92ff);
+}
+
+.programIcon {
+  width: 45px; /* Increased icon size */
+  height: 45px;
+  margin-bottom: 15px;
+  object-fit: contain;
+}
+
+.programCard h3 {
+  font-size: 18px;
+  font-weight: 700;
+  margin-bottom: 5px;
+}
+
+.programCard p {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+/* --- IMPACT --- */
+.impactCard {
+  background: linear-gradient(145deg, #5d5ffc, #3d92ff);
+  padding: 40px; /* Increased padding */
+  border-radius: 30px;
+}
+
+/* --- BLOGS --- */
+.blogSection h2 { 
+  font-size: 28px; /* Adjusted size */
+  margin-bottom: 25px;
+}
+
+.blogRow { 
+  display: flex; 
+  gap: 25px; 
+}
+
+.blogCard {
+  background: linear-gradient(145deg, #5d5ffc, #3d92ff);
+  padding: 25px; /* Increased padding */
+  border-radius: 20px;
+  flex: 1;
+  transition: transform 0.3s ease;
+}
+
+.blogCard:hover {
+  transform: translateY(-4px);
+}
+
+.blogCard h3 {
+  font-size: 18px;
+  margin: 10px 0;
+  font-weight: 700;
+}
+
+.blogCard p {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+/* --- CTA FOOTER --- */
+.footerCta {
+  background: linear-gradient(145deg, #875cff, #45adff);
+  padding: 50px; /* Increased padding */
+  border-radius: 30px;
+  text-align: center;
+}
+
+.footerCta h2 {
+  font-size: 32px;
+  font-weight: 800;
+  margin-bottom: 15px;
+}
+
+.footerBtn {
+  margin-top: 15px;
+  background: linear-gradient(145deg, #5d5ffc, #3d92ff);
+  border-radius: 14px; /* Slightly larger radius */
+  padding: 16px 32px; /* Increased padding */
+  font-weight: 800;
+  border: none;
+  cursor: pointer;
+  color: #2135ff;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.footerBtn:hover {
+  transform: scale(1.05);
+  opacity: 0.9;
+}
+
+/* --- RESPONSIVE ADJUSTMENTS --- */
+/* TABLET / MID-SIZE SCREENS */
+@media (max-width: 992px) {
+  .promoHero {
+    padding: 40px;
+  }
+
+  .promoHeroText h1 {
+    font-size: 36px;
+  }
+
+  .programGrid { 
+    grid-template-columns: repeat(2, 1fr); 
+  }
+}
+
+/* MOBILE SCREENS */
+@media (max-width: 768px) {
+  .promoWrapper {
+    gap: 40px;
+    padding: 15px;
+  }
+
+  .promoHero { 
+    flex-direction: column; 
+    text-align: center; 
+    padding: 30px;
+  }
+
+  .promoHeroText {
+    max-width: 100%; /* Text takes full width */
+  }
+
+  .promoHeroText h1 {
+    font-size: 32px;
+  }
+
+  .promoHeroImg {
+    width: 180px;
+    margin-top: 25px; /* Space between text and image */
+    max-width: 100%;
+  }
+
+  .promoStats { 
+    grid-template-columns: 1fr; /* Single column for stats */
+    gap: 15px;
+  }
+
+  .programGrid { 
+    grid-template-columns: 1fr; /* Single column for programs */
+  }
+
+  .blogRow { 
+    flex-direction: column; 
+    gap: 15px;
+  }
+
+  .sectionTitle {
+    font-size: 28px;
+  }
+
+  .footerCta {
+    padding: 30px;
+  }
+
+  .footerCta h2 {
+    font-size: 24px;
+  }
+}
+
+/* Very Small Mobile Screens */
+@media (max-width: 480px) {
+  .promoHero {
+    padding: 20px;
+  }
+  .promoHeroText h1 {
+    font-size: 28px;
+  }
+}

@@ -1,0 +1,84 @@
+/* src/components/SubjectCard.css */
+
+.subject-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  padding-bottom: 80px;
+}
+
+.subject-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+  gap: 1rem;
+  width: 100%;
+  max-width: 960px;
+}
+
+.subject-card {
+  width: 100px;
+  height: 100px;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 0.75rem;
+  cursor: pointer;
+  transition: transform 0.2s ease, background 0.3s ease;
+}
+
+.subject-card:hover {
+  background: linear-gradient(135deg, #a6caf2, #4a90e2);
+  transform: scale(1.05);
+}
+
+.subject-card:active {
+  transform: scale(0.95);
+}
+
+.subject-name {
+  color: #000000ad;
+  font-size: 14px;
+  font-weight: 500;
+  margin: 0;
+  align-self: flex-start;
+  transition: color 0.3s ease;
+}
+
+.subject-card:hover .subject-name {
+  color: #fff;
+}
+
+.subject-icon {
+  color: #000000b0;
+  font-size: 24px;
+  align-self: flex-end;
+  transition: color 0.3s ease;
+}
+
+.subject-card:hover .subject-icon {
+  color: #fff;
+}
+
+@media (max-width: 700px) {
+  .subject-container {
+    padding-bottom: 40px;
+  }
+
+  .subject-card {
+    width: 80px;
+    height: 80px;
+    padding: 0.5rem;
+  }
+
+  .subject-name {
+    font-size: 12px;
+  }
+
+  .subject-icon {
+    font-size: 20px;
+  }
+}

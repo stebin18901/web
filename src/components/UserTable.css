@@ -1,0 +1,90 @@
+/* UserTable.css */
+
+.user-card-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.user-card {
+  background: #00000082;
+  border-radius: 20px;
+  color: #fff;
+  padding: 20px 15px;
+  max-width: 400px;
+  width: 100%;
+  text-align: center;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+  animation: floatIn 0.7s ease forwards;
+}
+
+@keyframes floatIn {
+  0% { opacity: 0; transform: translateY(40px) scale(0.95); }
+  100% { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.rank-badge {
+  font-size: 2.5rem;
+  margin-bottom: 15px;
+  border-radius: 50px;
+color: rgb(255, 255, 255);
+}
+
+.user-name {
+    color: #fff;
+  font-size: 1.8rem;
+  font-weight: 900;
+  margin: 5px 0;
+}
+
+.user-school {
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: 20px;
+}
+
+.stats-grid {
+  display: flex;
+  justify-content: space-around;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+.loading-text {
+  text-align: center;
+  font-size: 1.2rem;
+  color: #004179;
+}
+
+/* Responsive */
+@media (max-width: 500px) {
+  .user-card {
+    padding: 20px 15px;
+  }
+  .user-name {
+    font-size: 1.5rem;
+  }
+  .rank-badge {
+    font-size: 2rem;
+  }
+  .stat-value {
+    font-size: 1.2rem;
+  }
+}

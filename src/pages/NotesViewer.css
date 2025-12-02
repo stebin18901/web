@@ -1,0 +1,82 @@
+
+
+.notes-root {
+  max-width: 850px;
+  margin: 0 auto;
+  padding: 20px;
+  line-height: 1.6;
+}
+
+/* Dropdowns */
+.dropdowns {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+
+select {
+  padding: 4px 6px;
+  font-size: 0.95rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+}
+
+/* Tabs */
+.tab-container {
+  display: flex;
+  gap: 6px;
+  margin: 10px 0;
+}
+
+.tab {
+  background: #f4f4f4;
+  border: none;
+  padding: 5px 10px;
+  cursor: pointer;
+  border-radius: 4px;
+}
+
+.tab.active {
+  background: #d7e9ff;
+  font-weight: bold;
+}
+
+/* Sections */
+h1, h2, h3, h4, h5 {
+  margin: 6px 0;
+}
+
+.desc {
+  font-size: 0.95rem;
+}
+
+ul {
+  margin-left: 20px;
+}
+
+.part-content {
+  margin-top: 10px;
+}
+
+.quiz-section {
+  margin-top: 10px;
+}
+
+.quiz-q {
+  margin-bottom: 12px;
+}
+
+.quiz-q ul {
+  margin-left: 25px;
+}
+
+.quiz-q hr {
+  border: 0;
+  border-bottom: 1px dashed #ccc;
+  margin-top: 6px;
+}
+
+.quiz-select {
+  margin-bottom: 10px;
+}

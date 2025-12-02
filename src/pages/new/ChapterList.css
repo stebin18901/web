@@ -1,0 +1,73 @@
+/* Root container */
+.chapter-list-container {
+  padding: 20px;
+  font-family: "Segoe UI", Arial, sans-serif;
+  background: linear-gradient(to top, #000000, #00000000);
+  min-height: 500px;
+}
+
+/* Subject filter row */
+.chapter-list-container .subject-filter {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.chapter-list-container .subject-filter label {
+  font-weight: 600;
+}
+
+.chapter-list-container .subject-filter select {
+  padding: 6px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  outline: none;
+  cursor: pointer;
+  background: #ffffff81;
+  transition: border 0.2s;
+}
+
+.chapter-list-container .subject-filter select:focus {
+  border-color: #007acc;
+}
+
+/* Chapters grid */
+.chapter-list-container .chapters-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 16px;
+}
+
+/* Chapter card */
+.chapter-list-container .chapter-card {
+  padding: 18px;
+  border-radius: 12px;
+  background: #929292;
+  border: 2px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.08);
+  position: relative;
+  align-items: center;
+}
+
+.chapter-list-container .chapter-card:hover {
+  border-color: #007acc;
+  transform: translateY(-5px);
+}
+
+
+
+.chapter-list-container .chapter-card h3 {
+  font-size: 1rem;
+  margin-bottom: 6px;
+  color: #222;
+}
+
+.chapter-list-container .chapter-card p {
+  font-size: 0.9rem;
+  color: #000000;
+  font-weight: 100;
+
+}

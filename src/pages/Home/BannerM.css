@@ -1,0 +1,146 @@
+/* CSS for BannerM component */
+.banner-container1 {
+  display: flex;
+  flex-direction: column; /* Mobile: Image on top, text below */
+  width: 100%;
+  align-items: center;
+  border-radius: 1rem;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15);
+  background-color: #f8f8f8;
+  padding: 2rem 0;
+  margin-top: 20px;
+  overflow: hidden;
+  transition: transform 0.3s ease-in-out;
+}
+
+.banner-text-container {
+  text-align: center;
+  padding: 1rem;
+  flex: 1; /* Allows it to take up space in row layout */
+}
+
+.banner-image-container1 {
+  width: 100%;
+  max-width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex: 1; /* Allows it to take up space in row layout */
+}
+
+.banner-image1 {
+  width: 100%;
+  height: auto;
+  object-fit: contain;
+}
+
+.banner-title1 {
+  font-size: clamp(2.5rem, 6vw, 4rem); /* More fluid scaling */
+  font-weight: 800;
+  font-family: 'Inter', sans-serif;
+  color: #212529;
+  line-height: 1.2;
+}
+
+.banner-subtitle1 {
+  margin-top: 0.75rem;
+  font-size: clamp(1.25rem, 3vw, 1.75rem); /* More fluid scaling */
+  font-family: 'Inter', sans-serif;
+  color: #6c757d;
+  line-height: 1.5;
+}
+
+/* --- New styles for the button container and buttons --- */
+.button-container1 {
+  display: flex;
+  justify-content: center; /* Center the buttons on mobile */
+  gap: 1rem; /* Space between the buttons */
+  margin-top: 1.5rem;
+  padding: 0 1rem;
+}
+
+.banner-button1 {
+  cursor: pointer;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 600;
+  border-radius: 0.5rem;
+  position: relative; /* Needed for the pseudo-element */
+  z-index: 1; /* Puts button text on top of the pseudo-element */
+  /* Remove old transitions and add new ones for color and transform */
+  transition: color 0.3s ease; 
+  overflow: hidden; /* Hides the pseudo-element until it slides in */
+}
+
+/* Slide-in pseudo-element styles */
+.banner-button1::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1; /* Puts the pseudo-element behind the button text */
+  transform: scaleX(0); /* Starts at zero width */
+  transform-origin: left; /* Makes it scale from the left */
+  transition: transform 0.3s ease-in-out;
+}
+
+.banner-button1:hover::before {
+  transform: scaleX(1); /* Expands to full width on hover */
+}
+
+/* Primary Button with Black Slide-in */
+.banner-button1.primary {
+  background-color: transparent;
+  color: #000000;
+  border: 1px solid #000000;
+}
+
+.banner-button1.primary::before {
+  background-color: #000000;
+}
+
+.banner-button1.primary:hover {
+  color: #ffffff; /* Changes text to white on hover */
+}
+
+/* Secondary Button with White Slide-in */
+.banner-button1.secondary {
+  background-color: #000000;
+  color: #ffffff;
+  border: 1px solid #ffffff;
+}
+
+.banner-button1.secondary::before {
+  background-color: #ffffff;
+}
+
+.banner-button1.secondary:hover {
+  color: #000000; /* Changes text to black on hover */
+}
+
+/* --- Media Query for Tablet and larger screens --- */
+@media (min-width: 768px) {
+  .banner-container1 {
+    flex-direction: row; /* Tablet/Desktop: Row layout */
+    justify-content: space-between;
+    padding: 3rem 0;
+  }
+
+  .banner-text-container {
+    text-align: left;
+    padding-right: 3rem;
+  }
+  
+  .button-container1 {
+    justify-content: flex-start; /* Align buttons to the left on desktop */
+  }
+}
+
+/* --- Media Query for Desktop-specific styles --- */
+@media (min-width: 1024px) {
+  .banner-container1:hover {
+    transform: translateY(-5px);
+  }
+}

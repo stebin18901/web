@@ -1,0 +1,110 @@
+/* Benefits.module.css */
+.benefitsSection {
+    background-color: #f9f9f9;
+    padding: 60px 20px;
+}
+
+.benefitsContent {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    gap: 40px;
+    flex-wrap: wrap;
+}
+
+.benefitsText {
+    flex: 1;
+    min-width: 300px;
+    text-align: left; /* Align text to the left */
+}
+
+.sectionTitle {
+    font-size: 2.5rem;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+.benefitsText p {
+    font-size: 1.1rem;
+    color: #666;
+    line-height: 1.6;
+    margin-bottom: 30px;
+}
+
+.benefitsList {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.benefitItem {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 15px;
+    cursor: pointer;
+    background-color: #fff;
+    transition: all 0.3s ease;
+}
+
+.benefitItem:hover {
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.benefitTitleContainer {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    font-size: 1.2rem;
+    color: #444;
+}
+
+.benefitTitle {
+    flex-grow: 1;
+    font-weight: 600;
+}
+
+.benefitIcon {
+    color: #2196f3;
+    font-size: 1.5rem;
+}
+
+.dropdownIcon {
+    color: #555;
+    font-size: 1rem;
+    transition: transform 0.3s ease;
+}
+
+.benefitDetails {
+    margin-top: 15px;
+    font-size: 1rem;
+    color: #666;
+    padding-left: 35px; /* Indent the details to align with the text */
+}
+
+.benefitsImage {
+    flex: 1;
+    min-width: 300px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.benefitsImg {
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .benefitsContent {
+        flex-direction: column-reverse;
+        text-align: left;
+    }
+
+    .sectionTitle {
+        font-size: 2rem;
+    }
+}

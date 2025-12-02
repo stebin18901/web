@@ -1,0 +1,382 @@
+:root {
+  --accent-color: #55acee; /* Or any other color you want for accents */
+  --accent-color-rgb: 85, 172, 238; /* RGB values for the accent color */
+}
+
+/* Features Section - Dark Background */
+.featuresSection {
+  padding: 100px 20px;
+  background: linear-gradient(180deg, #000000 0%, #1a1a1a 100%);
+  color: #e0e0e0;
+  text-align: center;
+  overflow: hidden;
+}
+
+/* Section Header - White Text */
+.sectionHeader {
+  margin-bottom: 80px;
+}
+
+.sectionTitle {
+  font-size: 3rem;
+  font-weight: 800;
+  color: #fff;
+  margin-bottom: 20px;
+  letter-spacing: -0.5px;
+}
+
+.titleDecor {
+  position: relative;
+  display: inline-block;
+}
+
+.titleDecor::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -15px;
+  transform: translateX(-50%);
+  width: 100px;
+  height: 5px;
+  background: linear-gradient(90deg, #555555, #888888, #555555);
+  border-radius: 3px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.4);
+}
+
+.sectionSubtitle {
+  font-size: 1.3rem;
+  color: #b0b0b0;
+  max-width: 700px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* Slider Container */
+.sliderContainer {
+  position: relative;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 60px;
+}
+
+.sliderTrack {
+  display: flex;
+  transition: transform 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+.slide {
+  flex: 0 0 100%;
+  min-width: 0;
+  padding: 0 20px;
+  box-sizing: border-box;
+}
+
+/* Feature Card */
+.featureCard {
+  background: #1f1f1f;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.3);
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  height: 500px;
+  position: relative;
+}
+
+.featureCard:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 30px 60px -10px rgba(0, 0, 0, 0.4);
+}
+
+.featureImageContainer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.featureImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.featureCard:hover .featureImage {
+  transform: scale(1.05);
+}
+
+.imageOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0.4) 0%,
+    rgba(0, 0, 0, 0.7) 70%,
+    rgba(0, 0, 0, 0.9) 100%
+  );
+  transition: all 0.6s ease;
+  display: none;
+}
+
+.featureCard:hover .imageOverlay {
+  background: rgba(0, 0, 0, 0.623);
+  display: block;
+}
+
+.featureContent {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 40px;
+  box-sizing: border-box;
+  text-align: left;
+  color: #fff;
+  z-index: 2;
+}
+
+.featureBadge {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 20px;
+  font-size: 1rem;
+  color: var(--accent-color);
+}
+
+.featureIcon {
+  font-size: 1.3rem;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));
+}
+
+.featureContent h3a {
+  font-size: 1.8rem;
+  margin: 0 0 15px;
+  font-weight: 700;
+  line-height: 1.3;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.4);
+}
+
+.descriptionContainer {
+  max-height: 0;
+  overflow: hidden;
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.featureCard:hover .descriptionContainer {
+  max-height: 100px;
+  margin-bottom: 25px;
+}
+
+.featureContent p {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  opacity: 0.9;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.learnMoreBtn {
+  position: relative;
+  background: var(--accent-color);
+  color: white;
+  border: none;
+  padding: 12px 25px;
+  border-radius: 30px;
+  font-weight: 600;
+  cursor: pointer;
+  overflow: hidden;
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  opacity: 0;
+  transform: translateY(20px);
+}
+
+.featureCard:hover .learnMoreBtn {
+  opacity: 1;
+  transform: translateY(0);
+  transition-delay: 0.2s;
+}
+
+.learnMoreBtn span {
+  position: relative;
+  z-index: 2;
+}
+
+.btnHoverEffect {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(to right, var(--accent-color), rgba(255, 255, 255, 0.2));
+  z-index: 1;
+  transform: translateX(-100%);
+  transition: transform 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.learnMoreBtn:hover .btnHoverEffect {
+  transform: translateX(0);
+}
+
+/* Slider Controls */
+.sliderArrowLeft,
+.sliderArrowRight {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 60px;
+  height: 60px;
+  background: rgba(40, 40, 40, 0.95);
+  border: none;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.2);
+  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  z-index: 10;
+  color: #fff;
+}
+
+.sliderArrowLeft:hover,
+.sliderArrowRight:hover {
+  background: #333333;
+  transform: translateY(-50%) scale(1.1);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+}
+
+.sliderArrowLeft {
+  left: -10px;
+}
+
+.sliderArrowRight {
+  right: -10px;
+}
+
+.arrowHoverEffect {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background: radial-gradient(circle at center, rgba(var(--accent-color-rgb), 0.2), transparent 70%);
+  transform: scale(0);
+  transition: transform 0.4s ease;
+}
+
+.sliderArrowLeft:hover .arrowHoverEffect,
+.sliderArrowRight:hover .arrowHoverEffect {
+  transform: scale(1);
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.8);
+    opacity: 0.7;
+  }
+  70% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
+  100% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+}
+
+/* Responsive Styles */
+@media (max-width: 992px) {
+  .featuresSection {
+    padding: 80px 15px;
+  }
+
+  .sectionTitle {
+    font-size: 2.5rem;
+  }
+
+  .sliderContainer {
+    padding: 0 30px;
+  }
+
+  .featureCard {
+    height: 450px;
+  }
+}
+
+@media (max-width: 768px) {
+  .sectionTitle {
+    font-size: 2.2rem;
+  }
+
+  .sliderContainer {
+    padding: 0 20px;
+  }
+
+  .featureCard {
+    height: 400px;
+  }
+
+  .featureContent {
+    padding: 30px;
+  }
+
+  .featureContent h3a {
+    font-size: 1.6rem;
+  }
+
+  .sliderArrowLeft,
+  .sliderArrowRight {
+    width: 50px;
+    height: 50px;
+  }
+}
+
+@media (max-width: 576px) {
+  .featuresSection {
+    padding: 60px 10px;
+  }
+
+  .sectionTitle {
+    font-size: 2rem;
+  }
+
+  .sectionSubtitle {
+    font-size: 1.1rem;
+  }
+
+  .featureCard {
+    height: 380px;
+  }
+
+  .featureContent {
+    padding: 25px;
+  }
+
+  .featureContent h3a {
+    font-size: 1.4rem;
+  }
+
+  .featureContent p {
+    font-size: 1rem;
+  }
+
+  .sliderArrowLeft,
+  .sliderArrowRight {
+    width: 40px;
+    height: 40px;
+  }
+
+  .sliderArrowLeft {
+    left: -5px;
+  }
+
+  .sliderArrowRight {
+    right: -5px;
+  }
+}

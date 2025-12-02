@@ -1,0 +1,179 @@
+/* -------------------------------
+   EA SPORTS – FUT CARD STYLE UI
+   Leads & Admissions Dashboard
+---------------------------------- */
+
+.leads-wrapper {
+  padding: 30px;
+  font-family: "Montserrat", sans-serif;
+}
+
+/* HEADER */
+.leads-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.leads-title {
+  font-size: 36px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  color: #23306a;
+  text-shadow: 0 0 10px #cfd7ff;
+}
+
+/* STATS BOX */
+.lead-stat-box {
+  display: flex;
+  gap: 25px;
+}
+
+.lead-stat-box div {
+  background: #ffffffdd;
+  padding: 12px 20px;
+  border-radius: 18px;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 0 12px rgba(0,0,0,0.08);
+  text-align: center;
+}
+
+.lead-stat-box p {
+  font-size: 22px;
+  font-weight: 800;
+  color: #2d3a9c;
+}
+
+/* INPUT BAR */
+.lead-input-bar {
+  display: flex;
+  gap: 15px;
+  margin-top: 25px;
+}
+
+.lead-input {
+  flex: 1;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #ccd4ff;
+}
+
+.lead-add-btn {
+  padding: 12px 22px;
+  background: #4154f1;
+  color: white;
+  font-weight: 700;
+  border: none;
+  border-radius: 12px;
+}
+
+/* FILTERS */
+.lead-filters {
+  margin-top: 20px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.lead-search {
+  width: 40%;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #ccd4ff;
+}
+
+.filter-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.filter-btn {
+  padding: 8px 15px;
+  border-radius: 10px;
+  border: 1px solid #cfd4ff;
+  background: #e8ebff;
+  font-weight: 600;
+}
+
+.filter-btn.active {
+  background: #4154f1;
+  color: white;
+}
+
+/* LEAD LIST */
+.lead-list {
+  margin-top: 25px;
+}
+
+.lead-card {
+  display: flex;
+  align-items: center;
+  background: white;
+  border-radius: 18px;
+  padding: 18px;
+  margin-bottom: 15px;
+  border: 2px solid #e7eaff;
+  box-shadow: 0 0 15px rgba(0,0,0,0.06);
+  position: relative;
+}
+
+.lead-score-bar {
+  width: 6px;
+  height: 100%;
+  border-radius: 10px;
+  margin-right: 15px;
+}
+
+.lead-main {
+  flex: 1;
+}
+
+.lead-name {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  color: #23306a;
+}
+
+.lead-contact {
+  margin: 6px 0;
+  color: #333;
+}
+
+.lead-status {
+  display: inline-block;
+  padding: 4px 12px;
+  color: white;
+  border-radius: 10px;
+  margin-right: 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.lead-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  color: white;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+/* ACTIONS */
+.lead-actions {
+  margin-left: 15px;
+}
+
+.convert-btn {
+  background: #00b894;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: none;
+  color: white;
+  font-weight: 700;
+}
+
+.empty {
+  text-align: center;
+  padding: 20px;
+  color: #777;
+}

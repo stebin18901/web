@@ -1,0 +1,129 @@
+/* Calender.css - Grid View */
+
+.calendar-container {
+    max-width: 800px;
+    margin: 40px auto;
+    padding: 20px;
+    background-color: #ffffff;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    font-family: 'Arial', sans-serif;
+    color: #333;
+}
+
+.calendar-title {
+    text-align: center;
+    font-size: 2.5rem;
+    color: #222;
+    margin-bottom: 30px;
+    font-weight: bold;
+    text-transform: uppercase;
+}
+
+.calendar-header {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    font-weight: bold;
+    color: #555;
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.day-label {
+    padding: 10px 0;
+}
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 10px;
+}
+
+.day-cell {
+    position: relative;
+    padding-top: 100%; /* Creates a square shape */
+    border-radius: 8px;
+    background-color: #f0f0f0;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.2rem;
+    color: #222;
+}
+
+.day-cell:hover:not(.empty) {
+    background-color: #dcdcdc;
+}
+
+.day-cell.empty {
+    background-color: transparent;
+    cursor: default;
+}
+
+.day-cell.has-event {
+    background-color: #555; /* Highlight color for event days */
+    color: #ffffff;
+    font-weight: bold;
+}
+
+.day-cell.has-event:hover {
+    background-color: #444;
+}
+
+.day-cell.selected-day {
+    outline: 3px solid #777;
+    outline-offset: -3px;
+}
+
+.event-details-dropdown {
+    margin-top: 20px;
+    padding: 20px;
+    background-color: #f5f5f5;
+    border-radius: 8px;
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.dropdown-title {
+    font-size: 1.5rem;
+    font-weight: 600;
+    color: #222;
+    margin-bottom: 10px;
+    border-bottom: 2px solid #e0e0e0;
+    padding-bottom: 10px;
+}
+
+.event-details-dropdown ul {
+    list-style: none;
+    padding: 0;
+}
+
+.event-detail-item {
+    background-color: #ffffff;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.event-detail-name {
+    font-weight: 500;
+}
+
+.no-events-message {
+    text-align: center;
+    font-style: italic;
+    color: #888;
+}
+
+@media (max-width: 768px) {
+    .calendar-container {
+        margin: 20px 10px;
+        padding: 15px;
+    }
+
+    .calendar-title {
+        font-size: 2rem;
+    }
+}

@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GameHub - Gaming Dashboard</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body class="bg-[#0d1222] text-gray-200 p-4 md:p-6">
+
+    <!-- Mobile Header -->
+    <header class="mobile-header lg:hidden fixed top-0 left-0 right-0 bg-[#12182c] border-b border-[#2d3748] p-4 z-50">
+        <div class="flex items-center">
+            <i class="fas fa-gamepad text-xl text-indigo-400 mr-2"></i>
+            <span class="font-bold text-sm">GameHub</span>
+        </div>
+        <div class="flex items-center gap-3">
+            <button class="text-gray-400 hover:text-indigo-400">
+                <i class="fas fa-search"></i>
+            </button>
+            <div class="profile-icon">
+                <img src="https://i.pravatar.cc/40?img=3" alt="Profile">
+            </div>
+        </div>
+    </header>
+
+    <div class="container mx-auto max-w-[1800px]">
+        <!-- Left Sidebar -->
+        <aside class="sidebar-left hidden lg:flex flex-col items-center py-6 bg-[#12182c] border-r border-[#2d3748] fixed h-[calc(100vh-3rem)] top-6 left-6 rounded-xl z-40">
+            <div class="logo mb-8">
+                <i class="fas fa-gamepad text-2xl text-indigo-400"></i>
+            </div>
+            <nav class="sidebar-nav flex-1">
+                <a href="#" class="active tooltip" title="Home">
+                    <i class="fas fa-home text-lg"></i>
+                </a>
+                <a href="#" class="tooltip" title="Games">
+                    <i class="fas fa-gamepad text-lg"></i>
+                </a>
+                <a href="#" class="tooltip" title="Friends">
+                    <i class="fas fa-users text-lg"></i>
+                </a>
+                <a href="#" class="tooltip" title="Messages">
+                    <i class="fas fa-comments text-lg"></i>
+                </a>
+                <a href="#" class="tooltip" title="Notifications">
+                    <i class="fas fa-bell text-lg"></i>
+                </a>
+                <a href="#" class="tooltip" title="Settings">
+                    <i class="fas fa-cog text-lg"></i>
+                </a>
+            </nav>
+            <div class="mt-auto">
+                <a href="#" class="tooltip" title="Logout">
+                    <i class="fas fa-sign-out-alt text-lg"></i>
+                </a>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content space-y-6 lg:ml-[104px] mt-6 lg:mt-0">
+            <!-- Desktop Header/Search Bar -->
+            <header class="hidden lg:flex items-center justify-between mb-6">
+                <div class="relative w-full max-w-xl">
+                    <input type="text" placeholder="Search games, friends..." 
+                           class="w-full bg-[#1a2033] text-gray-300 rounded-full py-2.5 px-5 pl-10 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all placeholder-gray-500 text-sm border border-[#2d3748]">
+                    <i class="fas fa-search absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                </div>
+                <div class="flex items-center gap-3 ml-4">
+                    <div class="profile-icon">
+                        <img src="https://i.pravatar.cc/40?img=3" alt="Profile">
+                    </div>
+                    <span class="text-sm font-medium">EsterFlow</span>
+                    <i class="fas fa-caret-down text-gray-400 text-sm"></i>
+                </div>
+            </header>
+
+            <!-- Hero Card -->
+            <section class="hero-card">
+                <img src="https://images.unsplash.com/photo-1542751371-adc38448a05e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=1200&h=300&q=80" 
+                     alt="Gaming Community" class="w-full h-full object-cover">
+                <div class="hero-overlay"></div>
+                <div class="hero-content">
+                    <div class="flex flex-col md:flex-row items-center justify-between p-6">
+                        <div class="flex-1 max-w-xl">
+                            <h2 class="text-2xl md:text-3xl font-bold text-gray-100 mb-2">JOIN OUR GAMING COMMUNITY</h2>
+                            <h3 class="text-xl md:text-2xl text-indigo-300 mb-4">PLAY WITH US</h3>
+                            <p class="text-sm text-gray-300 mb-6">Connect with thousands of gamers, find teammates, and join exclusive tournaments. Our community is waiting for you!</p>
+                            <button class="btn-primary">
+                                JOIN DISCORD <i class="fas fa-external-link-alt"></i>
+                            </button>
+                        </div>
+                        <div class="flex-shrink-0 mt-6 md:mt-0 md:ml-8 hidden md:block">
+                            <img src="https://images.unsplash.com/photo-1607853202273-797f1c22a38e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&h=200&q=80" 
+                                 alt="Game Character" class="rounded-xl w-full max-w-[250px] h-auto border-2 border-indigo-400/50">
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- New Releases Section -->
+            <section>
+                <div class="section-title">
+                    <h2>New Releases</h2>
+                    <a href="#">View All</a>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                    <!-- Game Card 1 -->
+                    <div class="game-card">
+                        <img src="https://images.unsplash.com/photo-1551103782-8ab07afd45c1?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&h=120&q=80" alt="DOGS">
+                        <div class="game-details">
+                            <div class="title">DOGS: The Adventure</div>
+                            <div class="rating">
+                                <span>⭐️ 4.2</span>
+                                <span class="ml-1 text-gray-500">(124)</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Game Card 2 -->
+                    <div class="game-card">
+                        <img src="https://images.unsplash.com/photo-1585771724684-38269d6639fd?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&h=120&q=80" alt="WITCHER">
+                        <div class="game-details">
+                            <div class="title">WITCHER 4: Wild Magic</div>
+                            <div class="rating">
+                                <span>⭐️ 4.9</span>
+                                <span class="ml-1 text-gray-500">(892)</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Game Card 3 -->
+                    <div class="game-card">
+                        <img src="https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&h=120&q=80" alt="FORTNITE">
+                        <div class="game-details">
+                            <div class="title">FORTNITE: Chapter 5</div>
+                            <div class="rating">
+                                <span>⭐️ 4.3</span>
+                                <span class="ml-1 text-gray-500">(1.2k)</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Game Card 4 -->
+                    <div class="game-card">
+                        <img src="https://images.unsplash.com/photo-1542751371-adc38448a05e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&h=120&q=80" alt="ARAMIS">
+                        <div class="game-details">
+                            <div class="title">ARAMIS: Legends</div>
+                            <div class="rating">
+                                <span>⭐️ 3.5</span>
+                                <span class="ml-1 text-gray-500">(56)</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Game Card 5 -->
+                    <div class="game-card">
+                        <img src="https://images.unsplash.com/photo-1507457379470-08b800bebc67?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&h=120&q=80" alt="PUBG">
+                        <div class="game-details">
+                            <div class="title">PUBG: New Dawn</div>
+                            <div class="rating">
+                                <span>⭐️ 3.8</span>
+                                <span class="ml-1 text-gray-500">(342)</span>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Game Card 6 -->
+                    <div class="game-card">
+                        <img src="https://images.unsplash.com/photo-1511512578047-dfb367046420?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&h=120&q=80" alt="CYBERPUNK">
+                        <div class="game-details">
+                            <div class="title">CYBERPUNK 2077</div>
+                            <div class="rating">
+                                <span>⭐️ 4.5</span>
+                                <span class="ml-1 text-gray-500">(1.5k)</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Parties and Favorites Section -->
+            <section class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <!-- Parties Card -->
+                <div class="card">
+                    <div class="section-title">
+                        <h2>Active Parties</h2>
+                        <a href="#">Create New</a>
+                    </div>
+                    <div class="scrollable-content space-y-2">
+                        <div class="list-item">
+                            <div class="profile-icon mr-3 bg-red-600">RL</div>
+                            <div class="flex-1">
+                                <div class="font-medium text-sm">Rocket League</div>
+                                <div class="text-xs text-gray-400 flex items-center">
+                                    <i class="fas fa-circle text-green-500 mr-1 text-[6px]"></i>
+                                    <span>2 online • Playing now</span>
+                                </div>
+                            </div>
+                            <button class="text-indigo-400 text-xs hover:text-indigo-300 bg-indigo-900/20 px-2 py-1 rounded">
+                                Join
+                            </button>
+                        </div>
+                        <div class="list-item">
+                            <div class="profile-icon mr-3 bg-green-600">F</div>
+                            <div class="flex-1">
+                                <div class="font-medium text-sm">Fortnite</div>
+                                <div class="text-xs text-gray-400 flex items-center">
+                                    <i class="fas fa-circle text-indigo-400 mr-1 text-[6px]"></i>
+                                    <span>1 online • In lobby</span>
+                                </div>
+                            </div>
+                            <button class="text-indigo-400 text-xs hover:text-indigo-300 bg-indigo-900/20 px-2 py-1 rounded">
+                                Join
+                            </button>
+                        </div>
+                        <div class="list-item">
+                            <div class="profile-icon mr-3 bg-blue-600">D</div>
+                            <div class="flex-1">
+                                <div class="font-medium text-sm">Destiny 2</div>
+                                <div class="text-xs text-gray-400 flex items-center">
+                                    <i class="fas fa-circle text-indigo-400 mr-1 text-[6px]"></i>
+                                    <span>1 online • Raid in progress</span>
+                                </div>
+                            </div>
+                            <button class="text-indigo-400 text-xs hover:text-indigo-300 bg-indigo-900/20 px-2 py-1 rounded">
+                                Join
+                            </button>
+                        </div>
+                        <div class="list-item">
+                            <div class="profile-icon mr-3 bg-yellow-600">V</div>
+                            <div class="flex-1">
+                                <div class="font-medium text-sm">Valorant</div>
+                                <div class="text-xs text-gray-400 flex items-center">
+                                    <i class="fas fa-circle text-green-500 mr-1 text-[6px]"></i>
+                                    <span>3 online • Competitive</span>
+                                </div>
+                            </div>
+                            <button class="text-indigo-400 text-xs hover:text-indigo-300 bg-indigo-900/20 px-2 py-1 rounded">
+                                Join
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Favorites Card -->
+                <div class="card">
+                    <div class="section-title">
+                        <h2>Your Favorites</h2>
+                        <a href="#">View All</a>
+                    </div>
+                    <div class="scrollable-content space-y-2">
+                        <div class="list-item justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-star text-yellow-400 mr-3 text-sm"></i>
+                                <div>
+                                    <div class="font-medium text-sm">Assassin's Creed Mirage</div>
+                                    <div class="text-xs text-gray-400">12 Oct • 45.2 GB</div>
+                                </div>
+                            </div>
+                            <button class="btn-primary text-xs !py-1 !px-3">
+                                Download
+                            </button>
+                        </div>
+                        <div class="list-item justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-star text-yellow-400 mr-3 text-sm"></i>
+                                <div>
+                                    <div class="font-medium text-sm">Spider-Man Miles Morales</div>
+                                    <div class="text-xs text-gray-400">22 Nov • 68.5 GB</div>
+                                </div>
+                            </div>
+                            <button class="text-xs !py-1 !px-3 rounded-full bg-green-600/20 text-green-400 border border-green-600/30">
+                                Installed
+                            </button>
+                        </div>
+                        <div class="list-item justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-star text-yellow-400 mr-3 text-sm"></i>
+                                <div>
+                                    <div class="font-medium text-sm">Uncharted: Legacy</div>
+                                    <div class="text-xs text-gray-400">22 Oct • 72.3 GB</div>
+                                </div>
+                            </div>
+                            <button class="btn-primary text-xs !py-1 !px-3">
+                                Download
+                            </button>
+                        </div>
+                        <div class="list-item justify-between">
+                            <div class="flex items-center">
+                                <i class="fas fa-star text-yellow-400 mr-3 text-sm"></i>
+                                <div>
+                                    <div class="font-medium text-sm">God of War Ragnarök</div>
+                                    <div class="text-xs text-gray-400">15 Dec • 85.1 GB</div>
+                                </div>
+                            </div>
+                            <button class="btn-primary text-xs !py-1 !px-3">
+                                Download
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+            <!-- Recently Played Section -->
+            <section>
+                <div class="section-title">
+                    <h2>Recently Played</h2>
+                    <a href="#">View All</a>
+                </div>
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3">
+                    <!-- Game Card 1 -->
+                    <div class="game-card">
+                        <img src="https://images.unsplash.com/photo-1542751371-adc38448a05e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&h=120&q=80" alt="ARAMIS">
+                        <div class="game-details">
+                            <div class="title">ARAMIS: Legends</div>
+                            <div class="text-xs text-gray-400">2h ago • 4.2h playtime</div>
+                        </div>
+                    </div>
+                    <!-- Game Card 2 -->
+                    <div class="game-card">
+                        <img src="https://images.unsplash.com/photo-1511512578047-dfb367046420?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&h=120&q=80" alt="CYBERPUNK">
+                        <div class="game-details">
+                            <div class="title">CYBERPUNK 2077</div>
+                            <div class="text-xs text-gray-400">1d ago • 12.7h playtime</div>
+                        </div>
+                    </div>
+                    <!-- Game Card 3 -->
+                    <div class="game-card">
+                        <img src="https://images.unsplash.com/photo-1493711662062-fa541adb3fc8?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&h=120&q=80" alt="FORTNITE">
+                        <div class="game-details">
+                            <div class="title">FORTNITE</div>
+                            <div class="text-xs text-gray-400">3d ago • 8.3h playtime</div>
+                        </div>
+                    </div>
+                    <!-- Game Card 4 -->
+                    <div class="game-card">
+                        <img src="https://images.unsplash.com/photo-1585771724684-38269d6639fd?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=200&h=120&q=80" alt="WITCHER">
+                        <div class="game-details">
+                            <div class="title">WITCHER 4</div>
+                            <div class="text-xs text-gray-400">1w ago • 32.1h playtime</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Right Sidebar -->
+        <aside class="sidebar-right hidden lg:block space-y-4">
+            <!-- Friends Online Card -->
+            <div class="card">
+                <div class="section-title">
+                    <h2>Friends Online</h2>
+                    <span class="text-xs text-gray-400">12/45</span>
+                </div>
+                <div class="scrollable-content space-y-2">
+                    <div class="list-item">
+                        <div class="profile-icon mr-3 bg-pink-600">FS</div>
+                        <div class="flex-1">
+                            <div class="font-medium text-sm">Fallen Sudios</div>
+                            <div class="text-xs text-gray-400 flex items-center">
+                                <i class="fas fa-circle text-green-500 mr-1 text-[6px]"></i>
+                                <span>Playing Fortnite</span>
+                            </div>
+                        </div>
+                        <button class="text-indigo-400 hover:text-indigo-300 text-sm">
+                            <i class="fas fa-comment-dots"></i>
+                        </button>
+                    </div>
+                    <div class="list-item">
+                        <div class="profile-icon mr-3 bg-purple-600">RK</div>
+                        <div class="flex-1">
+                            <div class="font-medium text-sm">Raffan Kash</div>
+                            <div class="text-xs text-gray-400 flex items-center">
+                                <i class="fas fa-circle text-green-500 mr-1 text-[6px]"></i>
+                                <span>Online</span>
+                            </div>
+                        </div>
+                        <button class="text-indigo-400 hover:text-indigo-300 text-sm">
+                            <i class="fas fa-comment-dots"></i>
+                        </button>
+                    </div>
+                    <div class="list-item">
+                        <div class="profile-icon mr-3 bg-yellow-600">MK</div>
+                        <div class="flex-1">
+                            <div class="font-medium text-sm">Mohan Kumar</div>
+                            <div class="text-xs text-gray-400 flex items-center">
+                                <i class="fas fa-circle text-indigo-400 mr-1 text-[6px]"></i>
+                                <span>Playing Rocket League</span>
+                            </div>
+                        </div>
+                        <button class="text-indigo-400 hover:text-indigo-300 text-sm">
+                            <i class="fas fa-comment-dots"></i>
+                        </button>
+                    </div>
+                    <div class="list-item">
+                        <div class="profile-icon mr-3 bg-green-600">AJ</div>
+                        <div class="flex-1">
+                            <div class="font-medium text-sm">Alex Johnson</div>
+                            <div class="text-xs text-gray-400 flex items-center">
+                                <i class="fas fa-circle text-indigo-400 mr-1 text-[6px]"></i>
+                                <span>In lobby</span>
+                            </div>
+                        </div>
+                        <button class="text-indigo-400 hover:text-indigo-300 text-sm">
+                            <i class="fas fa-comment-dots"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recommended Accessories Card -->
+            <div class="card">
+                <div class="section-title">
+                    <h2>Recommended</h2>
+                </div>
+                <div class="flex flex-col items-center">
+                    <img src="https://images.unsplash.com/photo-1591488320449-011701bb6704?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=300&h=150&q=80" 
+                         alt="Controller" class="rounded-lg mb-3 w-full h-auto border border-[#2d3748]">
+                    <div class="w-full">
+                        <div class="font-semibold text-sm mb-1">Xbox Elite Controller</div>
+                        <div class="text-xs text-gray-400 mb-2">Wireless gaming controller with adjustable tension</div>
+                        <div class="flex justify-between items-center w-full">
+                            <span class="text-indigo-400 font-medium text-sm">$149.99</span>
+                            <button class="text-xs bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded-full">
+                                Buy Now
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Download Progress Card -->
+            <div class="card">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center">
+                        <i class="fas fa-circle text-green-500 mr-2 text-xs"></i>
+                        <span class="font-medium text-sm">Downloading</span>
+                    </div>
+                    <span class="text-xs text-gray-400">65%</span>
+                </div>
+                <div class="text-xs text-gray-400 mb-2">Spider-Man: Marvel's Edition</div>
+                <div class="progress-bar mb-1">
+                    <div class="progress-fill" style="width: 65%"></div>
+                </div>
+                <div class="flex justify-between text-xs text-gray-400">
+                    <span>42.3/65.1 GB</span>
+                    <span>2h 15m remaining</span>
+                </div>
+            </div>
+            
+            <!-- News Update Card -->
+            <div class="card">
+                <div class="section-title">
+                    <h2>Latest News</h2>
+                    <a href="#">More</a>
+                </div>
+                <div class="space-y-3">
+                    <div class="flex items-start">
+                        <img src="https://images.unsplash.com/photo-1542751371-adc38448a05e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=50&h=50&q=80" 
+                             alt="News" class="rounded-md w-10 h-10 object-cover mr-3 border border-[#2d3748]">
+                        <div>
+                            <div class="font-medium text-sm mb-1">New DLC announced</div>
+                            <div class="text-xs text-gray-400">Aramis: Legends expansion coming December 15</div>
+                        </div>
+                    </div>
+                    <div class="flex items-start">
+                        <img src="https://images.unsplash.com/photo-1511512578047-dfb367046420?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=50&h=50&q=80" 
+                             alt="News" class="rounded-md w-10 h-10 object-cover mr-3 border border-[#2d3748]">
+                        <div>
+                            <div class="font-medium text-sm mb-1">Patch 2.1 released</div>
+                            <div class="text-xs text-gray-400">Cyberpunk 2077 gets major update</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- Mobile Menu -->
+    <nav class="mobile-menu lg:hidden fixed bottom-0 left-0 right-0 bg-[#12182c] border-t border-[#2d3748] z-50">
+        <a href="#" class="mobile-menu-item active">
+            <i class="fas fa-home"></i>
+            <span>Home</span>
+        </a>
+        <a href="#" class="mobile-menu-item">
+            <i class="fas fa-gamepad"></i>
+            <span>Games</span>
+        </a>
+        <a href="#" class="mobile-menu-item">
+            <i class="fas fa-users"></i>
+            <span>Friends</span>
+        </a>
+        <a href="#" class="mobile-menu-item">
+            <i class="fas fa-bell"></i>
+            <span>Alerts</span>
+        </a>
+        <a href="#" class="mobile-menu-item">
+            <i class="fas fa-cog"></i>
+            <span>Settings</span>
+        </a>
+    </nav>
+
+</body>
+<script>
+    // Tooltip functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        // Add tooltip event listeners
+        const tooltips = document.querySelectorAll('.tooltip');
+        tooltips.forEach(tooltip => {
+            const title = tooltip.getAttribute('title');
+            tooltip.removeAttribute('title');
+            
+            const tooltipElement = document.createElement('div');
+            tooltipElement.className = 'tooltip-text hidden absolute bg-[#1a2033] text-gray-200 text-xs px-2 py-1 rounded whitespace-nowrap z-50';
+            tooltipElement.textContent = title;
+            tooltip.appendChild(tooltipElement);
+            
+            tooltip.addEventListener('mouseenter', () => {
+                tooltipElement.classList.remove('hidden');
+            });
+            
+            tooltip.addEventListener('mouseleave', () => {
+                tooltipElement.classList.add('hidden');
+            });
+        });
+
+        // Mobile menu active state
+        const mobileMenuItems = document.querySelectorAll('.mobile-menu-item');
+        mobileMenuItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                mobileMenuItems.forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Sidebar nav active state
+        const sidebarNavItems = document.querySelectorAll('.sidebar-nav a');
+        sidebarNavItems.forEach(item => {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                sidebarNavItems.forEach(i => i.classList.remove('active'));
+                this.classList.add('active');
+            });
+        });
+
+        // Game card hover effect
+        const gameCards = document.querySelectorAll('.game-card');
+        gameCards.forEach(card => {
+            card.addEventListener('mouseenter', function() {
+                this.querySelector('.game-details').classList.add('hover-effect');
+            });
+            
+            card.addEventListener('mouseleave', function() {
+                this.querySelector('.game-details').classList.remove('hover-effect');
+            });
+        });
+    });
+
+    // Responsive adjustments
+    window.addEventListener('resize', function() {
+        // You can add responsive adjustments here if needed
+    });
+</script>
+<style>
+    /* Base Styles */
+    body {
+        font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    }
+
+    /* Header Styles */
+    .mobile-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        height: 60px;
+    }
+
+    .profile-icon img {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 2px solid #2d3748;
+    }
+
+    /* Sidebar Styles */
+    .sidebar-left {
+        width: 80px;
+    }
+
+    .sidebar-nav {
+        display: flex;
+        flex-direction: column;
+        gap: 28px;
+    }
+
+    .sidebar-nav a {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 12px;
+        color: #64748b;
+        transition: all 0.2s ease;
+        position: relative;
+    }
+
+    .sidebar-nav a:hover, 
+    .sidebar-nav a.active {
+        background-color: #1e293b;
+        color: #818cf8;
+    }
+
+    .sidebar-nav a.active::before {
+        content: '';
+        position: absolute;
+        left: -16px;
+        height: 20px;
+        width: 4px;
+        background-color: #818cf8;
+        border-radius: 0 2px 2px 0;
+    }
+
+    /* Tooltip Styles */
+    .tooltip-text {
+        background-color: #1e293b;
+        color: #e2e8f0;
+        padding: 6px 10px;
+        border-radius: 6px;
+        font-size: 12px;
+        left: 50px;
+        top: 50%;
+        transform: translateY(-50%);
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        opacity: 0;
+        transition: opacity 0.2s ease;
+        pointer-events: none;
+    }
+
+    .tooltip:hover .tooltip-text {
+        opacity: 1;
+    }
+
+    /* Hero Card Styles */
+    .hero-card {
+        position: relative;
+        height: 300px;
+        border-radius: 16px;
+        overflow: hidden;
+    }
+
+    .hero-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: linear-gradient(90deg, rgba(13, 18, 34, 0.8) 0%, rgba(13, 18, 34, 0.4) 100%);
+    }
+
+    .hero-content {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        display: flex;
+        align-items: center;
+    }
+
+    /* Section Styles */
+    .section-title {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 16px;
+    }
+
+    .section-title h2 {
+        font-size: 18px;
+        font-weight: 600;
+    }
+
+    .section-title a {
+        font-size: 14px;
+        color: #818cf8;
+    }
+
+    /* Game Card Styles */
+    .game-card {
+        position: relative;
+        border-radius: 12px;
+        overflow: hidden;
+        transition: transform 0.2s ease;
+    }
+
+    .game-card:hover {
+        transform: translateY(-4px);
+    }
+
+    .game-card img {
+        width: 100%;
+        height: 120px;
+        object-fit: cover;
+    }
+
+    .game-details {
+        padding: 12px;
+        background-color: #1a2033;
+        transition: all 0.2s ease;
+    }
+
+    .game-details.hover-effect {
+        background-color: #1e293b;
+    }
+
+    .game-details .title {
+        font-size: 14px;
+        font-weight: 500;
+        margin-bottom: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .game-details .rating {
+        font-size: 12px;
+        color: #e2e8f0;
+    }
+
+    /* Card Styles */
+    .card {
+        background-color: #12182c;
+        border-radius: 12px;
+        padding: 16px;
+        border: 1px solid #2d3748;
+    }
+
+    .scrollable-content {
+        max-height: 300px;
+        overflow-y: auto;
+        padding-right: 8px;
+    }
+
+    .scrollable-content::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .scrollable-content::-webkit-scrollbar-thumb {
+        background-color: #2d3748;
+        border-radius: 4px;
+    }
+
+    /* List Item Styles */
+    .list-item {
+        display: flex;
+        align-items: center;
+        padding: 10px 12px;
+        border-radius: 8px;
+        background-color: #1a2033;
+        transition: all 0.2s ease;
+    }
+
+    .list-item:hover {
+        background-color: #1e293b;
+    }
+
+    .profile-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: 600;
+        font-size: 12px;
+    }
+
+    /* Button Styles */
+    .btn-primary {
+        background-color: #6366f1;
+        color: white;
+        padding: 8px 16px;
+        border-radius: 9999px;
+        font-size: 14px;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    .btn-primary:hover {
+        background-color: #4f46e5;
+    }
+
+    /* Progress Bar Styles */
+    .progress-bar {
+        height: 6px;
+        background-color: #1a2033;
+        border-radius: 3px;
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
+        background-color: #6366f1;
+        border-radius: 3px;
+    }
+
+    /* Mobile Menu Styles */
+    .mobile-menu {
+        display: flex;
+        height: 60px;
+    }
+
+    .mobile-menu-item {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #64748b;
+        font-size: 10px;
+        transition: all 0.2s ease;
+    }
+
+    .mobile-menu-item i {
+        font-size: 18px;
+        margin-bottom: 4px;
+    }
+
+    .mobile-menu-item.active {
+        color: #818cf8;
+    }
+
+    /* Right Sidebar Styles */
+    .sidebar-right {
+        width: 280px;
+        position: fixed;
+        right: 24px;
+        top: 24px;
+        height: calc(100vh - 48px);
+        overflow-y: auto;
+    }
+
+    .sidebar-right .card {
+        margin-bottom: 16px;
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 1024px) {
+        .main-content {
+            margin-right: 0;
+            padding-bottom: 80px;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .hero-content {
+            padding: 20px;
+        }
+        
+        .hero-card {
+            height: auto;
+            aspect-ratio: 16/9;
+        }
+    }
+</style>
+</html>

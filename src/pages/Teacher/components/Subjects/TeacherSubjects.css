@@ -1,0 +1,165 @@
+/* ============================
+   GLOBAL LAYOUT
+============================ */
+.teacher-subjects-container {
+  background: #f9fafb;
+  border-radius: 8px;
+  padding: 16px;
+  min-height: 80vh;
+  font-family: "Inter", sans-serif;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* ============================
+   HEADER
+============================ */
+.subject-header {
+  border-bottom: 1px solid #e5e7eb;
+  padding-bottom: 8px;
+  margin-bottom: 6px;
+}
+
+.subject-header h2 {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.subject-header p {
+  font-size: 0.9rem;
+  color: #6b7280;
+  margin-top: 2px;
+}
+
+/* ============================
+   FILTER BAR
+============================ */
+.filter-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 0.9rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  padding: 6px 10px;
+  width: fit-content;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+.filter-bar label {
+  color: #374151;
+  font-weight: 500;
+}
+
+.filter-bar select {
+  border: 1px solid #d1d5db;
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 0.9rem;
+  outline: none;
+  background: #f9fafb;
+  color: #111827;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.filter-bar select:hover {
+  background: #f3f4f6;
+}
+
+.filter-bar select:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.15);
+}
+
+/* ============================
+   SUBJECT GRID
+============================ */
+.subject-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 12px;
+  margin-top: 10px;
+}
+
+/* ============================
+   SUBJECT CARD
+============================ */
+.subject-card {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  padding: 12px 14px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+  transition: all 0.2s ease-in-out;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.subject-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(79, 70, 229, 0.1);
+  border-color: #6366f1;
+}
+
+.subject-card h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #111827;
+  margin: 0;
+}
+
+.subject-card p {
+  font-size: 0.85rem;
+  color: #4b5563;
+  margin: 0;
+}
+
+.subject-list {
+  list-style-type: none;
+  padding: 0;
+  margin: 6px 0 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.subject-list li {
+  font-size: 0.85rem;
+  background: #eef2ff;
+  color: #3730a3;
+  padding: 4px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  transition: all 0.2s ease;
+  cursor: default;
+}
+
+.subject-list li:hover {
+  background: #e0e7ff;
+  color: #312e81;
+}
+
+
+.student-count {
+  margin-top: auto;
+  font-size: 0.8rem;
+  color: #6b7280;
+  text-align: right;
+}
+
+/* ============================
+   NO SUBJECTS
+============================ */
+.no-subjects {
+  text-align: center;
+  padding: 40px 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+}

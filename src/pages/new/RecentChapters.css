@@ -1,0 +1,78 @@
+.recent-chapters-container {
+  padding: 30px 20px;
+  font-family: "Segoe UI", Arial, sans-serif;
+}
+
+.header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.header-row h2 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  color: #222;
+}
+
+.view-all-btn {
+  padding: 8px 16px;
+  border: none;
+  background: #007acc;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.view-all-btn:hover {
+  background: #005fa3;
+}
+
+/* Grid */
+.recent-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 18px;
+}
+
+/* Card */
+.recent-card {
+  padding: 18px;
+  border-radius: 12px;
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.recent-card:hover {
+  transform: translateY(-5px);
+  border-color: #007acc;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.15);
+}
+
+.recent-card h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #111;
+  margin-bottom: 6px;
+}
+
+.recent-card .meta-info {
+  font-size: 0.9rem;
+  color: #444;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.recent-card strong {
+  color: #007acc;
+}

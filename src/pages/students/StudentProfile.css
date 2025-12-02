@@ -1,0 +1,158 @@
+/* --------- ROOT --------- */
+.gp-container {
+  padding: 25px;
+  background: linear-gradient(135deg, #eef4ff 0%, #ffffff 100%);
+  min-height: 100vh;
+  font-family: "Poppins", sans-serif;
+}
+
+/* --------- HEADER BANNER --------- */
+.gp-banner {
+  display: flex;
+  justify-content: space-between;
+  background: linear-gradient(135deg, #dbe8ff, #e6f0ff);
+  padding: 25px;
+  border-radius: 20px;
+  margin-bottom: 25px;
+  box-shadow: 0 8px 25px rgba(0, 82, 204, 0.15);
+  border: 1px solid #d0e2ff;
+}
+
+.gp-title {
+  font-size: 32px;
+  margin: 0;
+  color: #0a2b63;
+  font-weight: 900;
+  letter-spacing: 1px;
+}
+
+.gp-sub {
+  font-size: 14px;
+  color: #5a708c;
+  margin-top: 5px;
+}
+
+/* -------- PLAYER CARD (EA Style) ------- */
+.gp-player-card {
+  background: #ffffff;
+  border-radius: 18px;
+  padding: 20px;
+  width: 160px;
+  text-align: center;
+  border: 2px solid #b5ccff;
+  box-shadow: 0 6px 15px rgba(0, 60, 255, 0.2);
+  position: relative;
+}
+
+.gp-overall {
+  font-size: 48px;
+  font-weight: 900;
+  color: #0a49d4;
+  text-shadow: 0px 0px 10px rgba(0, 89, 255, 0.5);
+}
+
+.gp-name {
+  font-size: 18px;
+  font-weight: 700;
+  margin-top: 10px;
+  color: #082b55;
+}
+
+.gp-class {
+  font-size: 14px;
+  color: #4977cc;
+  margin-top: 3px;
+}
+
+/* -------- CARDS --------- */
+.gp-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 22px;
+  margin-bottom: 25px;
+  border: 1px solid #d9e6ff;
+  box-shadow: 0 4px 14px rgba(0, 50, 150, 0.1);
+}
+
+.gp-section-title {
+  margin-bottom: 15px;
+  font-size: 20px;
+  color: #0b2a52;
+  font-weight: 700;
+}
+
+/* -------- INFO ROWS -------- */
+.gp-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  font-size: 15px;
+  border-bottom: 1px dashed #d8e3f7;
+}
+
+.gp-row span {
+  color: #5b7191;
+}
+
+.gp-row b {
+  color: #0b2554;
+}
+
+/* -------- STATS -------- */
+.gp-stats-card .gp-stat {
+  margin-bottom: 18px;
+}
+
+.gp-stat span {
+  font-size: 14px;
+  color: #4b6fa1;
+  font-weight: 600;
+}
+
+.gp-bar {
+  background: #e1ecff;
+  height: 12px;
+  border-radius: 20px;
+  margin: 8px 0;
+  overflow: hidden;
+}
+
+.gp-bar-fill {
+  background: linear-gradient(90deg, #1e73ff, #64a1ff);
+  height: 100%;
+  border-radius: 20px;
+  transition: width 0.5s ease;
+}
+
+.gp-level {
+  margin-top: 15px;
+  padding: 10px 20px;
+  width: fit-content;
+  border-radius: 12px;
+  font-weight: 700;
+  font-size: 15px;
+}
+
+/* Level colors */
+.gp-weak {
+  background: #ffdfdf;
+  color: #d10000;
+}
+
+.gp-average {
+  background: #fff3cd;
+  color: #b58a00;
+}
+
+.gp-strong {
+  background: #d9ffe0;
+  color: #0e8a27;
+}
+
+/* Loader */
+.gp-loading {
+  text-align: center;
+  font-size: 16px;
+  padding: 40px;
+  color: #5e769b;
+}

@@ -1,0 +1,316 @@
+/* --- Keyframe Animations (Refined) --- */
+
+/* General fade-in for major sections */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+/* Slide in from top for header elements */
+@keyframes slideInFromTop {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Slide in from bottom for major blocks */
+@keyframes slideInFromBottom {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Staggered entry for individual concept cards */
+@keyframes fadeInScaleUp {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* --- Global Container --- */
+.concept-container {
+  padding: 24px;
+  max-width: 1200px;
+  margin: auto;
+  font-family: 'Poppins', 'Segoe UI', sans-serif;
+  background-color: #f5f7fa; /* New: Very light gray-blue for a clean background */
+  opacity: 0; /* Start hidden */
+  animation: fadeIn 0.8s ease-out forwards; /* Overall fade in for the page content */
+  animation-delay: 0.1s; /* Slight delay after page load */
+}
+
+/* --- Header --- */
+.subject-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #333a45; /* New: Dark charcoal for better contrast */
+  margin-bottom: 24px;
+  text-align: center;
+  opacity: 0; /* Start hidden */
+  animation: slideInFromTop 0.6s ease-out forwards; /* Slide in from top */
+  animation-delay: 0.3s; /* Delay after container */
+}
+
+/* --- Search Input --- */
+.search-box {
+  width: 100%;
+  padding: 12px 0px;
+  font-size: 16px;
+  border-radius: 10px;
+  border: 2px solid #e0e6ec; /* New: Lighter border color */
+  background-color: #ffffff; /* Pure white */
+  margin-bottom: 30px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  opacity: 0; /* Start hidden */
+  animation: fadeIn 0.7s ease-out forwards; /* Fade in */
+  animation-delay: 0.5s; /* Delay after title */
+}
+
+.search-box:focus {
+  border-color: #517acb; /* New: Richer blue on focus */
+  outline: none;
+}
+
+/* --- Chapter Block --- */
+.chapter-section {
+  margin-bottom: 40px;
+  opacity: 0; /* Start hidden */
+  animation: fadeIn 0.7s ease-out forwards;
+  animation-delay: 0.7s; /* Delay after search box */
+}
+
+.chapter-title {
+  font-size: 22px;
+  font-weight: 600;
+  color: #517acb; /* New: Richer blue for chapter title */
+  margin-bottom: 16px;
+  position: relative;
+  padding-left: 14px;
+  opacity: 0; /* Start hidden */
+  animation: slideInFromTop 0.6s ease-out forwards;
+  animation-delay: 0.9s; /* Delay after chapter section */
+}
+
+.chapter-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 5px;
+  width: 6px;
+  height: 90%;
+  background-color: #517acb; /* New: Match chapter title color */
+  border-radius: 4px;
+}
+
+/* --- Grid Layout --- */
+.concept-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 20px;
+}
+
+/* --- Card Design --- */
+.concept-card {
+  background: #ffffff;
+  border-radius: 16px;
+  padding: 18px 16px;
+  border: 1px solid #e0e0e0;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  position: relative;
+  opacity: 0; /* Start hidden */
+  animation: fadeInScaleUp 0.6s ease-out forwards;
+  /* Staggered delay handled below with :nth-child */
+}
+
+.concept-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+}
+
+/* Staggered animation for concept cards */
+.concept-grid .concept-card:nth-child(1) { animation-delay: 1.1s; }
+.concept-grid .concept-card:nth-child(2) { animation-delay: 1.15s; }
+.concept-grid .concept-card:nth-child(3) { animation-delay: 1.2s; }
+.concept-grid .concept-card:nth-child(4) { animation-delay: 1.25s; }
+.concept-grid .concept-card:nth-child(5) { animation-delay: 1.3s; }
+.concept-grid .concept-card:nth-child(6) { animation-delay: 1.35s; }
+.concept-grid .concept-card:nth-child(7) { animation-delay: 1.4s; }
+.concept-grid .concept-card:nth-child(8) { animation-delay: 1.45s; }
+.concept-grid .concept-card:nth-child(9) { animation-delay: 1.5s; }
+.concept-grid .concept-card:nth-child(10) { animation-delay: 1.55s; }
+
+.concept-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333a45; /* New: Dark charcoal */
+  margin-bottom: 14px;
+}
+
+/* Footer Area */
+.concept-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* Badge Styles */
+.badge {
+  padding: 6px 12px;
+  font-size: 12px;
+  border-radius: 16px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.badge-completed {
+  background-color: #e8f5e9; /* New: Lighter green */
+  color: #388e3c; /* New: Darker green */
+  border: 1px solid #c8e6c9;
+}
+
+.badge-pending {
+  background-color: #fffde7; /* New: Very light yellow */
+  color: #f0a500; /* New: Match test button color */
+  border: 1px solid #fff59d;
+}
+
+/* Buttons */
+.concept-button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.3s ease, transform 0.2s ease;
+}
+
+.concept-button.test {
+  background-color: #f0a500; /* New: Warm gold */
+  color: white;
+  box-shadow: 0 4px 6px rgba(240, 165, 0, 0.2);
+}
+
+.concept-button.test:hover {
+  background-color: #d89500;
+  transform: scale(1.05);
+}
+
+.concept-button.completed {
+  background-color: #517acb; /* New: Rich blue */
+  color: white;
+  box-shadow: 0 4px 6px rgba(81, 122, 203, 0.2);
+}
+
+.concept-button.completed:hover {
+  background-color: #4a6fac;
+  transform: scale(1.05);
+}
+
+/* Empty or Loading States */
+.loading-text,
+.no-concepts {
+  text-align: center;
+  font-size: 16px;
+  color: #607d8b;
+  margin-top: 40px;
+  opacity: 0; /* Start hidden */
+  animation: fadeIn 0.7s ease-out forwards; /* Fade in for state messages */
+  animation-delay: 0.8s; /* Delay after other elements */
+}
+
+/* --- Quiz Banner Section --- */
+.Banner {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 20px;
+  padding: 12px 18px;
+  background-color: #e3f2fd;
+  border-left: 6px solid #517acb; /* New: Match new blue accent */
+  border-radius: 12px;
+  box-shadow: 0 4px 8px rgba(81, 122, 203, 0.08); /* New: Updated shadow color */
+  opacity: 0; /* Start hidden */
+  animation: slideInFromTop 0.8s ease-out forwards; /* Animate banner in */
+  animation-delay: 0.2s; /* Appears early on the page */
+}
+
+/* Optional: animate the bubble container */
+.Banner .speech-bubble {
+  background: #ffffff;
+  padding: 10px 14px;
+  border-radius: 10px;
+  position: relative;
+  font-size: 14px;
+  font-weight: 500;
+  color: #37474f;
+  max-width: 300px;
+  animation: fadeInUp 0.8s ease;
+  animation-delay: 0.5s; /* Delay speech bubble */
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+/* Triangle/tail of chat bubble */
+.Banner .speech-bubble::after {
+  content: "";
+  position: absolute;
+  top: 10px;
+  left: -8px;
+  width: 0;
+  height: 0;
+  border-top: 8px solid transparent;
+  border-right: 8px solid white;
+  border-bottom: 8px solid transparent;
+}
+
+/* Animation */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0px);
+  }
+}
+
+/* Boy Image */
+.Banner img {
+  width: 60px;
+  height: auto;
+  margin-right: 12px;
+}
+
+/* Responsive Mobile */
+@media screen and (max-width: 600px) {
+  .concept-name {
+    font-size: 16px;
+  }
+  .concept-button {
+    font-size: 13px;
+    padding: 6px 12px;
+  }
+  .badge {
+    font-size: 11px;
+    padding: 4px 10px;
+  }
+}

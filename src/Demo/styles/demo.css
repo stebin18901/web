@@ -1,0 +1,10 @@
+
+.demo-app{display:flex;min-height:100vh;font-family:Arial,sans-serif;}
+.demo-sidebar{width:220px;background:#0f172a;color:white;padding:20px;}
+.demo-sidebar ul{list-style:none;padding:0;margin:0;}
+.demo-sidebar li{padding:8px;margin-bottom:6px;cursor:pointer;border-radius:6px;}
+.demo-sidebar li.active{background:#1d4ed8;}
+.demo-content{flex:1;padding:20px;background:#f5f7fb;}
+.cards{display:flex;gap:12px;flex-wrap:wrap;}
+.card{background:white;padding:14px;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.08);}
+.table{margin-top:20px;background:white;padding:14px;border-radius:8px;}

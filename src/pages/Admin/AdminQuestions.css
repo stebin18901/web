@@ -1,0 +1,183 @@
+/* AdminQuestions.css */
+
+/* --- Overall Container --- */
+.admin-questions-container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Align to the top, useful if content is long */
+    min-height: 100vh; /* Full viewport height */
+    background-color: #f0f2f5; /* Light background for the page */
+    padding: 30px 20px;
+    box-sizing: border-box; /* Include padding in element's total width and height */
+}
+
+.admin-questions-card {
+    background-color: #ffffff;
+    padding: 40px;
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08); /* Softer, more modern shadow */
+    width: 100%;
+    max-width: 800px; /* Max width for readability */
+    box-sizing: border-box;
+}
+
+/* --- Heading --- */
+.admin-questions-card h2 {
+    font-size: 2.2em; /* Slightly larger heading */
+    color: #333;
+    margin-bottom: 30px;
+    text-align: center;
+    font-weight: 600;
+}
+
+/* --- Form General Styles --- */
+.admin-questions-form {
+    display: grid;
+    grid-template-columns: 1fr; /* Single column layout */
+    gap: 20px; /* Space between form groups */
+}
+
+/* --- Form Groups (Label + Input/Select/Textarea) --- */
+.form-group {
+    margin-bottom: 5px; /* Adjust spacing slightly */
+}
+
+.form-group label {
+    display: block; /* Label on its own line */
+    font-weight: 600;
+    margin-bottom: 8px; /* Space between label and input */
+    color: #555;
+    font-size: 1em;
+}
+
+.form-group input[type="text"],
+.form-group select,
+.form-group textarea:not(.json-textarea) { /* Exclude json-textarea from this selector */
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 8px; /* Rounded corners for inputs */
+    font-size: 1em;
+    color: #333;
+    box-sizing: border-box; /* Crucial for consistent width */
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    /* Add specific styles for select dropdown arrow if needed for cross-browser consistency */
+    -webkit-appearance: none; /* Remove default styling for Chrome/Safari */
+    -moz-appearance: none; /* Remove default styling for Firefox */
+    appearance: none; /* Remove default styling for all */
+    background-image: url('data:image/svg+xml;charset=US-ASCII,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%22292.4%22%20height%3D%22292.4%22%3E%3Cpath%20fill%3D%22%23000000%22%20d%3D%22M287%2C146.2L287%2C146.2c-4.4-4.4-10.8-4.4-15.2,0L146.2,273.7L20.4,146.2c-4.4-4.4-10.8-4.4-15.2,0l0,0c-4.4,4.4-4.4,10.8,0,15.2l133,133c2.2,2.2,5,3.3,7.6,3.3c2.7,0,5.4-1.1,7.6-3.3l133-133C291.4,157,291.4,150.6,287,146.2z%22%2F%3E%3C%2Fsvg%3E');
+    background-repeat: no-repeat;
+    background-position: right 15px center;
+    background-size: 10px;
+    padding-right: 35px; /* Make space for the custom arrow */
+}
+
+
+.form-group input[type="text"]:focus,
+.form-group select:focus,
+.form-group textarea:not(.json-textarea):focus {
+    border-color: #007bff; /* Highlight on focus */
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25); /* Soft focus ring */
+    outline: none; /* Remove default outline */
+}
+
+/* --- JSON Textarea Specific Styles --- */
+.json-textarea {
+    width: 100%;
+    padding: 15px; /* Slightly more padding for code-like input */
+    border: 1px solid #ccc; /* Slightly darker border */
+    border-radius: 8px;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace; /* Monospace font for code */
+    font-size: 0.95em;
+    color: #333;
+    background-color: #f8f8f8; /* Light grey background */
+    box-sizing: border-box;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+    resize: vertical; /* Allow vertical resizing */
+    min-height: 250px; /* Increased min-height for JSON */
+}
+
+.json-textarea:focus {
+    border-color: #007bff;
+    box-shadow: 0 0 0 3px rgba(0, 123, 255, 0.25);
+    outline: none;
+    background-color: #fff; /* White background on focus */
+}
+
+/* --- Error Message Style --- */
+.error-message {
+    color: #dc3545; /* Red color for errors */
+    background-color: #ffe0e0; /* Light red background */
+    border: 1px solid #dc3545;
+    border-radius: 6px;
+    padding: 10px 15px;
+    margin-top: 10px;
+    font-size: 0.9em;
+    font-weight: 500;
+    text-align: left;
+    white-space: pre-wrap; /* Preserve whitespace and line breaks for readability */
+}
+
+/* --- Submit Button --- */
+.submit-button {
+    background-color: #007bff; /* Primary brand color */
+    color: white;
+    padding: 15px 25px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1.1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+    width: 100%; /* Full width button */
+    margin-top: 20px;
+}
+
+.submit-button:hover {
+    background-color: #0056b3; /* Darker shade on hover */
+    transform: translateY(-2px); /* Slight lift effect */
+}
+
+.submit-button:disabled {
+    background-color: #cccccc;
+    cursor: not-allowed;
+    transform: none; /* Remove lift effect when disabled */
+    opacity: 0.7; /* Slightly dim when disabled */
+}
+
+/* --- Responsive Adjustments --- */
+@media (max-width: 768px) {
+    .admin-questions-card {
+        padding: 30px 20px;
+        margin: 15px; /* Add some margin on smaller screens */
+    }
+
+    .admin-questions-card h2 {
+        font-size: 1.8em;
+        margin-bottom: 25px;
+    }
+
+    .json-textarea {
+        min-height: 200px; /* Adjust min-height for smaller screens */
+    }
+
+    .submit-button {
+        padding: 12px 20px;
+        font-size: 1em;
+    }
+}
+
+@media (max-width: 480px) {
+    .admin-questions-container {
+        padding: 15px;
+    }
+
+    .admin-questions-card {
+        padding: 20px 15px;
+    }
+
+    .admin-questions-card h2 {
+        font-size: 1.6em;
+        margin-bottom: 20px;
+    }
+}

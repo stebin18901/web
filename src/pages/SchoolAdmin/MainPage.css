@@ -1,0 +1,52 @@
+/* === Main Layout === */
+.main-layout {
+  display: flex;
+  background: linear-gradient(135deg, #f2f2f2 0%, #ffffff 100%);
+  min-height: 100vh;
+  width: 100%;
+  position: relative;
+  overflow-x: hidden;
+}
+
+/* === Default: Sidebar expanded (270px) === */
+.content-area {
+  flex: 1;
+  margin-left: 270px;
+  transition: margin-left 0.3s ease, padding 0.3s ease;
+}
+
+/* === When sidebar is collapsed (76px) === */
+.sa-sidebar.collapsed ~ .content-area {
+  margin-left: 76px;
+}
+
+/* === Content container === */
+.content-container {
+  margin: 0 auto;
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  padding: 24px 32px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+  transition: all 0.3s ease;
+}
+
+/* === Adjust for large tablets === */
+@media (max-width: 1024px) {
+  .content-area {
+    margin-left: 250px;
+  }
+}
+
+/* === Mobile view === */
+@media (max-width: 768px) {
+  .content-area {
+    margin-left: 0;
+  }
+
+  .content-container {
+    padding: 16px;
+    border-radius: 10px;
+    box-shadow: none;
+  }
+}

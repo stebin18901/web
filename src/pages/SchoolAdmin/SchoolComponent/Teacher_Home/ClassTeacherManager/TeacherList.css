@@ -1,0 +1,88 @@
+.teacher-list-container {
+  display: flex;
+  flex-direction: column;
+  height: 450px;
+}
+
+.teacher-search {
+  width: 100%;
+  padding: 8px 10px;
+  margin: 6px 0 12px;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 14px;
+}
+
+.teacher-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.teacher-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.teacher-card:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.teacher-card.selected {
+  border: 1.5px solid #007bff;
+  background: rgba(0, 123, 255, 0.15);
+}
+
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #007bff33;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+}
+
+.teacher-meta {
+  flex: 1;
+}
+
+.teacher-name {
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.teacher-email {
+  font-size: 13px;
+  opacity: 0.7;
+}
+
+.teacher-role-tag {
+  display: inline-block;
+  margin-top: 4px;
+  font-size: 12px;
+  color: #007bff;
+  background: #e6f0ff;
+  border-radius: 6px;
+  padding: 2px 6px;
+}
+
+.no-teachers {
+  text-align: center;
+  opacity: 0.6;
+  margin-top: 20px;
+}
+
+.right-footer {
+  margin-top: 10px;
+  font-size: 13px;
+  opacity: 0.9;
+}
