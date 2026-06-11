@@ -4,7 +4,7 @@ import Loader from "../Shared/Loader";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "../../../../firebase/firebaseConfig";
 
-// ✅ Import same admin components
+// ✅ Import admin components
 import ClassDetailView from "../../../SchoolAdmin/SchoolComponent/Teacher_Home/ClassTeacherManager/ClassDetailView";
 import TeacherList from "../../../SchoolAdmin/SchoolComponent/Teacher_Home/ClassTeacherManager/TeacherList";
 import StudentRollSetup from "./StudentRollSetup";
@@ -17,15 +17,18 @@ const TeacherClasses = () => {
   const [selectedClass, setSelectedClass] = useState(null);
   const [teachers, setTeachers] = useState([]);
   const [draggedTeacher, setDraggedTeacher] = useState(null);
-  const [selectedTeacher, setSelectedTeacher] = useState(null);
+  
+  // 🔹 CHANGED: single selectedTeacher to selectedTeachers array
+  const [selectedTeachers, setSelectedTeachers] = useState([]); 
+  
   const [searchTerm, setSearchTerm] = useState("");
   const [loading, setLoading] = useState(true);
   const [showRollSetup, setShowRollSetup] = useState(true);
 
   const isClassTeacher = teacher?.role === "class_teacher";
-  const activeClass = teacher?.assignedClass || ""; // 🔹 the class currently selected in floating switch
+  const activeClass = teacher?.assignedClass || ""; 
 
-  // 🔹 Fetch all classes of this teacher (handles multi-class)
+  // 🔹 Fetch all classes of this teacher
   useEffect(() => {
     if (!teacher?.schoolId) return;
 
@@ -36,7 +39,6 @@ const TeacherClasses = () => {
 
     const unsub = onSnapshot(q, (snap) => {
       const all = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      // if class teacher, filter only their classes
       const filtered = isClassTeacher
         ? all.filter((c) => teacher?.assignedClasses?.includes(c.className))
         : all;
@@ -47,7 +49,7 @@ const TeacherClasses = () => {
     return () => unsub();
   }, [teacher, isClassTeacher]);
 
-  // 🔹 Fetch all teachers for same school (for class team)
+  // 🔹 Fetch all teachers for same school
   useEffect(() => {
     if (!teacher?.schoolId) return;
     const q = query(collection(db, "users"), where("schoolId", "==", teacher.schoolId));
@@ -76,7 +78,7 @@ const TeacherClasses = () => {
       <div className="teacher-class-detail">
         <h2 className="gradient-text">My Class ({currentClass.className})</h2>
 
-        {/* 🔹 Roll Setup Section with Minimize Feature */}
+        {/* 🔹 Roll Setup Section */}
         <div className="roll-setup-container glass-card">
           <div className="roll-setup-header">
             <h3>Student Roll Setup</h3>
@@ -112,6 +114,11 @@ const TeacherClasses = () => {
               teachers={teachers}
               draggedTeacher={draggedTeacher}
               setDraggedTeacher={setDraggedTeacher}
+              
+              /* 🔹 UPDATED PROPS */
+              selectedTeachers={selectedTeachers}
+              setSelectedTeachers={setSelectedTeachers}
+              
               mode="admin"
             />
           </div>
@@ -119,8 +126,11 @@ const TeacherClasses = () => {
           <div className="teacher-list-section glass-card">
             <TeacherList
               teachers={teachers}
-              selectedTeacher={selectedTeacher}
-              setSelectedTeacher={setSelectedTeacher}
+              
+              /* 🔹 UPDATED PROPS */
+              selectedTeachers={selectedTeachers}
+              setSelectedTeachers={setSelectedTeachers}
+              
               draggedTeacher={draggedTeacher}
               setDraggedTeacher={setDraggedTeacher}
               searchTerm={searchTerm}
@@ -176,6 +186,9 @@ const TeacherClasses = () => {
             className={selectedClass.className}
             teacher={teacher}
             mode="teacher"
+            // Props below are not used in "teacher" mode but passed for consistency
+            selectedTeachers={selectedTeachers}
+            setSelectedTeachers={setSelectedTeachers}
           />
         </div>
       )}

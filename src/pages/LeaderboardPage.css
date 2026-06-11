@@ -1,0 +1,125 @@
+.leaderboard-page {
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: "Poppins", "Segoe UI", sans-serif;
+  color: #0f172a;
+}
+
+.leaderboard-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.leaderboard-top h1 {
+  margin: 0;
+  color: #0f2d6d;
+}
+
+.leaderboard-top p {
+  margin: 4px 0 0;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.leaderboard-top button,
+.leaderboard-tabs button {
+  border: none;
+  background: #2e67f2;
+  color: #fff;
+  border-radius: 10px;
+  padding: 10px 14px;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.leaderboard-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.leaderboard-tabs button {
+  background: #eef4ff;
+  color: #1e40af;
+  border: 1px solid #cfe0ff;
+}
+
+.leaderboard-tabs button.active {
+  background: #1e40af;
+  color: #ffffff;
+}
+
+.leaderboard-subject-select {
+  min-width: 240px;
+  margin-bottom: 14px;
+  padding: 11px 12px;
+  border: 1px solid #cfe0ff;
+  border-radius: 10px;
+  color: #0f172a;
+  background: #ffffff;
+  font-weight: 700;
+}
+
+.leaderboard-table-wrap {
+  overflow: auto;
+  border: 1px solid #dbe6fb;
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(15, 45, 109, 0.06);
+}
+
+.leaderboard-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 760px;
+  background: #ffffff;
+}
+
+.leaderboard-table th,
+.leaderboard-table td {
+  padding: 13px 14px;
+  border-bottom: 1px solid #ecf1fc;
+  text-align: left;
+}
+
+.leaderboard-table thead th {
+  background: #f4f8ff;
+  color: #38528a;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+}
+
+.leaderboard-table tr.me td {
+  background: #ecfdf5;
+  color: #14532d;
+  font-weight: 800;
+}
+
+.leaderboard-empty {
+  padding: 22px;
+  border-radius: 14px;
+  border: 1px solid #dbe6fb;
+  background: #ffffff;
+  color: #64748b;
+  font-weight: 700;
+}
+
+@media (max-width: 640px) {
+  .leaderboard-page {
+    padding: 14px;
+  }
+
+  .leaderboard-top {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .leaderboard-top button,
+  .leaderboard-subject-select {
+    width: 100%;
+  }
+}

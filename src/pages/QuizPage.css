@@ -1,0 +1,676 @@
+﻿/* Base Layout & Reset Overrides */
+.quiz-master-page {
+  min-height: 100vh;
+  background: linear-gradient(140deg, #f8fbff, #edf2ff);
+  padding: 16px;
+  font-family: "Poppins", "Segoe UI", sans-serif;
+  color: #0f172a;
+  box-sizing: border-box;
+}
+
+.quiz-master-page.quiz-lockdown,
+.quiz-master-page.quiz-lockdown * {
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+.quiz-master-page *, 
+.quiz-master-page *::before, 
+.quiz-master-page *::after {
+  box-sizing: border-box;
+}
+
+/* Topbar Typography styling */
+.qm-topbar h1 {
+  margin: 0;
+  font-size: 2rem;
+  letter-spacing: -0.01em;
+  font-weight: 700;
+}
+
+.qm-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  background: #ffffff;
+  border: 1px solid #d9e2f5;
+  border-radius: 18px;
+  padding: 18px 20px;
+  box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+}
+
+.qm-topbar p {
+  margin: 6px 0 0;
+  color: #1d4ed8;
+  font-weight: 600;
+}
+
+.qm-score-box {
+  min-width: 170px;
+  padding: 14px 18px;
+  border-radius: 14px;
+  background: #0f172a;
+  color: #ffffff;
+  text-align: right;
+}
+
+.qm-score-box span {
+  display: block;
+  margin-bottom: 4px;
+  color: #cbd5e1;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.qm-score-box strong {
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.attempt-chip {
+  margin-top: 10px;
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1e40af;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+/* Main Layout Grid */
+.qm-body {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 16px;
+  margin-top: 16px;
+  align-items: start;
+}
+
+/* Shared Card Styling */
+.qm-sidebar,
+.qm-meta-card,
+.qm-question-card,
+.qm-footer,
+.chapter-card {
+  background: #ffffff;
+  border: 1px solid #d9e2f5;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(15, 23, 42, 0.03), 0 10px 24px -3px rgba(15, 23, 42, 0.05);
+}
+
+/* Sidebar & Navigation Grid */
+.qm-sidebar {
+  padding: 20px;
+  position: sticky;
+  top: 16px;
+}
+
+.qm-sidebar h3 {
+  margin: 0 0 14px;
+  font-size: 1.1rem;
+  color: #1e293b;
+}
+
+.concept-group-nav {
+  margin-top: 12px;
+}
+
+.concept-group-nav h4 {
+  margin: 6px 0;
+  font-size: 0.9rem;
+  color: #1e3a8a;
+}
+
+.legend {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  color: #475569;
+  margin-bottom: 8px;
+}
+
+.dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.dot.done { background: #10b981; }
+.dot.current { background: #2563eb; }
+.dot.pending,
+.dot.not-visited { background: #cbd5e1; }
+.dot.visited { background: #f59e0b; }
+.dot.review { background: #8b5cf6; }
+
+.qm-number-grid {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(55px, 1fr));
+  gap: 8px;
+}
+
+.qm-num {
+  border: 1px solid #d3def5;
+  border-radius: 10px;
+  padding: 10px 6px;
+  font-weight: 600;
+  background: #f8fbff;
+  color: #475569;
+  cursor: pointer;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+.qm-num:hover {
+  border-color: #2563eb;
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.qm-num:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.qm-num.current {
+  border-color: #2563eb;
+  background: #2563eb;
+  color: #ffffff;
+  box-shadow: 0 4px 10px rgba(37, 99, 235, 0.2);
+}
+
+.qm-num.answered,
+.qm-num.done {
+  background: #10b981;
+  border-color: #10b981;
+  color: #ffffff;
+}
+
+.qm-num.visited {
+  background: #fffbeb;
+  border-color: #f59e0b;
+  color: #92400e;
+}
+
+.qm-num.review {
+  background: #8b5cf6;
+  border-color: #8b5cf6;
+  color: #ffffff;
+}
+
+.qm-num.notVisited {
+  background: #f8fbff;
+  color: #64748b;
+}
+
+/* Secondary Actions inside Sidebar */
+.mark-review-btn {
+  width: 100%;
+  margin-top: 16px;
+  border: 1px solid #bfd3ff;
+  background: #eff6ff;
+  color: #1e40af;
+  border-radius: 10px;
+  padding: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mark-review-btn:hover {
+  background: #dbeafe;
+}
+
+/* Main Layout content column */
+.qm-main {
+  display: grid;
+  gap: 16px;
+}
+
+/* Meta Grid System */
+.qm-meta-card {
+  padding: 16px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 16px;
+}
+
+.qm-meta-card div {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.qm-meta-card div span {
+  color: #64748b;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.qm-meta-card div strong {
+  font-size: 1rem;
+  color: #0f172a;
+}
+
+/* Question Layout Configuration */
+.qm-question-card {
+  padding: 24px;
+}
+
+.qm-question-kicker {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.qm-question-kicker span {
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #3730a3;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.qm-question-card h2 {
+  margin: 0 0 16px;
+  font-size: clamp(1.25rem, 2.5vw, 1.6rem);
+  line-height: 1.4;
+  font-weight: 600;
+}
+
+.qm-question-image {
+  display: block;
+  max-width: 100%;
+  max-height: 360px;
+  object-fit: contain;
+  margin: 0 0 16px;
+  border-radius: 12px;
+  border: 1px solid #e2e8f0;
+}
+
+.qm-options {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+/* Option Rows & Structural Fixes */
+.qm-option {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 14px 18px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.qm-option:hover {
+  border-color: #cbd5e1;
+  background: #f8fafc;
+}
+
+.qm-option.selected {
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.qm-option.correct {
+  border-color: #16a34a;
+  background: #ecfdf3;
+}
+
+.qm-option.incorrect {
+  border-color: #dc2626;
+  background: #fef2f2;
+}
+
+.opt-badge {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  color: #475569;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.qm-option.selected .opt-badge {
+  background: #2563eb;
+  color: #ffffff;
+}
+
+.opt-text {
+  font-size: 1rem;
+  color: #334155;
+  flex-grow: 1;
+  line-height: 1.5;
+}
+
+.qm-option.selected .opt-text {
+  color: #1e3a8a;
+  font-weight: 500;
+}
+
+.opt-radio {
+  margin-left: auto;
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  accent-color: #2563eb;
+}
+
+/* Math Typesetting Handling (LaTeX & KaTeX) */
+.qm-latex-question {
+  margin: 0 0 16px;
+  line-height: 1.6;
+  font-size: 1.05rem;
+}
+
+.opt-text .katex-display,
+.qm-latex-question .katex-display,
+.qm-latex-explanation .katex-display {
+  margin: 12px 0;
+  padding: 8px 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
+}
+
+/* Post-submission Result & Explanations UI */
+.qm-result-note {
+  margin-top: 20px;
+  padding: 16px;
+  background: #f8fafc;
+  border-left: 4px solid #64748b;
+  border-radius: 0 12px 12px 0;
+}
+
+.qm-latex-explanation {
+  font-weight: 400;
+  line-height: 1.6;
+  color: #475569;
+}
+
+/* Functional Footers */
+.qm-footer {
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.qm-footer button {
+  min-width: 120px;
+  max-width: 200px;
+  border: 1px solid #cbd5e1;
+  background: #ffffff;
+  color: #334155;
+  border-radius: 10px;
+  padding: 12px 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.qm-footer button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.qm-footer button:hover {
+  background: #f8fafc;
+  border-color: #94a3b8;
+}
+
+.qm-footer .submit-btn {
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  color: #ffffff;
+  border: none;
+  margin-left: auto; /* Pushes the submission action gracefully to the right */
+}
+
+.qm-footer .submit-btn:hover {
+  opacity: 0.95;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+}
+
+/* Overall Section Completion Metrics */
+.qm-progress-line {
+  margin-top: 12px;
+  height: 6px;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.qm-progress-line > div {
+  height: 100%;
+  background: linear-gradient(90deg, #10b981, #34d399);
+  transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.attempt-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  display: grid;
+  place-items: center;
+  z-index: 1000;
+}
+
+.attempt-modal {
+  width: min(92vw, 420px);
+  background: #fff;
+  border-radius: 14px;
+  padding: 20px;
+  border: 1px solid #dbeafe;
+  box-shadow: 0 20px 48px rgba(15, 23, 42, 0.2);
+}
+
+.attempt-modal h3 {
+  margin: 0 0 8px;
+}
+
+.attempt-modal p {
+  margin: 0 0 14px;
+  color: #475569;
+}
+
+.attempt-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.attempt-practice-btn,
+.attempt-test-btn,
+.attempt-back-btn {
+  border-radius: 10px;
+  padding: 10px 14px;
+  border: none;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.attempt-practice-btn {
+  background: #10b981;
+  color: #fff;
+}
+
+.attempt-test-btn {
+  background: #2563eb;
+  color: #fff;
+}
+
+.attempt-back-btn {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+/* Collapsible Multi-chapter Navigation Modules */
+.chapter-list-v2 {
+  display: grid;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.chapter-card {
+  padding: 16px;
+}
+
+.chapter-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.expand-btn {
+  border: none;
+  background: transparent;
+  font-size: 1.25rem;
+  cursor: pointer;
+  color: #64748b;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.chapter-title-wrap {
+  flex-grow: 1;
+}
+
+.chapter-title-wrap h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.chapter-title-wrap p {
+  margin: 2px 0 0;
+  color: #64748b;
+  font-size: 0.82rem;
+}
+
+/* Interactive CTA Components */
+.attempt-main-btn,
+.subtopic-item button {
+  border: none;
+  background: #2563eb;
+  color: #ffffff;
+  border-radius: 8px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-weight: 500;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.attempt-main-btn:hover,
+.subtopic-item button:hover {
+  background: #1d4ed8;
+}
+
+.subtopic-list {
+  margin-top: 12px;
+  padding-left: 32px;
+  display: grid;
+  gap: 8px;
+}
+
+.subtopic-item {
+  border: 1px solid #f1f5f9;
+  background: #f8fafc;
+  border-radius: 10px;
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+/* Complete Mobile & Tablet Breakpoint Optimization */
+@media (max-width: 980px) {
+  .qm-topbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .qm-score-box {
+    text-align: left;
+  }
+
+  .qm-body {
+    grid-template-columns: 1fr;
+  }
+
+  .qm-sidebar {
+    position: static; /* Release sticky layout for natural mobile flow */
+  }
+
+  .qm-meta-card {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 540px) {
+  .quiz-master-page {
+    padding: 12px;
+  }
+  
+  .qm-meta-card {
+    grid-template-columns: 1fr; /* True single column stack to prevent item pinching */
+    gap: 12px;
+  }
+
+  .qm-question-card {
+    padding: 16px;
+  }
+
+  .qm-option {
+    padding: 12px;
+  }
+
+  .qm-footer {
+    flex-direction: row; /* Avoid massive block rows; maintain unified bar spacing */
+    flex-wrap: wrap;
+    padding: 12px;
+  }
+
+  .qm-footer button {
+    flex: 1 1 calc(50% - 6px); /* Balanced side-by-side splits on small screens */
+    min-width: unset;
+    max-width: unset;
+    padding: 10px;
+    font-size: 0.9rem;
+  }
+
+  .qm-footer .submit-btn {
+    flex: 1 1 100%; /* Pushes the main submit button to a full width accent button below choices */
+    order: 3;
+  }
+  
+  .subtopic-list {
+    padding-left: 0;
+  }
+}

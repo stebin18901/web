@@ -2,105 +2,91 @@ import React, { useState } from "react";
 import "./AdminPanel.css"; // Optional: For styling
 import SchoolQuiz from "./Admin/SchoolQuiz";
 import Schools from "./Admin/Schools";
-import CreateQuiz from "./Admin/createQuiz";
 import SchoolQuizSwitch from "./Admin/SchoolQuizSwitch";
-import CreateChapterQuiz from "./Admin/CreateChapterQuiz";
-import AdminSubjects from "./Admin/AdminSubjects";
 import AdminQCreate from "./Admin/AdminQCreate";
 import ReportAdmin from "./Admin/reportAdmin";
 import AdminAddFeature from "./Admin/AdminAddFeature";
 import AdminCalendar from "./Admin/AdminCalendar";
 import AdminTemplates from "./Admin/AdminTemplates";
 import CreateTutor from "./Admin/CreateTutor";
+import AdminCreateLeague from "./Admin/AdminCreateLeague";
 
 const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState("schoolQuiz"); // Default active tab
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const tabs = [
+    { id: "schoolQuiz", label: "School Quiz" },
+    { id: "schools", label: "Schools" },
+    { id: "createquiz", label: "Chapter Mgt" },
+    { id: "createchapter", label: "Create chapter" },
+    { id: "report", label: "Report card" },
+    { id: "feature", label: "Feature" },
+    { id: "calender", label: "Calender" },
+    { id: "news", label: "news template" },
+    { id: "premiumchapter", label: "Premium chapter" },
+    { id: "league", label: "League" },
+  ];
 
   // Function to handle tab clicks
   const handleTabClick = (tabName) => {
     setActiveTab(tabName);
+    setIsSidebarOpen(false);
   };
 
   return (
-    <div className="admin-panel">
-      {/* Tab Navigation */}
-      <div className="tabs-nav">
-        <button
-          className={`tab-button ${activeTab === "schoolQuiz" ? "active" : ""}`}
-          onClick={() => handleTabClick("schoolQuiz")}
-        >
-          School Quiz
-        </button>
-        <button
-          className={`tab-button ${activeTab === "schools" ? "active" : ""}`}
-          onClick={() => handleTabClick("schools")}
-        >
-          Schools
-        </button>
-        <button
-          className={`tab-button ${activeTab === "createquiz" ? "active" : ""}`}
-          onClick={() => handleTabClick("createquiz")}
-        >
-          Chapter Mgt
-        </button>
-        <button
-          className={`tab-button ${activeTab === "createchapterquiz" ? "active" : ""}`}
-          onClick={() => handleTabClick("createchapterquiz")}
-        >
-          Chapterquiz create
-        </button>
-        <button
-          className={`tab-button ${activeTab === "createchapter" ? "active" : ""}`}
-          onClick={() => handleTabClick("createchapter")}
-        >
-          Create chapter
-        </button>
-        <button
-          className={`tab-button ${activeTab === "report" ? "active" : ""}`}
-          onClick={() => handleTabClick("report")}
-        >
-          Report card
-        </button>
-        <button
-          className={`tab-button ${activeTab === "feature" ? "active" : ""}`}
-          onClick={() => handleTabClick("feature")}
-        >
-          Feature
-        </button>
-        <button
-          className={`tab-button ${activeTab === "calender" ? "active" : ""}`}
-          onClick={() => handleTabClick("calender")}
-        >
-          Calender
-        </button>
-        <button
-          className={`tab-button ${activeTab === "news" ? "active" : ""}`}
-          onClick={() => handleTabClick("news")}
-        >
-          news template
-        </button>
-        <button
-          className={`tab-button ${activeTab === "premiumchapter" ? "active" : ""}`}
-          onClick={() => handleTabClick("premiumchapter")}
-        >
-          Premium chapter
-        </button>
-        {/* Add more tabs as needed */}
-      </div>
+    <div className="admin-layout">
+      {isSidebarOpen && <div className="admin-overlay" onClick={() => setIsSidebarOpen(false)} />}
 
-      {/* Tab Content */}
-      <div className="tab-content">
-        {activeTab === "schoolQuiz" && <SchoolQuiz />}
-        {activeTab === "schools" && <Schools />}
-        {activeTab === "createquiz" && <SchoolQuizSwitch />}
-        {activeTab === "createchapterquiz" && <CreateChapterQuiz />}
-        {activeTab === "createchapter" && <AdminQCreate />}
-        {activeTab === "report" && <ReportAdmin />}
-        {activeTab === "premiumchapter" && <CreateTutor />}
-        {activeTab === "feature" && <AdminAddFeature />}
-        {activeTab === "calender" && <AdminCalendar />}
-        {activeTab === "news" && <AdminTemplates />}
-        {/* Add more tab content as needed */}
+      <aside className={`admin-sidebar ${isSidebarOpen ? "open" : ""}`}>
+        <div className="sidebar-head">
+          <div>
+            <p className="admin-kicker">Control Center</p>
+            <h1 className="admin-title">Admin</h1>
+          </div>
+          <button className="icon-btn close-btn" onClick={() => setIsSidebarOpen(false)} aria-label="Close menu">
+            ×
+          </button>
+        </div>
+
+        <nav className="sidebar-tabs">
+          {tabs.map((tab) => (
+            <button
+              key={tab.id}
+              className={`tab-button ${activeTab === tab.id ? "active" : ""}`}
+              onClick={() => handleTabClick(tab.id)}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </nav>
+      </aside>
+
+      <div className="admin-panel">
+        <header className="admin-topbar">
+          <button className="icon-btn menu-btn" onClick={() => setIsSidebarOpen(true)} aria-label="Open menu">
+            ☰
+          </button>
+          <div>
+            <h2 className="topbar-title">{tabs.find((t) => t.id === activeTab)?.label || "Admin Workspace"}</h2>
+            <p className="admin-subtitle">Manage schools, quizzes, reports, templates, and league operations.</p>
+          </div>
+        </header>
+
+        {/* Tab Content */}
+        <div className="tab-content">
+          {activeTab === "schoolQuiz" && <SchoolQuiz />}
+          {activeTab === "schools" && <Schools />}
+          {activeTab === "createquiz" && <SchoolQuizSwitch />}
+          {activeTab === "createchapter" && <AdminQCreate />}
+          {activeTab === "report" && <ReportAdmin />}
+          {activeTab === "premiumchapter" && <CreateTutor />}
+          {activeTab === "feature" && <AdminAddFeature />}
+          {activeTab === "calender" && <AdminCalendar />}
+          {activeTab === "news" && <AdminTemplates />}
+          {activeTab === "league" && <AdminCreateLeague />}
+          {/* Add more tab content as needed AdminUploadJourney*/}
+        </div>
       </div>
     </div>
   );

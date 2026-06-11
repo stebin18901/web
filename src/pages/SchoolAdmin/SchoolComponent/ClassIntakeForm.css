@@ -1,0 +1,52 @@
+.class-intake-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #f8fafc, #e2e8f0);
+  padding: 20px;
+}
+
+.class-intake-card {
+  width: 100%;
+  max-width: 520px;
+  background: #ffffff;
+  border-radius: 14px;
+  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.12);
+  padding: 24px;
+}
+
+.class-intake-card h1 {
+  margin: 0 0 8px;
+  font-size: 1.4rem;
+  color: #0f172a;
+}
+
+.intake-form {
+  display: grid;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.intake-form input {
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 10px;
+  font-size: 0.95rem;
+}
+
+.intake-form button {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.status-message {
+  margin-top: 12px;
+  font-size: 0.9rem;
+  color: #1e293b;
+}

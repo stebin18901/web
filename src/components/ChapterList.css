@@ -245,11 +245,38 @@ button {
   border-color: #3498db;
 }
 
+.edit-input-small {
+  max-width: 90px;
+}
+
 .no-chapters {
   text-align: center;
   padding: 40px;
   color: #7f8c8d;
   font-size: 18px;
+}
+
+.chapter-sort-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin: 0 auto 16px;
+}
+
+.sort-box {
+  background: #eef2ff;
+  color: #1e3a8a;
+  border: 1px solid #c7d2fe;
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-weight: 600;
+}
+
+.sort-box.active {
+  background: #2563eb;
+  color: #fff;
+  border-color: #1d4ed8;
 }
 
 @media (max-width: 768px) {

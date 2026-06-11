@@ -1,52 +1,103 @@
-// src/components/StudentCSVUpload.js
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import Papa from "papaparse";
 import { db } from "../../../firebase/firebaseConfig";
-import { doc, setDoc } from "firebase/firestore";
+import { collection, doc, writeBatch } from "firebase/firestore";
+
+const normalize = (value) => String(value || "").trim();
 
 const UploadStudents = ({ schoolId }) => {
   const [students, setStudents] = useState([]);
   const [uploadStatus, setUploadStatus] = useState("");
+  const [manual, setManual] = useState({ fullName: "", className: "", section: "", rollNumber: "", pin: "" });
+
+  const normalizedSchoolId = useMemo(() => normalize(schoolId).toLowerCase(), [schoolId]);
 
   const handleFileUpload = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (!file) return;
 
     Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
-      complete: function (results) {
-        setStudents(results.data); // array of student objects
+      complete: ({ data }) => {
+        const parsed = data
+          .map((row) => ({
+            fullName: normalize(row.fullName || row.name),
+            className: normalize(row.className || row.class),
+            section: normalize(row.section),
+            rollNumber: normalize(row.rollNumber || row.roll),
+            pin: normalize(row.pin || row.password),
+          }))
+          .filter((s) => s.fullName && s.className && s.rollNumber && s.pin);
+
+        setStudents(parsed);
       },
     });
   };
 
+  const addManualStudent = () => {
+    if (!manual.fullName || !manual.className || !manual.rollNumber || !manual.pin) return;
+    setStudents((prev) => [...prev, manual]);
+    setManual({ fullName: "", className: "", section: "", rollNumber: "", pin: "" });
+  };
+
   const uploadToFirestore = async () => {
-    setUploadStatus("Uploading...");
+    if (!normalizedSchoolId || students.length === 0) return;
+
+    setUploadStatus("Uploading students...");
+
     try {
-      for (const student of students) {
-        const studentRef = doc(db, `schools/${schoolId}/students/${student.studentId}`);
-        await setDoc(studentRef, {
+      const batch = writeBatch(db);
+
+      students.forEach((student) => {
+        const id = `${normalizedSchoolId}_${student.className}_${student.rollNumber}`;
+        const ref = doc(collection(db, "studentAccounts"), id);
+
+        batch.set(ref, {
           ...student,
-          timestamp: new Date(),
+          schoolId: normalizedSchoolId,
+          createdAt: new Date(),
         });
-      }
-      setUploadStatus("✅ Students uploaded successfully!");
+      });
+
+      await batch.commit();
+      setUploadStatus(`Uploaded ${students.length} students successfully.`);
+      setStudents([]);
     } catch (error) {
-      setUploadStatus("❌ Upload failed: " + error.message);
+      setUploadStatus(`Upload failed: ${error.message}`);
     }
   };
 
   return (
     <div className="csv-upload-container">
-      <h2>Upload Student CSV</h2>
+      <h2>Upload Students</h2>
+      <p>CSV columns: fullName, className, section, rollNumber, pin</p>
       <input type="file" accept=".csv" onChange={handleFileUpload} />
+
+      <hr style={{ margin: "16px 0" }} />
+
+      <h3>Add Student Manually</h3>
+      <div style={{ display: "grid", gap: 10, maxWidth: 560 }}>
+        <input placeholder="Full Name" value={manual.fullName} onChange={(e) => setManual((p) => ({ ...p, fullName: e.target.value }))} />
+        <input placeholder="Class" value={manual.className} onChange={(e) => setManual((p) => ({ ...p, className: e.target.value }))} />
+        <input placeholder="Section" value={manual.section} onChange={(e) => setManual((p) => ({ ...p, section: e.target.value }))} />
+        <input placeholder="Roll Number" value={manual.rollNumber} onChange={(e) => setManual((p) => ({ ...p, rollNumber: e.target.value }))} />
+        <input placeholder="PIN / Password" value={manual.pin} onChange={(e) => setManual((p) => ({ ...p, pin: e.target.value }))} />
+        <button onClick={addManualStudent}>Add to List</button>
+      </div>
+
       {students.length > 0 && (
         <>
-          <p>{students.length} students ready to upload</p>
+          <p style={{ marginTop: 16 }}>{students.length} students ready</p>
           <button onClick={uploadToFirestore}>Upload to Database</button>
+          <ul>
+            {students.slice(0, 8).map((s, i) => (
+              <li key={`${s.rollNumber}-${i}`}>{s.fullName} | Class {s.className} | Roll {s.rollNumber}</li>
+            ))}
+          </ul>
         </>
       )}
+
       {uploadStatus && <p>{uploadStatus}</p>}
     </div>
   );

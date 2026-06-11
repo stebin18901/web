@@ -1,6 +1,11 @@
 import React, { useState, useEffect } from "react";
 import { db } from "../../firebase/firebaseConfig"; // Import Firestore
-import { collection, setDoc, doc, getDocs, deleteDoc, updateDoc } from "firebase/firestore";
+import { collection, setDoc, doc, getDocs, deleteDoc, updateDoc, getDoc } from "firebase/firestore";
+import {
+  DEFAULT_SCHOOL_SETTINGS_COLLECTION,
+  DEFAULT_SCHOOL_SETTINGS_DOC,
+  normalizeSchoolId,
+} from "../../config/defaultSchool";
 import "./Schools.css"; // Import the CSS file
 
 const Schools = () => {
@@ -10,6 +15,23 @@ const Schools = () => {
   const [editSchoolId, setEditSchoolId] = useState(null); // Track the school being edited
   const [searchQuery, setSearchQuery] = useState(""); // For search functionality
   const [password, setPassword] = useState("");
+  const [activeStudentSchoolId, setActiveStudentSchoolId] = useState("");
+  const [generatedLink, setGeneratedLink] = useState("");
+  const [generatedLogoutLink, setGeneratedLogoutLink] = useState("");
+  const [generatedLinkFor, setGeneratedLinkFor] = useState("");
+  const [generatedLinkExpiry, setGeneratedLinkExpiry] = useState("");
+  const [defaultSchoolId, setDefaultSchoolId] = useState("");
+
+  useEffect(() => {
+    const raw = localStorage.getItem("studentSchoolAccess");
+    if (!raw) return;
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed?.schoolId) setActiveStudentSchoolId(parsed.schoolId);
+    } catch {
+      localStorage.removeItem("studentSchoolAccess");
+    }
+  }, []);
 
   // Fetch schools from Firestore on component mount
   useEffect(() => {
@@ -23,6 +45,11 @@ const Schools = () => {
       schoolsList.push({ id: doc.id, ...doc.data() });
     });
     setSchools(schoolsList);
+
+    const defaultSnap = await getDoc(doc(db, DEFAULT_SCHOOL_SETTINGS_COLLECTION, DEFAULT_SCHOOL_SETTINGS_DOC));
+    if (defaultSnap.exists()) {
+      setDefaultSchoolId(normalizeSchoolId(defaultSnap.data().schoolId));
+    }
   };
 
   // Handle form submission to add or update a school
@@ -74,6 +101,97 @@ const Schools = () => {
     setPassword(school.password || "");
   };
 
+  const handleStudentAuth = (school) => {
+    const normalizedId = normalizeSchoolId(school.schoolId);
+    if (normalizeSchoolId(activeStudentSchoolId) === normalizedId) {
+      localStorage.removeItem("studentSchoolAccess");
+      localStorage.removeItem("schoolStudentSession");
+      setActiveStudentSchoolId("");
+      alert(`${school.schoolName} student access is now unauthenticated.`);
+      return;
+    }
+
+    const payload = {
+      schoolId: normalizedId,
+      schoolName: school.schoolName,
+      authenticatedAt: new Date().toISOString(),
+      source: "admin189201",
+    };
+    localStorage.setItem("studentSchoolAccess", JSON.stringify(payload));
+    setActiveStudentSchoolId(normalizedId);
+    alert(
+      `${school.schoolName} selected for student login.\nStudents can now login at /login using class, section, roll no, and pin.`
+    );
+  };
+
+  const handleSetDefaultSchool = async (school) => {
+    const normalizedId = normalizeSchoolId(school.schoolId);
+    await setDoc(
+      doc(db, DEFAULT_SCHOOL_SETTINGS_COLLECTION, DEFAULT_SCHOOL_SETTINGS_DOC),
+      {
+        schoolId: normalizedId,
+        schoolName: school.schoolName || normalizedId,
+        enabled: true,
+        updatedAt: new Date().toISOString(),
+        updatedBy: "admin189201",
+      },
+      { merge: true }
+    );
+    setDefaultSchoolId(normalizedId);
+    alert(`${school.schoolName} is now the default school for unauthenticated student access.`);
+  };
+
+  const generateToken = () => {
+    const bytes = new Uint8Array(18);
+    window.crypto.getRandomValues(bytes);
+    return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+  };
+
+  const handleGenerateAuthLink = async (school) => {
+    try {
+      const token = generateToken();
+      const expiresAt = Date.now() + 2 * 60 * 60 * 1000;
+      const linkPayload = {
+        token,
+        schoolId: String(school.schoolId || "").trim().toLowerCase(),
+        schoolName: school.schoolName || school.schoolId,
+        expiresAt,
+        createdAt: new Date().toISOString(),
+        used: false,
+        createdBy: "admin189201",
+      };
+
+      const logoutToken = generateToken();
+      const logoutPayload = {
+        token: logoutToken,
+        schoolId: linkPayload.schoolId,
+        schoolName: linkPayload.schoolName,
+        expiresAt,
+        createdAt: new Date().toISOString(),
+        used: false,
+        createdBy: "admin189201",
+      };
+
+      await setDoc(doc(db, "schoolAuthLinks", token), linkPayload);
+      await setDoc(doc(db, "schoolLogoutLinks", logoutToken), logoutPayload);
+
+      const authUrl = `${window.location.origin}/sa/${token}`;
+      const logoutUrl = `${window.location.origin}/sl/${logoutToken}`;
+      setGeneratedLink(authUrl);
+      setGeneratedLogoutLink(logoutUrl);
+      setGeneratedLinkFor(linkPayload.schoolName);
+      setGeneratedLinkExpiry(new Date(expiresAt).toLocaleString());
+
+      if (navigator?.clipboard?.writeText) {
+        await navigator.clipboard.writeText(`Auth: ${authUrl}\nLogout: ${logoutUrl}`);
+      }
+
+      alert(`Short auth and logout links generated for ${linkPayload.schoolName}. They are valid for 2 hours.`);
+    } catch (error) {
+      alert("Failed to generate auth link: " + error.message);
+    }
+  };
+
   // Handle search
   const filteredSchools = schools.filter(
     (school) =>
@@ -122,14 +240,34 @@ const Schools = () => {
       {/* List of Schools */}
       <div className="schools-list">
         <h2>List of Schools</h2>
+        {generatedLink && (
+          <div className="auth-link-card">
+            <p><strong>Latest Short Links:</strong> {generatedLinkFor}</p>
+            <p><small>Valid till: {generatedLinkExpiry}</small></p>
+            <label>Auth</label>
+            <input value={generatedLink} readOnly />
+            <label>Logout</label>
+            <input value={generatedLogoutLink} readOnly />
+          </div>
+        )}
         {filteredSchools.length > 0 ? (
           <ul>
             {filteredSchools.map((school) => (
               <li key={school.id}>
                 <strong>{school.schoolName}</strong> - ID: {school.schoolId}
+                {defaultSchoolId === normalizeSchoolId(school.schoolId) && (
+                  <span className="default-school-badge">Default</span>
+                )}
                 <div className="actions">
-                  <button onClick={() => handleEdit(school)}>Edit</button>
-                  <button onClick={() => handleDelete(school.id)}>Delete</button>
+                  <button className="btn-default" onClick={() => handleSetDefaultSchool(school)}>
+                    {defaultSchoolId === normalizeSchoolId(school.schoolId) ? "Default School" : "Set Default"}
+                  </button>
+                  <button className="btn-auth" onClick={() => handleStudentAuth(school)}>
+                    {normalizeSchoolId(activeStudentSchoolId) === normalizeSchoolId(school.schoolId) ? "Unauthenticate" : "Auth"}
+                  </button>
+                  <button className="btn-link" onClick={() => handleGenerateAuthLink(school)}>Generate Link</button>
+                  <button className="btn-edit" onClick={() => handleEdit(school)}>Edit</button>
+                  <button className="btn-delete" onClick={() => handleDelete(school.id)}>Delete</button>
                 </div>
               </li>
             ))}

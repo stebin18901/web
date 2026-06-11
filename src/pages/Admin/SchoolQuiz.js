@@ -1,6 +1,6 @@
 import React, { useState } from "react";
 import { db } from "../../firebase/firebaseConfig";
-import { collection, addDoc } from "firebase/firestore";
+import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import "./SchoolQuiz.css";
 import ChapterList from "../../components/ChapterList";
 
@@ -11,6 +11,7 @@ const SchoolQuiz = () => {
   const [responseUrl, setResponseUrl] = useState(""); // Spreadsheet URL for responses
   const [selectedClass, setSelectedClass] = useState(6);
   const [notes, setNotes] = useState(""); // JSON notes field
+  const [sortPosition, setSortPosition] = useState("");
 
   // Add a new test link input field
   const handleAddTestLink = () => {
@@ -75,9 +76,11 @@ const SchoolQuiz = () => {
         subject,
         class: selectedClass,
         chapterName,
+        sortPosition: sortPosition === "" ? null : Number(sortPosition),
         testLinks, // Save testLinks as an array
         responseUrl, // Save the response spreadsheet URL
         notes: notesData, // Save parsed notes data
+        createdAt: serverTimestamp(),
       });
 
       alert("Chapter added successfully!");
@@ -86,6 +89,7 @@ const SchoolQuiz = () => {
       setTestLinks([""]); // Reset test links
       setResponseUrl(""); // Reset response URL
       setNotes(""); // Reset notes
+      setSortPosition("");
     } catch (error) {
       console.error("Error adding document: ", error);
       alert("Failed to add chapter. Please try again.");
@@ -137,6 +141,17 @@ const SchoolQuiz = () => {
             value={chapterName}
             onChange={(e) => setChapterName(e.target.value)}
             required
+          />
+        </div>
+
+        <div className="form-group">
+          <label>Sort Position (optional):</label>
+          <input
+            type="number"
+            min="1"
+            value={sortPosition}
+            onChange={(e) => setSortPosition(e.target.value)}
+            placeholder="1, 2, 3..."
           />
         </div>
 

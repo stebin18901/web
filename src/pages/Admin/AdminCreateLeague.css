@@ -1,0 +1,305 @@
+/* ============================================================
+   LAYOUT & MAIN CONTAINER
+   ============================================================ */
+.league-admin {
+  padding: 20px;
+  max-width: 1200px;
+  margin: 0 auto;
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #1e293b;
+}
+
+.admin-header {
+  margin-bottom: 30px;
+  border-bottom: 2px solid #e2e8f0;
+  padding-bottom: 10px;
+}
+
+.card {
+  background: #ffffff;
+  padding: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================================
+   FORMS & INPUTS
+   ============================================================ */
+.league-form {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 30px;
+  background: #f8fafc;
+  padding: 20px;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+input, textarea, select {
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #cbd5e1;
+  font-size: 14px;
+  width: 100%;
+  box-sizing: border-box;
+  background: white;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: 2px solid #2563eb;
+  border-color: transparent;
+}
+
+.full-width {
+  grid-column: span 2;
+}
+
+/* ============================================================
+   AVAILABLE TEAMS (HORIZONTAL PICKER)
+   ============================================================ */
+.available-teams-section {
+  background: #f1f5f9;
+  padding: 15px;
+  border-radius: 10px;
+  margin-bottom: 20px;
+}
+
+.available-teams-section h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 14px;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.horizontal-scroll-list {
+  display: flex;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 10px 5px;
+  scrollbar-width: thin;
+}
+
+.mini-team-card {
+  flex: 0 0 auto;
+  background: white;
+  border: 1px solid #cbd5e1;
+  padding: 8px 15px;
+  border-radius: 25px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+.mini-team-card:hover {
+  transform: translateY(-2px);
+  border-color: #2563eb;
+  background: #eff6ff;
+}
+
+.mini-team-card img {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.mini-team-card span {
+  font-size: 14px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   BUTTONS
+   ============================================================ */
+.primary-btn {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.2s;
+}
+
+.primary-btn:hover { background: #1d4ed8; }
+
+.secondary-btn {
+  background: #e2e8f0;
+  color: #475569;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.secondary-btn:hover { background: #cbd5e1; }
+
+.activate-btn {
+  background: #059669;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.activate-btn:hover { background: #047857; }
+
+/* ============================================================
+   TABLES & BADGES
+   ============================================================ */
+.league-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.league-table th {
+  background: #f8fafc;
+  text-align: left;
+  padding: 12px 15px;
+  color: #64748b;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.league-table td {
+  padding: 15px;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.status-badge {
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.status-badge.scheduled { background: #fef3c7; color: #92400e; }
+.status-badge.active { background: #dcfce7; color: #166534; }
+.status-badge.completed { background: #f1f5f9; color: #475569; }
+
+/* ============================================================
+   MODAL STYLES
+   ============================================================ */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  backdrop-filter: blur(4px);
+}
+
+.modal {
+  background: #fff;
+  padding: 24px;
+  border-radius: 12px;
+  width: 95%;
+  max-width: 800px;
+  max-height: 90vh;
+  overflow-y: auto;
+  position: relative;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  border-bottom: 1px solid #e2e8f0;
+  padding-bottom: 15px;
+}
+
+.form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+}
+
+.file-input {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  font-size: 12px;
+  background: #f8fafc;
+  padding: 8px;
+  border-radius: 6px;
+  border: 1px dashed #cbd5e1;
+}
+
+/* ============================================================
+   TEAM LIST (INSIDE LEAGUE)
+   ============================================================ */
+.team-grid-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.team-card-expanded {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 0.5fr;
+  align-items: center;
+  padding: 12px;
+  background: #fff;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  transition: border-color 0.2s;
+}
+
+.team-card-expanded:hover { border-color: #94a3b8; }
+
+.team-main-info {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.team-logo-preview {
+  width: 45px;
+  height: 45px;
+  border-radius: 8px;
+  object-fit: cover;
+  background: #f1f5f9;
+}
+
+.team-name-label { font-weight: 700; display: block; }
+.captain-name-label { font-size: 13px; color: #64748b; }
+
+.team-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 15px;
+}
+
+.edit-link { color: #2563eb; background: none; border: none; cursor: pointer; font-weight: 600; }
+.delete-link { color: #dc2626; background: none; border: none; cursor: pointer; font-weight: 600; }
+
+/* ============================================================
+   UTILITIES
+   ============================================================ */
+.mt { margin-top: 20px; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;}
+.empty-msg { color: #94a3b8; text-align: center; padding: 20px; font-style: italic; }
+
+hr { border: 0; border-top: 1px solid #e2e8f0; margin: 25px 0; }
+
+.modal::-webkit-scrollbar { width: 6px; }
+.modal::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }

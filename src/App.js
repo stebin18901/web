@@ -2,46 +2,42 @@ import { BrowserRouter as Router, Route, Routes, Navigate } from "react-router-d
 import { AuthProvider, useAuth } from "./context/AuthContext";
 import { QuizProvider } from "./context/QuizContext";
 import { LeaderboardProvider } from "./context/LeaderboardContext";
-import { TeacherAuthProvider } from "./context/TeacherAuthContext"; 
+import { TeacherAuthProvider } from "./context/TeacherAuthContext";
 import { TeacherDataProvider } from "./context/TeacherDataContext";
 
-import Home from "./pages/Home";
 import Login from "./pages/Login";
 import QuizPage from "./pages/QuizPage";
 import Dashboard from "./pages/Dashboard";
+import LeaderboardPage from "./pages/LeaderboardPage";
+import StudentNotePage from "./pages/StudentNotePage";
+import LeaguePage from "./pages/LeaguePage";
+import LeagueCreateQuizPage from "./pages/LeagueCreateQuizPage";
 import AdminPanel from "./pages/AdminPanel";
+import ManageLeagueAdmin from "./pages/ManageLeagueAdmin";
 import "./App.css";
-import SubjectQuizPage from "./pages/SubjectQuizPage";
-import SubDetail from "./pages/SubDetail";
-import ConceptList from "./pages/new/ConceptList";
-import Quiz from "./pages/new/Quiz";
-import AdminQCreate from "./pages/Admin/AdminQCreate";
-import ReportCard from "./pages/new/ReportCard";
-import SchoolAdmin from "./pages/SchoolAdmin/SchoolAdmin";
-import FeatureDetails from "./pages/FeatureDetails";
-import NotFound from "./pages/NotFound";
-import AboutPage from "./pages/AboutPage";
-import TutorView from "./pages/new/TutorView";
-import ChapterList from "./pages/new/ChapterList";
-import PremiumWrapper from "./PremiumWrapper/PremiumWrapper";
-import Pricing from "./components/Pricing";
-import NotesViewer from "./pages/NotesViewer";
 import AdminProtect from "./pages/Admin/AdminProtect";
-
 import MainHome from "./pages/MainHome";
 import DemoApp from "./Demo/DemoApp";
-
-// ✅ Teacher-specific imports
 import TeacherLogin from "./pages/Teacher/TeacherLogin";
 import TeacherDashboard from "./pages/Teacher/TeacherDashboard";
 import TeacherProtect from "./pages/Teacher/TeacherProtect";
-import TeacherPublicRoute from "./routes/TeacherPublicRoute"; // ✅ NEW
+import TeacherPublicRoute from "./routes/TeacherPublicRoute";
 import StudentProfile from "./pages/students/[id]";
+import SchoolAdmin from "./pages/SchoolAdmin/SchoolAdmin";
+import SchoolMagicAuth from "./pages/SchoolAdmin/SchoolMagicAuth";
+import AboutPage from "./pages/AboutPage";
+import Pricing from "./components/Pricing";
+import NotesViewer from "./pages/NotesViewer";
+import NotFound from "./pages/NotFound";
+import ClassIntakeForm from "./pages/SchoolAdmin/SchoolComponent/ClassIntakeForm";
+import QuizAttemptReport from "./pages/QuizAttemptReport";
+import PaymentSuccess from "./pages/PaymentSuccess";
+import PlanSelection from "./pages/PlanSelection";
 
-// ✅ Private route for student dashboard
 const PrivateRoute = ({ element }) => {
   const { user } = useAuth();
-  return user ? element : <Navigate to="/login" replace />;
+  const studentSession = localStorage.getItem("schoolStudentSession");
+  return user || studentSession ? element : <Navigate to="/login" replace />;
 };
 
 const App = () => {
@@ -51,35 +47,31 @@ const App = () => {
         <LeaderboardProvider>
           <Router>
             <Routes>
-              {/* ===================================== */}
-              {/* 🔹 STUDENT & GENERAL ROUTES */}
-              {/* ===================================== */}
-              <Route path="/" element={<MainHome />} />
+              <Route path="/home" element={<MainHome />} />
+              <Route path="/" element={<Login />} />
               <Route path="/login" element={<Login />} />
               <Route path="/demo" element={<DemoApp />} />
-              <Route
-                path="/quiz/:quizId"
-                element={<PrivateRoute element={<QuizPage />} />}
-              />
-              <Route
-                path="/dashboard"
-                element={<PrivateRoute element={<Dashboard />} />}
-              />
-              <Route
-                path="/admin189201"
-                element={<AdminProtect element={<AdminPanel />} />}
-              />
+              <Route path="/quiz/:quizId" element={<PrivateRoute element={<QuizPage />} />} />
+              <Route path="/quiz-report" element={<PrivateRoute element={<QuizAttemptReport />} />} />
+              <Route path="/dashboard" element={<PrivateRoute element={<Dashboard />} />} />
+              <Route path="/notes-view" element={<PrivateRoute element={<StudentNotePage />} />} />
+              <Route path="/leaderboard" element={<PrivateRoute element={<LeaderboardPage />} />} />
+              <Route path="/league" element={<PrivateRoute element={<LeaguePage />} />} />
+              <Route path="/league/create-quiz" element={<PrivateRoute element={<LeagueCreateQuizPage />} />} />
+              <Route path="/league/create-quiz/:quizId" element={<PrivateRoute element={<LeagueCreateQuizPage />} />} />
+              <Route path="/admin189201" element={<AdminProtect element={<AdminPanel />} />} />
+              <Route path="/manage-league-admin" element={<AdminProtect element={<ManageLeagueAdmin />} />} />
               <Route path="/students/:id" element={<StudentProfile />} />
               <Route path="/school-admin/*" element={<SchoolAdmin />} />
+              <Route path="/school-auth/:token" element={<SchoolMagicAuth />} />
+              <Route path="/sa/:token" element={<SchoolMagicAuth />} />
+              <Route path="/sl/:token" element={<SchoolMagicAuth mode="logout" />} />
+              <Route path="/class-form/:schoolId/:className/:type" element={<ClassIntakeForm />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/pricing" element={<Pricing />} />
+              <Route path="/plan-selection" element={<PlanSelection />} />
+              <Route path="/payment-success" element={<PaymentSuccess />} />
               <Route path="/test" element={<NotesViewer />} />
-
-              {/* ===================================== */}
-              {/* 🔹 TEACHER ROUTES */}
-              {/* ===================================== */}
-
-              {/* 🟢 Public route (login/register) */}
               <Route
                 path="/teacher-login"
                 element={
@@ -88,8 +80,6 @@ const App = () => {
                   </TeacherAuthProvider>
                 }
               />
-
-              {/* 🔒 Protected route (dashboard) */}
               <Route
                 path="/teacher-dashboard/*"
                 element={
@@ -104,10 +94,6 @@ const App = () => {
                   </TeacherAuthProvider>
                 }
               />
-
-              {/* ===================================== */}
-              {/* ❌ 404 PAGE */}
-              {/* ===================================== */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Router>

@@ -121,6 +121,35 @@
   box-shadow: var(--shadow-sm);
 }
 
+.auth-link-card {
+  margin-bottom: 1rem;
+  padding: 0.9rem;
+  border-radius: 10px;
+  border: 1px solid #d9e5ff;
+  background: #f4f8ff;
+}
+
+.auth-link-card p {
+  margin: 0 0 6px;
+  text-align: left;
+}
+
+.auth-link-card label {
+  display: block;
+  margin: 10px 0 4px;
+  color: #31446f;
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.auth-link-card input {
+  width: 100%;
+  border: 1px solid #cddcff;
+  border-radius: 8px;
+  background: #fff;
+  padding: 0.6rem 0.7rem;
+}
+
 .schools-list h2 {
   color: var(--text-color);
   margin-bottom: 1rem;
@@ -184,23 +213,63 @@
   gap: 0.25rem;
 }
 
-.actions button:first-child {
+.actions .btn-auth {
   background-color: var(--success-color);
   color: white;
 }
 
-.actions button:first-child:hover {
+.actions .btn-auth:hover {
   background-color: var(--success-hover);
   transform: translateY(-1px);
 }
 
-.actions button:last-child {
+.actions .btn-delete {
   background-color: var(--danger-color);
   color: white;
 }
 
-.actions button:last-child:hover {
+.actions .btn-delete:hover {
   background-color: var(--danger-hover);
+  transform: translateY(-1px);
+}
+
+.actions .btn-edit {
+  background-color: var(--primary-color);
+  color: white;
+}
+
+.actions .btn-edit:hover {
+  background-color: var(--primary-hover);
+  transform: translateY(-1px);
+}
+
+.actions .btn-link {
+  background-color: #5f3dc4;
+  color: white;
+}
+
+.actions .btn-link:hover {
+  background-color: #5335ad;
+  transform: translateY(-1px);
+}
+
+.default-school-badge {
+  margin-left: 10px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #dcfce7;
+  color: #166534;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.actions .btn-default {
+  background-color: #0f766e;
+  color: white;
+}
+
+.actions .btn-default:hover {
+  background-color: #0d665f;
   transform: translateY(-1px);
 }
 

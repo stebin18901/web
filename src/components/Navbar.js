@@ -1,11 +1,44 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import {
+  BookOpenCheck,
+  ChevronLeft,
+  ChevronRight,
+  Home,
+  LogIn,
+  LogOut,
+  Trophy,
+} from "lucide-react";
 import "./Navbar.css";
+
+const SIDEBAR_STORAGE_KEY = "hepsy_sidebar_collapsed";
 
 const Navbar = () => {
   const { user, logout } = useAuth();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+      if (stored === "true") setIsCollapsed(true);
+    } catch (error) {
+      console.error("Failed to read sidebar state:", error);
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(SIDEBAR_STORAGE_KEY, String(isCollapsed));
+    } catch (error) {
+      console.error("Failed to persist sidebar state:", error);
+    }
+    document.documentElement.style.setProperty(
+      "--app-sidebar-width",
+      isCollapsed ? "84px" : "260px"
+    );
+  }, [isCollapsed]);
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -17,8 +50,23 @@ const Navbar = () => {
 
   return (
     <>
-      <nav className="navbar">
-        <h1 className="navbar-title">HEPSY</h1>
+      <nav className={`navbar ${isCollapsed ? "collapsed" : ""}`}>
+        <div className="navbar-header">
+          <h1 className="navbar-title">
+            <span className="navbar-title-full">HEPSY</span>
+            <span className="navbar-title-short">H</span>
+          </h1>
+
+          <button
+            className="sidebar-collapse-btn"
+            type="button"
+            onClick={() => setIsCollapsed((prev) => !prev)}
+            aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+          >
+            {isCollapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+          </button>
+        </div>
         
         {/* Hamburger menu icon */}
         <button
@@ -34,37 +82,60 @@ const Navbar = () => {
         {/* Navigation links container */}
         <div className={`navbar-links ${isMenuOpen ? "active" : ""}`}>
           <div className="navbar-link-group">
-            <NavLink 
-              to="/" 
-              className={({ isActive }) => `navbar-link ${isActive ? 'active' : ''}`} 
+            <NavLink
+              to="/"
+              title="Home"
+              className={({ isActive }) => `navbar-link ${isActive ? "active" : ""}`}
               onClick={closeMenu}
             >
-              Home
+              <Home size={18} className="nav-icon" />
+              <span className="link-label">Home</span>
             </NavLink>
             {user && (
-              <NavLink 
-                to="/dashboard" 
-                className={({ isActive }) => `navbar-link ${isActive ? 'active' : ''}`} 
-                onClick={closeMenu}
-              >
-                ExamFocus
-              </NavLink>
+              <>
+                <NavLink
+                  to="/dashboard"
+                  end
+                  title="ExamFocus"
+                  className={({ isActive }) => `navbar-link ${isActive ? "active" : ""}`}
+                  onClick={closeMenu}
+                >
+                  <BookOpenCheck size={18} className="nav-icon" />
+                  <span className="link-label">ExamFocus</span>
+                </NavLink>
+                <NavLink
+                  to="/league"
+                  title="League"
+                  className={({ isActive }) => `navbar-link ${isActive ? "active" : ""}`}
+                  onClick={closeMenu}
+                >
+                  <Trophy size={18} className="nav-icon" />
+                  <span className="link-label">League</span>
+                </NavLink>
+              </>
             )}
           </div>
           {user ? (
-            <button 
-              onClick={() => { logout(); closeMenu(); }} 
+            <button
+              onClick={() => {
+                logout();
+                closeMenu();
+              }}
+              title="Logout"
               className="navbar-button logout"
             >
-              Logout
+              <LogOut size={18} className="nav-icon" />
+              <span className="link-label">Logout</span>
             </button>
           ) : (
-            <NavLink 
-              to="/login" 
-              className={({ isActive }) => `navbar-button login ${isActive ? 'active' : ''}`} 
+            <NavLink
+              to="/login"
+              title="Login"
+              className={({ isActive }) => `navbar-button login ${isActive ? "active" : ""}`}
               onClick={closeMenu}
             >
-              Login
+              <LogIn size={18} className="nav-icon" />
+              <span className="link-label">Login</span>
             </NavLink>
           )}
         </div>

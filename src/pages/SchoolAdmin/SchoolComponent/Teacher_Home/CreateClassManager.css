@@ -1,0 +1,54 @@
+.ccm-container {
+  padding: 20px;
+}
+
+.ccm-section {
+  margin-bottom: 20px;
+}
+
+.ccm-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.ccm-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #f7f9fc;
+  padding: 10px;
+  border-radius: 6px;
+}
+
+.ccm-row input {
+  width: 80px;
+}
+
+.ccm-actions {
+  margin-top: 20px;
+}
+
+.ccm-actions button {
+  padding: 10px 20px;
+  background: linear-gradient(90deg, #3b82f6, #10b981);
+  border: none;
+  color: white;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.ccm-log {
+  margin-top: 20px;
+  background: #111827;
+  color: #e5e7eb;
+  padding: 12px;
+  border-radius: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.log-line {
+  font-size: 13px;
+  margin-bottom: 4px;
+}

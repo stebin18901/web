@@ -8,7 +8,6 @@ import {
   setDoc,
   deleteDoc,
   getDoc,
-  getDocs,
   updateDoc,
   writeBatch,
 } from "firebase/firestore";
@@ -81,33 +80,30 @@ const ClassTeacherManager = ({ schoolId }) => {
   const [filteredTeachers, setFilteredTeachers] = useState([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [draggedTeacher, setDraggedTeacher] = useState(null);
-  const [selectedTeacher, setSelectedTeacher] = useState(null);
+  
+  // 🔹 CHANGED: single selectedTeacher (null) to selectedTeachers (array [])
+  const [selectedTeachers, setSelectedTeachers] = useState([]); 
+  
   const [loading, setLoading] = useState(false);
   const [newDivisionInput, setNewDivisionInput] = useState({});
   const [confirmModal, setConfirmModal] = useState(null);
   const [activeClassDetail, setActiveClassDetail] = useState(null);
 
-  // =========================================
   // Realtime Teachers
-  // =========================================
   useEffect(() => {
     if (!schoolId) return;
     const q = query(collection(db, "users"), where("schoolId", "==", schoolId));
     const unsub = onSnapshot(q, (snap) => {
       const list = snap.docs
         .map((d) => ({ id: d.id, ...d.data() }))
-        .filter((t) => ["teacher", "class_teacher"].includes(t.role)); // ✅ Only teachers
-
+        .filter((t) => ["teacher", "class_teacher"].includes(t.role));
       setTeachers(list);
       setFilteredTeachers(list);
     });
-
     return () => unsub();
   }, [schoolId]);
 
-  // =========================================
   // Realtime Classes
-  // =========================================
   useEffect(() => {
     if (!schoolId) return;
     const q = query(collection(db, "classes"), where("schoolId", "==", schoolId));
@@ -119,25 +115,20 @@ const ClassTeacherManager = ({ schoolId }) => {
     return () => unsub();
   }, [schoolId]);
 
-  // =========================================
   // Search Filter
-  // =========================================
   useEffect(() => {
     const lower = searchTerm.trim().toLowerCase();
     setFilteredTeachers(
       !lower
         ? teachers
         : teachers.filter(
-          (t) =>
-            (t.name || "").toLowerCase().includes(lower) ||
-            (t.email || "").toLowerCase().includes(lower)
-        )
+            (t) =>
+              (t.name || "").toLowerCase().includes(lower) ||
+              (t.email || "").toLowerCase().includes(lower)
+          )
     );
   }, [searchTerm, teachers]);
 
-  // =========================================
-  // HELPERS
-  // =========================================
   const classDocId = (className) => `${schoolId}_${className}`;
   const activeSection = useMemo(
     () => sections.find((s) => s.id === activeSectionId),
@@ -151,10 +142,6 @@ const ClassTeacherManager = ({ schoolId }) => {
     );
     return divs.length ? divs : ["A"];
   };
-
-  // =========================================
-  // CLASS OPERATIONS
-  // =========================================
 
   // ➕ Add new division
   const handleAddDivision = async (grade, divRaw) => {
@@ -185,17 +172,22 @@ const ClassTeacherManager = ({ schoolId }) => {
     }
   };
 
-  // 👩‍🏫 Assign teacher to class (handles replacement)
+  // 👩‍🏫 Assign teacher (Modified to handle selection reset)
   const assignTeacher = async (className, teacher) => {
-    const t = teacher || draggedTeacher || selectedTeacher;
-    if (!t) return alert("Select or drag a teacher first");
+    // 🔹 If a single teacher is passed, use it; otherwise use draggedTeacher; 
+    // (Note: This function still works for ClassTeacher assignment which is usually 1:1)
+    const t = teacher || draggedTeacher || (selectedTeachers.length > 0 ? selectedTeachers[0] : null);
+    
+    if (!t) {
+      setActiveClassDetail(className);
+      return;
+    }
     setLoading(true);
 
     try {
       const classRef = doc(db, "classes", classDocId(className));
       const classSnap = await getDoc(classRef);
 
-      // Ensure class exists
       if (!classSnap.exists()) {
         await setDoc(classRef, {
           schoolId,
@@ -210,29 +202,23 @@ const ClassTeacherManager = ({ schoolId }) => {
       const classData = classSnap.data();
       const oldTeacherId = classData?.classTeacherId;
 
-      // If same teacher already assigned
       if (oldTeacherId === t.id) {
         setLoading(false);
         return;
       }
 
-      // 1️⃣ Unassign old teacher (if exists)
       if (oldTeacherId) {
         const oldTeacherRef = doc(db, "users", oldTeacherId);
         const oldSnap = await getDoc(oldTeacherRef);
-        if (oldSnap.exists()) {
-          const oldData = oldSnap.data();
-          if (oldData.assignedClass === className) {
-            await updateDoc(oldTeacherRef, {
-              role: "teacher",
-              assignedClass: null,
-              updatedAt: new Date(),
-            });
-          }
+        if (oldSnap.exists() && oldSnap.data().assignedClass === className) {
+          await updateDoc(oldTeacherRef, {
+            role: "teacher",
+            assignedClass: null,
+            updatedAt: new Date(),
+          });
         }
       }
 
-      // 2️⃣ Assign new teacher
       await updateDoc(classRef, {
         classTeacherId: t.id,
         classTeacherName: t.name,
@@ -247,20 +233,17 @@ const ClassTeacherManager = ({ schoolId }) => {
         updatedAt: new Date(),
       });
 
-      // 3️⃣ Create roll setup only if missing
       await createDefaultRollSetup(schoolId, className);
-
-      console.log(`✅ ${t.name} assigned to ${className}`);
     } catch (err) {
       console.error("Assignment failed:", err);
     } finally {
       setDraggedTeacher(null);
-      setSelectedTeacher(null);
+      setSelectedTeachers([]); // 🔹 Reset selection
       setLoading(false);
     }
   };
 
-  // ❌ Remove teacher from class
+  // ❌ Remove teacher
   const doRemoveTeacher = async (className) => {
     setLoading(true);
     try {
@@ -289,8 +272,6 @@ const ClassTeacherManager = ({ schoolId }) => {
           });
         }
       }
-
-      console.log(`🔸 Teacher removed from ${className}`);
     } catch (err) {
       console.error("Failed to remove teacher", err);
     } finally {
@@ -299,7 +280,7 @@ const ClassTeacherManager = ({ schoolId }) => {
     }
   };
 
-  // 🗑️ Delete class (safe cleanup)
+  // 🗑️ Delete class
   const doDeleteClass = async (className) => {
     setLoading(true);
     try {
@@ -323,7 +304,6 @@ const ClassTeacherManager = ({ schoolId }) => {
       }
 
       await deleteDoc(ref);
-      console.log(`🗑️ Class ${className} deleted`);
     } catch (err) {
       console.error("Class deletion failed", err);
     } finally {
@@ -332,9 +312,6 @@ const ClassTeacherManager = ({ schoolId }) => {
     }
   };
 
-  // =========================================
-  // UI: Render Grade Row
-  // =========================================
   const renderGradeRow = (grade) => {
     const divisions = getDivisionsForGrade(grade);
     return (
@@ -363,6 +340,7 @@ const ClassTeacherManager = ({ schoolId }) => {
                     <div className="assigned-actions">
                       <button
                         className="remove-btn"
+                        title="Remove Teacher"
                         onClick={(e) => {
                           e.stopPropagation();
                           setConfirmModal({ type: "removeTeacher", className });
@@ -372,6 +350,7 @@ const ClassTeacherManager = ({ schoolId }) => {
                       </button>
                       <button
                         className="delete-btn"
+                        title="Delete Class"
                         onClick={(e) => {
                           e.stopPropagation();
                           setConfirmModal({ type: "deleteClass", className });
@@ -390,8 +369,19 @@ const ClassTeacherManager = ({ schoolId }) => {
                         assignTeacher(className, null);
                       }}
                     >
-                      ＋ Assign Teacher ({className})
+                      Open ({className})
                     </button>
+                    <div className="assigned-actions" style={{ position: 'absolute', right: '5px', top: '5px' }}>
+                       <button
+                        className="delete-btn"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setConfirmModal({ type: "deleteClass", className });
+                        }}
+                      >
+                        ✕
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
@@ -401,7 +391,7 @@ const ClassTeacherManager = ({ schoolId }) => {
           <div className="add-division">
             <input
               type="text"
-              placeholder="New Div (e.g. B)"
+              placeholder="New Div"
               value={newDivisionInput[grade] || ""}
               onChange={(e) =>
                 setNewDivisionInput((p) => ({
@@ -425,9 +415,6 @@ const ClassTeacherManager = ({ schoolId }) => {
     );
   };
 
-  // =========================================
-  // MAIN RENDER
-  // =========================================
   return (
     <div className="ctm-container">
       <div className="ctm-header">
@@ -446,6 +433,11 @@ const ClassTeacherManager = ({ schoolId }) => {
               teachers={teachers}
               draggedTeacher={draggedTeacher}
               setDraggedTeacher={setDraggedTeacher}
+              
+              /* 🔹 PASSING PLURAL PROPS TO ClassDetailView */
+              selectedTeachers={selectedTeachers}
+              setSelectedTeachers={setSelectedTeachers}
+              
               onBack={() => setActiveClassDetail(null)}
               mode="admin"
             />
@@ -472,8 +464,11 @@ const ClassTeacherManager = ({ schoolId }) => {
         <div className="right-panel">
           <TeacherList
             teachers={filteredTeachers}
-            selectedTeacher={selectedTeacher}
-            setSelectedTeacher={setSelectedTeacher}
+            
+            /* 🔹 PASSING PLURAL PROPS TO TeacherList */
+            selectedTeachers={selectedTeachers}
+            setSelectedTeachers={setSelectedTeachers}
+            
             draggedTeacher={draggedTeacher}
             setDraggedTeacher={setDraggedTeacher}
             searchTerm={searchTerm}
@@ -489,10 +484,10 @@ const ClassTeacherManager = ({ schoolId }) => {
             <p>
               {confirmModal.type === "removeTeacher"
                 ? `Remove teacher from ${confirmModal.className}?`
-                : `Delete ${confirmModal.className}?`}
+                : `Delete class ${confirmModal.className} entirely?`}
             </p>
             <div className="modal-actions">
-              <button onClick={() => setConfirmModal(null)}>Cancel</button>
+              <button className="modal-cancel" onClick={() => setConfirmModal(null)}>Cancel</button>
               <button
                 className="modal-confirm"
                 onClick={() =>
@@ -512,3 +507,4 @@ const ClassTeacherManager = ({ schoolId }) => {
 };
 
 export default ClassTeacherManager;
+
