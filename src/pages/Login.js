@@ -58,9 +58,11 @@ const Login = () => {
   const [activeFeatureIndex, setActiveFeatureIndex] = useState(0);
   const [error, setError] = useState("");
   const [otpNotice, setOtpNotice] = useState("");
+  const [lastOtpRequestTime, setLastOtpRequestTime] = useState(0);
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
+  const OTP_COOLDOWN_MS = 60000; // 60 seconds cooldown between OTP requests
 
   useEffect(() => {
     const studentSession = localStorage.getItem("schoolStudentSession");
@@ -69,7 +71,31 @@ const Login = () => {
     }
   }, [location.pathname, navigate, otpSent, user]);
 
+  useEffect(() => {
+    return () => {
+      clearRecaptchaVerifier();
+    };
+  }, []);
+
+  const clearRecaptchaVerifier = () => {
+    if (window.defaultSchoolRecaptchaVerifier) {
+      try {
+        window.defaultSchoolRecaptchaVerifier.clear();
+      } catch (e) {
+        console.error("Error clearing reCAPTCHA verifier:", e);
+      }
+      window.defaultSchoolRecaptchaVerifier = null;
+    }
+
+    // Explicitly reset the inner node structure to fully purge hidden iframe residue left by Firebase
+    const container = document.getElementById("default-school-recaptcha");
+    if (container) {
+      container.innerHTML = '<div id="default-school-recaptcha-inner"></div>';
+    }
+  };
+
   const resetOtp = () => {
+    clearRecaptchaVerifier();
     setOtpSent(false);
     setOtpCode("");
     setConfirmationResult(null);
@@ -77,38 +103,64 @@ const Login = () => {
   };
 
   const sendOtp = async (cleanPhone) => {
-  let verifierContainer = document.getElementById("default-school-recaptcha");
-  if (!verifierContainer) {
-    verifierContainer = document.createElement("div");
-    verifierContainer.id = "default-school-recaptcha";
-    verifierContainer.style.display = "none"; 
-    document.body.appendChild(verifierContainer);
-  }
-
-  try {
-    if (!window.defaultSchoolRecaptchaVerifier) {
-      window.defaultSchoolRecaptchaVerifier = new RecaptchaVerifier(auth, "default-school-recaptcha", {
-        size: "invisible",
-      });
-    }
-
-    const confirmation = await signInWithPhoneNumber(auth, `+91${cleanPhone}`, window.defaultSchoolRecaptchaVerifier);
-    setConfirmationResult(confirmation);
-    setOtpSent(true);
-    setOtpNotice("OTP sent to this phone number.");
-  } catch (err) {
-    // CRITICAL: Wipe out the corrupted verifier instance so it can recreate cleanly
-    if (window.defaultSchoolRecaptchaVerifier) {
-      try {
-        window.defaultSchoolRecaptchaVerifier.clear();
-      } catch (e) {
-        console.error("Error clearing verifier:", e);
+    try {
+      const now = Date.now();
+      const timeSinceLastRequest = now - lastOtpRequestTime;
+      if (lastOtpRequestTime > 0 && timeSinceLastRequest < OTP_COOLDOWN_MS) {
+        const secondsRemaining = Math.ceil((OTP_COOLDOWN_MS - timeSinceLastRequest) / 1000);
+        setError(`Please wait ${secondsRemaining} seconds before requesting another OTP.`);
+        return false;
       }
-      window.defaultSchoolRecaptchaVerifier = null;
+
+      // Clear memory references and reset the raw HTML element inner node
+      clearRecaptchaVerifier();
+
+      const verifierContainer = document.getElementById("default-school-recaptcha-inner");
+      if (!verifierContainer) {
+        setError("reCAPTCHA target container not found. Please refresh the page.");
+        return false;
+      }
+
+      // Bind directly onto the dynamically refreshed nested container targeting identifier
+      window.defaultSchoolRecaptchaVerifier = new RecaptchaVerifier(
+        auth,
+        "default-school-recaptcha-inner",
+        {
+          size: "invisible",
+        }
+      );
+
+      const confirmation = await signInWithPhoneNumber(
+        auth,
+        `+91${cleanPhone}`,
+        window.defaultSchoolRecaptchaVerifier
+      );
+      
+      setLastOtpRequestTime(Date.now());
+      setConfirmationResult(confirmation);
+      setOtpSent(true);
+      setOtpNotice("OTP sent to this phone number.");
+      setError("");
+      return true;
+    } catch (err) {
+      console.error("Error sending OTP:", err);
+      clearRecaptchaVerifier();
+      
+      let errorMessage = "Failed to send OTP. Please try again.";
+      if (err.code === "auth/too-many-requests") {
+        errorMessage = "Too many OTP requests. Please wait a few minutes before trying again.";
+      } else if (err.code === "auth/invalid-phone-number") {
+        errorMessage = "Invalid phone number format.";
+      } else if (err.code === "auth/operation-not-allowed") {
+        errorMessage = "Phone authentication is not enabled. Please contact support.";
+      } else if (err.message) {
+        errorMessage = err.message;
+      }
+      
+      setError(errorMessage);
+      return false;
     }
-    throw err;
-  }
-};
+  };
 
   const verifyOtp = async () => {
     if (!confirmationResult) {
@@ -317,17 +369,20 @@ const Login = () => {
             return;
           }
 
-          // Inside your handleSubmit function under default-school login:
-if (!otpSent) {
-  setOtpNotice(
-    existingEnrollment.isPaid
-      ? "OTP sent to this phone number."
-      : "Registration found. Enter OTP to continue to payment."
-  );
-  await sendOtp(cleanPhone);
-  setIsSubmitting(false); // release submit lock after OTP sends successfully
-  return;
-}
+          if (!otpSent) {
+            const otpNoticeMsg = existingEnrollment.isPaid
+              ? "OTP sent to this phone number."
+              : "Registration found. Enter OTP to continue to payment.";
+            setOtpNotice(otpNoticeMsg);
+            const success = await sendOtp(cleanPhone);
+            if (!success) {
+              setIsSubmitting(false);
+              return;
+            }
+            setIsSubmitting(false);
+            return;
+          }
+
           const otpVerified = await verifyOtp();
           if (!otpVerified) return;
 
@@ -356,7 +411,12 @@ if (!otpSent) {
         }
 
         if (!otpSent) {
-          await sendOtp(cleanPhone);
+          const success = await sendOtp(cleanPhone);
+          if (!success) {
+            setIsSubmitting(false);
+            return;
+          }
+          setIsSubmitting(false);
           return;
         }
         const otpVerified = await verifyOtp();
@@ -656,10 +716,12 @@ if (!otpSent) {
           </>
         )}
       </form>
-      {/* Keep it in your JSX wrapper */}
-<div id="default-school-recaptcha"></div>
+
+      {/* Structured nested configuration target to protect from overlapping instances */}
+      <div id="default-school-recaptcha">
+        <div id="default-school-recaptcha-inner"></div>
+      </div>
     </div>
-    
   );
 };
 
