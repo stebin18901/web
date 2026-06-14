@@ -27,6 +27,9 @@ import SchoolAdmin from "./pages/SchoolAdmin/SchoolAdmin";
 import SchoolMagicAuth from "./pages/SchoolAdmin/SchoolMagicAuth";
 import AboutPage from "./pages/AboutPage";
 import Pricing from "./components/Pricing";
+import PricingNew from "./components/PricingNew";
+import SubscriptionCheckout from "./components/SubscriptionCheckout";
+import SubscriptionStatus from "./pages/SubscriptionStatus";
 import NotesViewer from "./pages/NotesViewer";
 import NotFound from "./pages/NotFound";
 import ClassIntakeForm from "./pages/SchoolAdmin/SchoolComponent/ClassIntakeForm";
@@ -68,7 +71,9 @@ const App = () => {
               <Route path="/sl/:token" element={<SchoolMagicAuth mode="logout" />} />
               <Route path="/class-form/:schoolId/:className/:type" element={<ClassIntakeForm />} />
               <Route path="/about" element={<AboutPage />} />
-              <Route path="/pricing" element={<Pricing />} />
+              <Route path="/pricing" element={<PricingNew />} />
+              <Route path="/subscribe" element={<PrivateRoute element={<SubscriptionCheckout />} />} />
+              <Route path="/subscription-status" element={<PrivateRoute element={<SubscriptionStatus />} />} />
               <Route path="/plan-selection" element={<PlanSelection />} />
               <Route path="/payment-success" element={<PaymentSuccess />} />
               <Route path="/test" element={<NotesViewer />} />

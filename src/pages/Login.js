@@ -1,5 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
-import { collection, doc, getDoc, getDocs, query, setDoc, where } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  setDoc,
+  where,
+} from "firebase/firestore";
 import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -16,8 +24,14 @@ import {
 } from "../config/defaultSchool";
 import "./Login.css";
 
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
 const buildDefaultSchoolSession = (id, enrollment, schoolContext) => {
-  const selectedClasses = getUniqueClasses(enrollment.selectedClasses || [enrollment.className]);
+  const selectedClasses = getUniqueClasses(
+    enrollment.selectedClasses || [enrollment.className]
+  );
   return {
     id,
     name: enrollment.name || enrollment.phone || "Student",
@@ -33,9 +47,75 @@ const buildDefaultSchoolSession = (id, enrollment, schoolContext) => {
     accessMode: "default-school",
     planId: enrollment.planId || "",
     planName: enrollment.planName || "",
-    planMaxClasses: enrollment.planMaxClasses || selectedClasses.length || 1,
+    planMaxClasses:
+      enrollment.planMaxClasses || selectedClasses.length || 1,
+    razorpaySubscriptionId: enrollment.razorpaySubscriptionId || "",
   };
 };
+
+/**
+ * Checks whether this enrollment has a valid, active paid subscription.
+ *
+ * Rules:
+ *   1. enrollment.isPaid must be true
+ *   2. enrollment.planId must be set
+ *   3. If a razorpaySubscriptionId exists, verify the subscription doc in
+ *      Firestore is still marked subscriptionActive: true  (avoids trusting
+ *      a stale isPaid flag after a cancellation/expiry).
+ *
+ * Returns: "active" | "unpaid" | "expired"
+ */
+const isRazorpayPendingStatus = (status) =>
+  ["created", "authenticated", "pending"].includes(
+    String(status || "").toLowerCase()
+  );
+
+const isRazorpayExpiredStatus = (status) =>
+  ["cancelled", "paused", "completed", "expired"].includes(
+    String(status || "").toLowerCase()
+  );
+
+const checkSubscriptionStatus = async (enrollment, enrollmentId) => {
+  if (!enrollment.planId) return "unpaid";
+
+  const subId = enrollment.razorpaySubscriptionId;
+  if (!subId) {
+    return enrollment.isPaid ? "active" : "unpaid";
+  }
+
+  try {
+    const subSnap = await getDoc(doc(db, "subscriptions", subId));
+    if (!subSnap.exists()) {
+      return enrollment.isPaid ? "active" : "pending";
+    }
+
+    const subData = subSnap.data();
+    if (subData.subscriptionActive === true) {
+      if (subData.expiryDate) {
+        const expiry = new Date(subData.expiryDate);
+        if (expiry < new Date()) return "expired";
+      }
+      return "active";
+    }
+
+    const status = String(subData.status || subData.razorpayStatus || "").toLowerCase();
+    if (isRazorpayPendingStatus(status)) return "pending";
+    if (isRazorpayExpiredStatus(status)) return "expired";
+
+    if (subData.expiryDate) {
+      const expiry = new Date(subData.expiryDate);
+      if (expiry < new Date()) return "expired";
+    }
+
+    return enrollment.isPaid ? "active" : "pending";
+  } catch {
+    return enrollment.isPaid ? "active" : "pending";
+  }
+};
+
+// ---------------------------------------------------------------------------
+// Component
+// ---------------------------------------------------------------------------
 
 const Login = () => {
   const [schoolContext, setSchoolContext] = useState(null);
@@ -59,22 +139,86 @@ const Login = () => {
   const [error, setError] = useState("");
   const [otpNotice, setOtpNotice] = useState("");
   const [lastOtpRequestTime, setLastOtpRequestTime] = useState(0);
+
   const navigate = useNavigate();
   const location = useLocation();
   const { user } = useAuth();
-  const OTP_COOLDOWN_MS = 60000; // 60 seconds cooldown between OTP requests
 
-  useEffect(() => {
-    const studentSession = localStorage.getItem("schoolStudentSession");
-    if ((studentSession || (user && !otpSent)) && (location.pathname === "/login" || location.pathname === "/")) {
-      navigate("/dashboard", { replace: true });
-    }
-  }, [location.pathname, navigate, otpSent, user]);
+  const OTP_COOLDOWN_MS = 60000;
 
+  // -------------------------------------------------------------------------
+  // On mount: redirect if a valid paid session already exists in localStorage
+  // -------------------------------------------------------------------------
   useEffect(() => {
-    return () => {
-      clearRecaptchaVerifier();
+    const checkExistingSession = async () => {
+      const raw = localStorage.getItem("schoolStudentSession");
+      if (!raw) return;
+
+      try {
+        const session = JSON.parse(raw);
+        if (!session?.id) {
+          localStorage.removeItem("schoolStudentSession");
+          return;
+        }
+
+        // Non-default-school sessions (PIN-based) go straight to dashboard
+        if (session.accessMode !== "default-school") {
+          navigate("/dashboard", { replace: true });
+          return;
+        }
+
+        // Default-school sessions must have a planId
+        if (!session.planId) {
+          // No plan — send to plan selection
+          navigate(`/plan-selection?enrollmentId=${encodeURIComponent(session.id)}`, {
+            replace: true,
+          });
+          return;
+        }
+
+        // Verify subscription is still active
+        const enrollmentSnap = await getDoc(
+          doc(db, "defaultSchoolEnrollments", session.id)
+        );
+        if (!enrollmentSnap.exists()) {
+          localStorage.removeItem("schoolStudentSession");
+          return;
+        }
+
+        const enrollment = enrollmentSnap.data();
+        const status = await checkSubscriptionStatus(enrollment, session.id);
+
+        if (status === "active") {
+          navigate("/dashboard", { replace: true });
+        } else if (status === "pending") {
+          navigate(
+            `/plan-selection?enrollmentId=${encodeURIComponent(session.id)}`,
+            { replace: true }
+          );
+        } else {
+          localStorage.removeItem("schoolStudentSession");
+          setError(
+            status === "expired"
+              ? "Your subscription has expired. Please renew to continue."
+              : "Please complete payment to access the dashboard."
+          );
+        }
+      } catch {
+        localStorage.removeItem("schoolStudentSession");
+      }
     };
+
+    if (location.pathname === "/login" || location.pathname === "/") {
+      checkExistingSession();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
+  // -------------------------------------------------------------------------
+  // reCAPTCHA cleanup on unmount
+  // -------------------------------------------------------------------------
+  useEffect(() => {
+    return () => clearRecaptchaVerifier();
   }, []);
 
   const clearRecaptchaVerifier = () => {
@@ -86,8 +230,6 @@ const Login = () => {
       }
       window.defaultSchoolRecaptchaVerifier = null;
     }
-
-    // Explicitly reset the inner node structure to fully purge hidden iframe residue left by Firebase
     const container = document.getElementById("default-school-recaptcha");
     if (container) {
       container.innerHTML = '<div id="default-school-recaptcha-inner"></div>';
@@ -102,32 +244,33 @@ const Login = () => {
     setOtpNotice("");
   };
 
+  // -------------------------------------------------------------------------
+  // OTP send / verify
+  // -------------------------------------------------------------------------
   const sendOtp = async (cleanPhone) => {
     try {
       const now = Date.now();
-      const timeSinceLastRequest = now - lastOtpRequestTime;
-      if (lastOtpRequestTime > 0 && timeSinceLastRequest < OTP_COOLDOWN_MS) {
-        const secondsRemaining = Math.ceil((OTP_COOLDOWN_MS - timeSinceLastRequest) / 1000);
-        setError(`Please wait ${secondsRemaining} seconds before requesting another OTP.`);
+      const elapsed = now - lastOtpRequestTime;
+      if (lastOtpRequestTime > 0 && elapsed < OTP_COOLDOWN_MS) {
+        const secs = Math.ceil((OTP_COOLDOWN_MS - elapsed) / 1000);
+        setError(`Please wait ${secs} seconds before requesting another OTP.`);
         return false;
       }
 
-      // Clear memory references and reset the raw HTML element inner node
       clearRecaptchaVerifier();
 
-      const verifierContainer = document.getElementById("default-school-recaptcha-inner");
+      const verifierContainer = document.getElementById(
+        "default-school-recaptcha-inner"
+      );
       if (!verifierContainer) {
-        setError("reCAPTCHA target container not found. Please refresh the page.");
+        setError("reCAPTCHA container not found. Please refresh the page.");
         return false;
       }
 
-      // Bind directly onto the dynamically refreshed nested container targeting identifier
       window.defaultSchoolRecaptchaVerifier = new RecaptchaVerifier(
         auth,
         "default-school-recaptcha-inner",
-        {
-          size: "invisible",
-        }
+        { size: "invisible" }
       );
 
       const confirmation = await signInWithPhoneNumber(
@@ -135,7 +278,7 @@ const Login = () => {
         `+91${cleanPhone}`,
         window.defaultSchoolRecaptchaVerifier
       );
-      
+
       setLastOtpRequestTime(Date.now());
       setConfirmationResult(confirmation);
       setOtpSent(true);
@@ -145,19 +288,17 @@ const Login = () => {
     } catch (err) {
       console.error("Error sending OTP:", err);
       clearRecaptchaVerifier();
-      
-      let errorMessage = "Failed to send OTP. Please try again.";
-      if (err.code === "auth/too-many-requests") {
-        errorMessage = "Too many OTP requests. Please wait a few minutes before trying again.";
-      } else if (err.code === "auth/invalid-phone-number") {
-        errorMessage = "Invalid phone number format.";
-      } else if (err.code === "auth/operation-not-allowed") {
-        errorMessage = "Phone authentication is not enabled. Please contact support.";
-      } else if (err.message) {
-        errorMessage = err.message;
-      }
-      
-      setError(errorMessage);
+
+      let msg = "Failed to send OTP. Please try again.";
+      if (err.code === "auth/too-many-requests")
+        msg = "Too many OTP requests. Please wait a few minutes before trying again.";
+      else if (err.code === "auth/invalid-phone-number")
+        msg = "Invalid phone number format.";
+      else if (err.code === "auth/operation-not-allowed")
+        msg = "Phone authentication is not enabled. Please contact support.";
+      else if (err.message) msg = err.message;
+
+      setError(msg);
       return false;
     }
   };
@@ -171,10 +312,18 @@ const Login = () => {
       setError("Enter the OTP.");
       return false;
     }
-    await confirmationResult.confirm(otpCode.trim());
-    return true;
+    try {
+      await confirmationResult.confirm(otpCode.trim());
+      return true;
+    } catch (err) {
+      setError("Invalid OTP. Please try again.");
+      return false;
+    }
   };
 
+  // -------------------------------------------------------------------------
+  // Load school context
+  // -------------------------------------------------------------------------
   useEffect(() => {
     const loadSchoolContext = async () => {
       const raw = localStorage.getItem("studentSchoolAccess");
@@ -195,7 +344,11 @@ const Login = () => {
       }
 
       try {
-        const defaultRef = doc(db, DEFAULT_SCHOOL_SETTINGS_COLLECTION, DEFAULT_SCHOOL_SETTINGS_DOC);
+        const defaultRef = doc(
+          db,
+          DEFAULT_SCHOOL_SETTINGS_COLLECTION,
+          DEFAULT_SCHOOL_SETTINGS_DOC
+        );
         const defaultSnap = await getDoc(defaultRef);
         if (!defaultSnap.exists()) return;
 
@@ -207,10 +360,11 @@ const Login = () => {
         const schoolData = schoolSnap.exists() ? schoolSnap.data() : {};
         setSchoolContext({
           schoolId: defaultSchoolId,
-          schoolName: schoolData.schoolName || defaultData.schoolName || defaultSchoolId,
+          schoolName:
+            schoolData.schoolName || defaultData.schoolName || defaultSchoolId,
           accessMode: "default-school",
         });
-      } catch (err) {
+      } catch {
         setError("Unable to load default school.");
       }
     };
@@ -218,128 +372,139 @@ const Login = () => {
     loadSchoolContext();
   }, []);
 
+  // -------------------------------------------------------------------------
+  // Features carousel
+  // -------------------------------------------------------------------------
   useEffect(() => {
     const fetchFeatures = async () => {
       try {
         const snap = await getDocs(collection(db, "features"));
-        const featureData = snap.docs
-          .map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }))
-          .filter((feature) => feature.image);
-
-        setFeatures(featureData);
-      } catch (err) {
+        const data = snap.docs
+          .map((d) => ({ id: d.id, ...d.data() }))
+          .filter((f) => f.image);
+        setFeatures(data);
+      } catch {
         setFeatures([]);
       }
     };
-
     fetchFeatures();
   }, []);
 
   useEffect(() => {
     if (features.length <= 1) return undefined;
-
     const timer = setInterval(() => {
       setActiveFeatureIndex((prev) => (prev + 1) % features.length);
     }, 4000);
-
     return () => clearInterval(timer);
   }, [features.length]);
 
+  // -------------------------------------------------------------------------
+  // School-auth: load students
+  // -------------------------------------------------------------------------
   useEffect(() => {
     const fetchStudents = async () => {
-      if (!schoolContext?.schoolId || schoolContext.accessMode === "default-school") {
+      if (
+        !schoolContext?.schoolId ||
+        schoolContext.accessMode === "default-school"
+      ) {
         setStudents([]);
         return;
       }
-
       setLoadingStudents(true);
       setError("");
-
       try {
-        const q = query(collection(db, "studentAccounts"), where("schoolId", "==", schoolContext.schoolId));
+        const q = query(
+          collection(db, "studentAccounts"),
+          where("schoolId", "==", schoolContext.schoolId)
+        );
         const snap = await getDocs(q);
-        const data = snap.docs.map((docSnap) => ({ id: docSnap.id, ...docSnap.data() }));
-        setStudents(data);
-      } catch (err) {
+        setStudents(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+      } catch {
         setError("Unable to load students for this school.");
       } finally {
         setLoadingStudents(false);
       }
     };
-
     fetchStudents();
   }, [schoolContext]);
 
+  // -------------------------------------------------------------------------
+  // Default-school: available classes
+  // -------------------------------------------------------------------------
   useEffect(() => {
     const fetchAvailableDefaultClasses = async () => {
       if (schoolContext?.accessMode !== "default-school") {
         setAvailableDefaultClasses([]);
         return;
       }
-
       setLoadingDefaultClasses(true);
       try {
         const [chapterSnap, quizSnap] = await Promise.all([
           getDocs(collection(db, "chapters")),
           getDocs(collection(db, "quizzes")),
         ]);
-        const chapterRows = chapterSnap.docs.map((docSnap) => docSnap.data());
-        const quizRows = quizSnap.docs.map((docSnap) => docSnap.data());
-        const classes = buildAvailableClasses([...chapterRows, ...quizRows], [defaultClassName]);
+        const rows = [
+          ...chapterSnap.docs.map((d) => d.data()),
+          ...quizSnap.docs.map((d) => d.data()),
+        ];
+        const classes = buildAvailableClasses(rows, [defaultClassName]);
         setAvailableDefaultClasses(classes);
-        if (classes.length && defaultAuthMode === "register" && !classes.includes(defaultClassName)) {
+        if (
+          classes.length &&
+          defaultAuthMode === "register" &&
+          !classes.includes(defaultClassName)
+        ) {
           setDefaultClassName(classes[0]);
         }
-      } catch (err) {
+      } catch {
         setAvailableDefaultClasses(defaultClassName ? [defaultClassName] : []);
       } finally {
         setLoadingDefaultClasses(false);
       }
     };
-
     fetchAvailableDefaultClasses();
   }, [defaultAuthMode, defaultClassName, schoolContext]);
 
+  // -------------------------------------------------------------------------
+  // Derived options for school-auth selects
+  // -------------------------------------------------------------------------
   const classOptions = useMemo(() => {
-    const classSet = new Set(
+    const set = new Set(
       students
         .map((s) => String(s.className || s.class || "").trim())
         .filter(Boolean)
     );
-
-    return [...classSet].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+    return [...set].sort((a, b) =>
+      a.localeCompare(b, undefined, { numeric: true })
+    );
   }, [students]);
 
   useEffect(() => {
-    if (!classOptions.length) {
-      setSelectedClassName("");
-      return;
-    }
-
-    if (!classOptions.includes(selectedClassName)) {
+    if (!classOptions.length) { setSelectedClassName(""); return; }
+    if (!classOptions.includes(selectedClassName))
       setSelectedClassName(classOptions[0]);
-    }
   }, [classOptions, selectedClassName]);
 
   const rollOptions = useMemo(() => {
     return students
-      .filter((s) => String(s.className || s.class || "").trim() === selectedClassName)
+      .filter(
+        (s) =>
+          String(s.className || s.class || "").trim() === selectedClassName
+      )
       .map((s) => String(s.rollNumber || s.roll || "").trim())
       .filter(Boolean)
       .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
   }, [students, selectedClassName]);
 
   useEffect(() => {
-    if (!rollOptions.length) {
-      setSelectedRollNumber("");
-      return;
-    }
-
-    if (!rollOptions.includes(selectedRollNumber)) {
+    if (!rollOptions.length) { setSelectedRollNumber(""); return; }
+    if (!rollOptions.includes(selectedRollNumber))
       setSelectedRollNumber(rollOptions[0]);
-    }
   }, [rollOptions, selectedRollNumber]);
 
+  // -------------------------------------------------------------------------
+  // Form submit
+  // -------------------------------------------------------------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSubmitting(true);
@@ -351,74 +516,107 @@ const Login = () => {
         return;
       }
 
+      // ── Default-school flow (OTP-based) ──────────────────────────────────
       if (schoolContext.accessMode === "default-school") {
         const cleanPhone = normalizePhone(phone);
         if (cleanPhone.length !== 10) {
-          setError("Enter a valid 10 digit phone number.");
+          setError("Enter a valid 10-digit phone number.");
           return;
         }
 
         const enrollmentId = `${schoolContext.schoolId}_${cleanPhone}`;
         const enrollmentRef = doc(db, "defaultSchoolEnrollments", enrollmentId);
         const enrollmentSnap = await getDoc(enrollmentRef);
-        const existingEnrollment = enrollmentSnap.exists() ? enrollmentSnap.data() : null;
+        const existingEnrollment = enrollmentSnap.exists()
+          ? enrollmentSnap.data()
+          : null;
 
+        // ── LOGIN ───────────────────────────────────────────────────────────
         if (defaultAuthMode === "login") {
           if (!existingEnrollment) {
-            setError("No registration found for this phone number. Please register first.");
+            setError(
+              "No registration found for this phone number. Please register first."
+            );
             return;
           }
 
+          // Step 1: send OTP
           if (!otpSent) {
-            const otpNoticeMsg = existingEnrollment.isPaid
+            const notice = existingEnrollment.isPaid
               ? "OTP sent to this phone number."
               : "Registration found. Enter OTP to continue to payment.";
-            setOtpNotice(otpNoticeMsg);
+            setOtpNotice(notice);
             const success = await sendOtp(cleanPhone);
-            if (!success) {
-              setIsSubmitting(false);
-              return;
-            }
+            if (!success) { setIsSubmitting(false); return; }
             setIsSubmitting(false);
             return;
           }
 
+          // Step 2: verify OTP
           const otpVerified = await verifyOtp();
           if (!otpVerified) return;
 
-          if (!existingEnrollment.isPaid || !existingEnrollment.planId) {
-            navigate(`/plan-selection?enrollmentId=${encodeURIComponent(enrollmentId)}`);
+          // Step 3: check subscription status
+          const status = await checkSubscriptionStatus(
+            existingEnrollment,
+            enrollmentId
+          );
+
+          if (status === "active") {
+            // Full access — write session and go to dashboard
+            localStorage.setItem(
+              "schoolStudentSession",
+              JSON.stringify(
+                buildDefaultSchoolSession(
+                  enrollmentId,
+                  existingEnrollment,
+                  schoolContext
+                )
+              )
+            );
+            navigate("/dashboard");
             return;
           }
 
-          localStorage.setItem(
-            "schoolStudentSession",
-            JSON.stringify(buildDefaultSchoolSession(enrollmentId, existingEnrollment, schoolContext))
+          if (status === "pending") {
+            navigate(
+              `/plan-selection?enrollmentId=${encodeURIComponent(enrollmentId)}`
+            );
+            return;
+          }
+
+          if (status === "expired") {
+            setError(
+              "Your subscription has expired. Please renew your plan to continue."
+            );
+            navigate(
+              `/plan-selection?enrollmentId=${encodeURIComponent(enrollmentId)}`
+            );
+            return;
+          }
+
+          // status === "unpaid" — never paid or no planId
+          navigate(
+            `/plan-selection?enrollmentId=${encodeURIComponent(enrollmentId)}`
           );
-          navigate("/dashboard");
           return;
         }
 
+        // ── REGISTER ────────────────────────────────────────────────────────
         const cleanName = defaultName.trim();
         const cleanClassName = normalizeClassName(defaultClassName);
-        if (!cleanName) {
-          setError("Enter student name.");
-          return;
-        }
-        if (!cleanClassName) {
-          setError("Enter class.");
-          return;
-        }
+        if (!cleanName) { setError("Enter student name."); return; }
+        if (!cleanClassName) { setError("Select a class."); return; }
 
+        // Step 1: send OTP
         if (!otpSent) {
           const success = await sendOtp(cleanPhone);
-          if (!success) {
-            setIsSubmitting(false);
-            return;
-          }
+          if (!success) { setIsSubmitting(false); return; }
           setIsSubmitting(false);
           return;
         }
+
+        // Step 2: verify OTP
         const otpVerified = await verifyOtp();
         if (!otpVerified) return;
 
@@ -434,32 +632,66 @@ const Login = () => {
         };
 
         if (!existingEnrollment) {
+          // New registration
           await setDoc(enrollmentRef, {
             ...enrollmentPayload,
             isPaid: false,
             createdAt: new Date().toISOString(),
           });
-        } else if (existingEnrollment.isPaid) {
-          if (!existingEnrollment.planId) {
-            await setDoc(enrollmentRef, enrollmentPayload, { merge: true });
-            navigate(`/plan-selection?enrollmentId=${encodeURIComponent(enrollmentId)}`);
-            return;
-          }
+          navigate(
+            `/plan-selection?enrollmentId=${encodeURIComponent(enrollmentId)}`
+          );
+          return;
+        }
 
+        // Existing registration — check subscription
+        const status = await checkSubscriptionStatus(
+          existingEnrollment,
+          enrollmentId
+        );
+
+        if (status === "active") {
+          // Already paid & active — update profile fields and go to dashboard
+          await setDoc(enrollmentRef, enrollmentPayload, { merge: true });
           localStorage.setItem(
             "schoolStudentSession",
-            JSON.stringify(buildDefaultSchoolSession(enrollmentId, existingEnrollment, schoolContext))
+            JSON.stringify(
+              buildDefaultSchoolSession(
+                enrollmentId,
+                { ...existingEnrollment, ...enrollmentPayload },
+                schoolContext
+              )
+            )
           );
           navigate("/dashboard");
           return;
-        } else {
-          await setDoc(enrollmentRef, enrollmentPayload, { merge: true });
         }
 
-        navigate(`/plan-selection?enrollmentId=${encodeURIComponent(enrollmentId)}`);
+        await setDoc(enrollmentRef, enrollmentPayload, { merge: true });
+
+        if (status === "pending") {
+          setError(
+            "You have a pending payment. Please complete checkout to activate your access."
+          );
+          navigate(
+            `/plan-selection?enrollmentId=${encodeURIComponent(enrollmentId)}`
+          );
+          return;
+        }
+
+        if (status === "expired") {
+          setError(
+            "Your subscription has expired. Please renew your plan to continue."
+          );
+        }
+
+        navigate(
+          `/plan-selection?enrollmentId=${encodeURIComponent(enrollmentId)}`
+        );
         return;
       }
 
+      // ── School-auth flow (PIN-based) ──────────────────────────────────────
       if (!selectedClassName || !selectedRollNumber) {
         setError("Please choose class and roll number.");
         return;
@@ -471,10 +703,7 @@ const Login = () => {
           String(s.rollNumber || s.roll || "").trim() === selectedRollNumber
       );
 
-      if (!student) {
-        setError("Student not found.");
-        return;
-      }
+      if (!student) { setError("Student not found."); return; }
 
       const studentPin = String(student.pin || student.password || "").trim();
       if (!studentPin || studentPin !== pin.trim()) {
@@ -490,6 +719,7 @@ const Login = () => {
         rollNumber: selectedRollNumber,
         schoolName: schoolContext.schoolName,
         schoolId: schoolContext.schoolId,
+        accessMode: "school-auth",
       };
 
       localStorage.setItem("schoolStudentSession", JSON.stringify(session));
@@ -501,6 +731,9 @@ const Login = () => {
     }
   };
 
+  // -------------------------------------------------------------------------
+  // Render
+  // -------------------------------------------------------------------------
   const activeFeature = features[activeFeatureIndex];
 
   return (
@@ -528,7 +761,10 @@ const Login = () => {
             {features.length > 1 && (
               <div className="login-feature-dots" aria-hidden="true">
                 {features.map((feature, index) => (
-                  <span className={index === activeFeatureIndex ? "active" : ""} key={feature.id} />
+                  <span
+                    className={index === activeFeatureIndex ? "active" : ""}
+                    key={feature.id}
+                  />
                 ))}
               </div>
             )}
@@ -537,16 +773,21 @@ const Login = () => {
           <div className="login-feature-fallback" />
         )}
       </section>
+
       <form className="login-form" onSubmit={handleSubmit}>
         <h1 className="login-title">Student Login</h1>
+
         {error && <div className="login-error">{error}</div>}
-        {otpNotice && !error && <div className="login-otp-notice">{otpNotice}</div>}
+        {otpNotice && !error && (
+          <div className="login-otp-notice">{otpNotice}</div>
+        )}
 
         {!schoolContext ? (
           <div className="school-lock-card">
             <p className="school-lock-title">Student Access Not Enabled</p>
             <p className="school-lock-subtitle">
-              Admin can select a default school from <strong>/admin189201</strong> - Schools.
+              Admin can select a default school from{" "}
+              <strong>/admin189201</strong> - Schools.
             </p>
           </div>
         ) : schoolContext.accessMode === "default-school" ? (
@@ -557,8 +798,10 @@ const Login = () => {
               </p>
             </div>
             <p className="default-school-note">
-              Register once with name, default class, and phone. Choose a plan after registration.
+              Register once with name, default class, and phone. Choose a plan
+              after registration.
             </p>
+
             <div className="default-auth-tabs">
               <button
                 type="button"
@@ -583,6 +826,7 @@ const Login = () => {
                 Register
               </button>
             </div>
+
             {defaultAuthMode === "register" && (
               <>
                 <input
@@ -597,15 +841,18 @@ const Login = () => {
                   className="login-input"
                   value={defaultClassName}
                   onChange={(e) => setDefaultClassName(e.target.value)}
-                  disabled={loadingDefaultClasses || availableDefaultClasses.length === 0}
+                  disabled={
+                    loadingDefaultClasses ||
+                    availableDefaultClasses.length === 0
+                  }
                   required
                 >
                   {loadingDefaultClasses ? (
                     <option>Loading classes...</option>
                   ) : availableDefaultClasses.length ? (
-                    availableDefaultClasses.map((className) => (
-                      <option key={className} value={className}>
-                        Class {className}
+                    availableDefaultClasses.map((cn) => (
+                      <option key={cn} value={cn}>
+                        Class {cn}
                       </option>
                     ))
                   ) : (
@@ -614,6 +861,7 @@ const Login = () => {
                 </select>
               </>
             )}
+
             <input
               type="tel"
               className="login-input"
@@ -625,31 +873,31 @@ const Login = () => {
               }}
               required
             />
+
             {otpSent && (
               <input
                 type="text"
                 className="login-input"
-                placeholder="OTP"
+                placeholder="Enter OTP"
                 value={otpCode}
                 onChange={(e) => setOtpCode(e.target.value)}
                 required
               />
             )}
-            <button className="login-button" type="submit" disabled={isSubmitting}>
+
+            <button
+              className="login-button"
+              type="submit"
+              disabled={isSubmitting}
+            >
               {isSubmitting
-                ? defaultAuthMode === "register"
-                  ? otpSent
-                    ? "Verifying..."
-                    : "Sending OTP..."
-                  : otpSent
+                ? otpSent
                   ? "Verifying..."
                   : "Sending OTP..."
-                : defaultAuthMode === "register"
-                ? otpSent
-                  ? "Verify & Continue"
-                  : "Send OTP"
                 : otpSent
-                ? "Verify & Login"
+                ? defaultAuthMode === "register"
+                  ? "Verify & Continue"
+                  : "Verify & Login"
                 : "Send OTP"}
             </button>
           </>
@@ -710,14 +958,18 @@ const Login = () => {
               required
             />
 
-            <button className="login-button" type="submit" disabled={isSubmitting || rollOptions.length === 0}>
+            <button
+              className="login-button"
+              type="submit"
+              disabled={isSubmitting || rollOptions.length === 0}
+            >
               {isSubmitting ? "Signing in..." : "Login"}
             </button>
           </>
         )}
       </form>
 
-      {/* Structured nested configuration target to protect from overlapping instances */}
+      {/* Nested container to protect from overlapping reCAPTCHA instances */}
       <div id="default-school-recaptcha">
         <div id="default-school-recaptcha-inner"></div>
       </div>

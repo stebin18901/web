@@ -1,102 +1,83 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import { collection, doc, getDoc, getDocs, setDoc } from "firebase/firestore";
-import { db } from "../firebase/firebaseConfig";
+import { doc, getDoc, setDoc } from "firebase/firestore";
+import { db, auth } from "../firebase/firebaseConfig";
 import {
-  buildAvailableClasses,
-  CREATE_PAYMENT_LINK_URL,
-  DEFAULT_SCHOOL_CLASS_OPTIONS,
-  DEFAULT_SCHOOL_PLANS,
-  getDefaultSchoolPlan,
-  getUniqueClasses,
-  normalizeClassName,
-} from "../config/defaultSchool";
+  SUBSCRIPTION_PLANS,
+  DEFAULT_PRICING,
+  SUBSCRIPTION_FEATURES,
+  getPlanById,
+} from "../config/subscriptionConfig";
 import "./PlanSelection.css";
 
-const planRows = [DEFAULT_SCHOOL_PLANS.single, DEFAULT_SCHOOL_PLANS.multi, DEFAULT_SCHOOL_PLANS.mega];
-
-const buildSession = (enrollmentId, enrollment) => {
-  const selectedClasses = getUniqueClasses(enrollment.selectedClasses || [enrollment.className]);
-  const plan = getDefaultSchoolPlan(enrollment.planId);
-  return {
-    id: enrollmentId,
-    name: enrollment.name || enrollment.phone || "Student",
-    className: selectedClasses[0] || enrollment.className || "Default",
-    defaultClassName: enrollment.className || selectedClasses[0] || "",
-    selectedClasses,
-    classProfiles: enrollment.classProfiles || {},
-    section: "",
-    rollNumber: "",
-    phone: enrollment.phone || "",
-    schoolId: enrollment.schoolId || "",
-    schoolName: enrollment.schoolName || "Default School",
-    accessMode: "default-school",
-    planId: plan.id,
-    planName: plan.name,
-    planMaxClasses: plan.maxClasses,
-  };
-};
+const planRows = [
+  { id: "quarterly", key: "QUARTERLY" },
+  { id: "half_yearly", key: "HALF_YEARLY" },
+  { id: "yearly", key: "YEARLY" },
+];
 
 const PlanSelection = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const enrollmentId = searchParams.get("enrollmentId") || "";
   const [enrollment, setEnrollment] = useState(null);
-  const [selectedPlanId, setSelectedPlanId] = useState("single");
-  const [selectedClasses, setSelectedClasses] = useState([]);
-  const [availableClasses, setAvailableClasses] = useState([]);
+  const [selectedPlanId, setSelectedPlanId] = useState("yearly");
+  const [pricing, setPricing] = useState(DEFAULT_PRICING);
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
-
-  const selectedPlan = useMemo(() => getDefaultSchoolPlan(selectedPlanId), [selectedPlanId]);
-  const classOptions = useMemo(
-    () => buildAvailableClasses([], [...availableClasses, enrollment?.className, ...selectedClasses]),
-    [availableClasses, enrollment?.className, selectedClasses]
-  );
+  const [pricingLoaded, setPricingLoaded] = useState(false);
+  
+  // Fix: Added state container so subscription details can be read anywhere in the JSX template
+  const [activeSubscriptionId, setActiveSubscriptionId] = useState("");
 
   useEffect(() => {
     const loadEnrollment = async () => {
-      if (!enrollmentId) {
-        setError("Enrollment reference is missing.");
-        setLoading(false);
-        return;
-      }
-
       try {
+        if (!enrollmentId) {
+          const user = auth.currentUser;
+          if (user) {
+            navigate("/pricing", { replace: true });
+          } else {
+            navigate("/login", { replace: true });
+          }
+          setLoading(false);
+          return;
+        }
+
         const snap = await getDoc(doc(db, "defaultSchoolEnrollments", enrollmentId));
         if (!snap.exists()) {
-          setError("Enrollment was not found. Please register again.");
+          setError("Enrollment not found. Please register again.");
+          setLoading(false);
           return;
         }
 
         const data = snap.data();
-        const [chapterSnap, quizSnap] = await Promise.all([
-          getDocs(collection(db, "chapters")),
-          getDocs(collection(db, "quizzes")),
-        ]);
-        const discoveredClasses = buildAvailableClasses(
-          [
-            ...chapterSnap.docs.map((docSnap) => docSnap.data()),
-            ...quizSnap.docs.map((docSnap) => docSnap.data()),
-          ],
-          [data.className, ...(Array.isArray(data.selectedClasses) ? data.selectedClasses : [])]
-        );
         setEnrollment(data);
-        setAvailableClasses(discoveredClasses);
-        const planId = data.planId || "single";
-        const initialPlan = getDefaultSchoolPlan(planId);
-        setSelectedPlanId(planId);
-        const defaults = getUniqueClasses(data.selectedClasses || [data.className]);
-        setSelectedClasses(initialPlan.allClasses ? discoveredClasses : defaults.slice(0, initialPlan.maxClasses));
-
-        if (data.isPaid && data.planId) {
-          localStorage.setItem("schoolStudentSession", JSON.stringify(buildSession(enrollmentId, data)));
-          navigate("/dashboard", { replace: true });
+        if (data.razorpaySubscriptionId) {
+          setActiveSubscriptionId(data.razorpaySubscriptionId);
         }
+
+        try {
+          const priceSettingsRef = doc(db, "subscriptionSettings", "default");
+          const priceSettingsSnap = await getDoc(priceSettingsRef);
+          if (priceSettingsSnap.exists()) {
+            const settings = priceSettingsSnap.data();
+            setPricing({
+              quarterly: settings.quarterlyPrice || DEFAULT_PRICING.quarterly,
+              half_yearly: settings.halfYearlyPrice || DEFAULT_PRICING.half_yearly,
+              yearly: settings.yearlyPrice || DEFAULT_PRICING.yearly,
+            });
+          }
+        } catch (err) {
+          console.log("Using default pricing:", err.message);
+        }
+
+        setPricingLoaded(true);
+        setLoading(false);
       } catch (err) {
-        setError("Unable to load enrollment.");
-      } finally {
+        console.error("Error loading enrollment:", err);
+        setError("Unable to load enrollment details.");
         setLoading(false);
       }
     };
@@ -104,38 +85,31 @@ const PlanSelection = () => {
     loadEnrollment();
   }, [enrollmentId, navigate]);
 
+  useEffect(() => {
+    const sp = getPlanById(selectedPlanId);
+    const spPrice = pricing[selectedPlanId] || DEFAULT_PRICING[selectedPlanId];
+    console.debug("PlanSelection debug:", { selectedPlanId, selectedPlan: sp, selectedPrice: spPrice, submitting });
+  }, [selectedPlanId, pricing, submitting]);
+
   const choosePlan = (planId) => {
-    const plan = getDefaultSchoolPlan(planId);
-    const baseClasses = getUniqueClasses(selectedClasses.length ? selectedClasses : [enrollment?.className]);
     setSelectedPlanId(planId);
-    setSelectedClasses(plan.allClasses ? DEFAULT_SCHOOL_CLASS_OPTIONS : baseClasses.slice(0, plan.maxClasses));
     setError("");
   };
 
-  const toggleClass = (className) => {
-    if (selectedPlan.allClasses) return;
-
-    const cleanClassName = normalizeClassName(className);
-    setSelectedClasses((prev) => {
-      const current = getUniqueClasses(prev);
-      if (current.includes(cleanClassName)) {
-        return current.filter((item) => item !== cleanClassName);
-      }
-      if (current.length >= selectedPlan.maxClasses) return current;
-      return [...current, cleanClassName];
-    });
-  };
-
   const handlePay = async () => {
-    if (!enrollment) return;
-
-    const classesForPlan = selectedPlan.allClasses ? DEFAULT_SCHOOL_CLASS_OPTIONS : getUniqueClasses(selectedClasses);
-    if (!classesForPlan.length) {
-      setError("Select at least one class.");
+    if (!enrollment || !pricingLoaded) {
+      setError("Loading plan details...");
       return;
     }
-    if (classesForPlan.length > selectedPlan.maxClasses) {
-      setError(`This plan allows only ${selectedPlan.maxClasses} class${selectedPlan.maxClasses > 1 ? "es" : ""}.`);
+
+    if (!selectedPlanId) {
+      setError("Please select a plan.");
+      return;
+    }
+
+    const selectedPlan = getPlanById(selectedPlanId);
+    if (!selectedPlan) {
+      setError("Invalid plan selected.");
       return;
     }
 
@@ -143,146 +117,235 @@ const PlanSelection = () => {
     setError("");
 
     try {
-      const enrollmentRef = doc(db, "defaultSchoolEnrollments", enrollmentId);
-      const planPayload = {
-        planId: selectedPlan.id,
-        planName: selectedPlan.name,
-        planAmount: selectedPlan.amount,
-        planMaxClasses: selectedPlan.maxClasses,
-        selectedClasses: classesForPlan,
-        className: classesForPlan[0] || enrollment.className || "",
-        updatedAt: new Date().toISOString(),
-      };
-      await setDoc(enrollmentRef, planPayload, { merge: true });
-
-      if (enrollment.isPaid) {
-        const paidEnrollment = { ...enrollment, ...planPayload, isPaid: true };
-        localStorage.setItem("schoolStudentSession", JSON.stringify(buildSession(enrollmentId, paidEnrollment)));
+      if (enrollment.isPaid && enrollment.razorpaySubscriptionId) {
+        localStorage.setItem("schoolStudentSession", JSON.stringify(enrollment));
         navigate("/dashboard", { replace: true });
         return;
       }
 
-      const callbackUrl = `${window.location.origin}/payment-success?defaultStudentId=${encodeURIComponent(enrollmentId)}`;
-      const canUseCurrentOrigin =
-        window.location.protocol === "https:" &&
-        !window.location.hostname.includes("localhost") &&
-        !window.location.hostname.startsWith("127.");
-      const paymentPayload = {
-        userId: enrollmentId,
-        studentId: enrollmentId,
-        purpose: "defaultSchool",
-        amount: selectedPlan.amount * 100,
-        name: enrollment.name || "Student",
-        phone: enrollment.phone || "",
-        schoolId: enrollment.schoolId || "",
-        schoolName: enrollment.schoolName || "",
-        planId: selectedPlan.id,
+      const enrollmentRef = doc(db, "defaultSchoolEnrollments", enrollmentId);
+      const amount = pricing[selectedPlanId];
+
+      const planPayload = {
+        planId: selectedPlanId,
         planName: selectedPlan.name,
-        selectedClasses: classesForPlan,
+        planAmount: amount,
+        updatedAt: new Date().toISOString(),
       };
 
-      if (canUseCurrentOrigin) {
-        paymentPayload.callbackUrl = callbackUrl;
+      await setDoc(enrollmentRef, planPayload, { merge: true });
+
+      const userPhone = enrollment.phone || auth.currentUser?.phoneNumber || "";
+      const userName = enrollment.name || "Student";
+
+      const response = await fetch(
+        "https://us-central1-dreamprojects-cda5b.cloudfunctions.net/createRazorpaySubscription",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: enrollmentId,
+            name: userName,
+            email: auth.currentUser?.email || enrollment.email || "user@example.com",
+            phone: userPhone,
+            planId: selectedPlanId,
+            schoolId: enrollment.schoolId || "default",
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to create subscription");
       }
 
-      const res = await fetch(CREATE_PAYMENT_LINK_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(paymentPayload),
-      });
-      const responseText = await res.text();
-      let data = {};
-      try {
-        data = responseText ? JSON.parse(responseText) : {};
-      } catch {
-        data = { error: responseText };
+      const data = await response.json();
+
+      if (!data.subscriptionId) {
+        throw new Error("Failed to generate subscription reference");
       }
-      if (!res.ok) throw new Error(data.error || "Payment link creation failed.");
-      if (!data.payment_url) throw new Error("Payment link creation failed.");
+
+      setActiveSubscriptionId(data.subscriptionId);
 
       await setDoc(
         enrollmentRef,
         {
-          paymentLinkId: data.paymentLinkId || "",
-          paymentLinkUrl: data.payment_url,
-          paymentLinkCreatedAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
+          razorpaySubscriptionId: data.subscriptionId,
+          checkoutUrl: data.shortUrl || "",
+          subscriptionCreatedAt: new Date().toISOString(),
         },
         { merge: true }
       );
-      window.location.href = data.payment_url;
+
+      if (!window.Razorpay) {
+        throw new Error("Razorpay script not loaded. Please refresh the page.");
+      }
+
+      // --- UPDATE YOUR OPTIONS OBJECT TO THIS EXACT FORMAT ---
+      // --- CLEAN SUBSCRIPTION OPTIONS FORMAT ---
+      const options = {
+        key: "rzp_test_SINM6r07wHAFN6", 
+        subscription_id: data.subscriptionId, // ONLY use subscription_id (NO amount, NO currency)
+        name: "MINT Entrance Foundation",
+        description: `${selectedPlan.name} Subscription`,
+        handler: function (response) {
+          // This fires the instant you click 'Success' in the test environment!
+          window.location.href = `https://hepsy.in/payment-success?defaultStudentId=${encodeURIComponent(enrollmentId)}&razorpay_payment_id=${encodeURIComponent(response.razorpay_payment_id)}&razorpay_subscription_id=${encodeURIComponent(response.razorpay_subscription_id)}`;
+        },
+        prefill: {
+          name: userName,
+          email: auth.currentUser?.email || enrollment.email || "user@example.com",
+          contact: userPhone ? `+91${userPhone}` : ""
+        },
+        modal: {
+          ondismiss: function () {
+            setSubmitting(false);
+          }
+        },
+        theme: {
+          color: "#2563eb"
+        }
+      };
+
+      const rzp = new window.Razorpay(options);
+      rzp.open();
+
     } catch (err) {
-      setError(err.message || "Unable to continue to payment.");
-    } finally {
+      console.error("Payment error:", err);
+      setError(err.message || "Unable to proceed to payment.");
       setSubmitting(false);
     }
   };
 
-  if (loading) {
-    return <div className="plan-page"><div className="plan-shell">Loading plans...</div></div>;
+  if (loading || !pricingLoaded) {
+    return (
+      <div className="plan-page">
+        <div className="plan-shell">
+          <div className="plan-loader">
+            <div className="loader-circle"></div>
+            <p>Loading plans...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
+
+  const selectedPlan = getPlanById(selectedPlanId);
+  const selectedPrice = pricing[selectedPlanId] || DEFAULT_PRICING[selectedPlanId];
 
   return (
     <div className="plan-page">
       <main className="plan-shell">
         <div className="plan-head">
           <div>
-            <p>Default School</p>
-            <h1>Choose Your Plan</h1>
-            <span>{enrollment?.name || "Student"} | Class {enrollment?.className || "N/A"}</span>
+            <p>MINT Entrance Foundation Platform</p>
+            <h1>Choose Your Subscription Plan</h1>
+            <span>🎓 Unlock all classes (6-10) with one subscription</span>
           </div>
-          <button type="button" onClick={() => navigate("/login", { replace: true })}>Back</button>
+          <button type="button" onClick={() => navigate("/login", { replace: true })} className="btn-back">
+            Back
+          </button>
         </div>
 
         {error && <div className="login-error">{error}</div>}
 
         <section className="plan-grid">
-          {planRows.map((plan) => (
-            <button
-              type="button"
-              key={plan.id}
-              className={`plan-card ${selectedPlanId === plan.id ? "active" : ""}`}
-              onClick={() => choosePlan(plan.id)}
-            >
-              <span>{plan.name}</span>
-              <strong>Rs. {plan.amount}</strong>
-              <small>
-                {plan.allClasses
-                  ? "Access to all classes"
-                  : plan.maxClasses === 1
-                  ? "Choose one class"
-                  : `Choose up to ${plan.maxClasses} classes`}
-              </small>
-            </button>
-          ))}
+          {planRows.map((planConfig) => {
+            const plan = SUBSCRIPTION_PLANS[planConfig.key];
+            const price = pricing[planConfig.id];
+            const isSelected = selectedPlanId === planConfig.id;
+            const monthlyEquivalent = Math.round(price / plan.durationInMonths);
+
+            return (
+              <button
+                type="button"
+                key={plan.id}
+                className={`plan-card ${isSelected ? "active" : ""}`}
+                onClick={() => choosePlan(planConfig.id)}
+              >
+                <div className="plan-card-badge">
+                  {planConfig.id === "yearly" && <span className="badge-popular">Best Value</span>}
+                </div>
+
+                <span className="plan-name">{plan.name}</span>
+                <strong className="plan-price">₹{price}</strong>
+                <small className="plan-duration">for {plan.durationInMonths} months</small>
+                <small className="plan-monthly">₹{monthlyEquivalent}/month</small>
+
+                <div className="plan-features">
+                  <p>✅ All Classes (6-10)</p>
+                  <p>✅ Unlimited Quizzes</p>
+                  <p>✅ Auto-Renewal</p>
+                </div>
+              </button>
+            );
+          })}
         </section>
 
-        <section className="class-picker">
-          <div className="class-picker-head">
-            <h2>Classes</h2>
-            <span>{selectedPlan.allClasses ? "All classes included" : `${selectedClasses.length} / ${selectedPlan.maxClasses}`}</span>
-          </div>
-          <div className="class-chip-grid">
-            {DEFAULT_SCHOOL_CLASS_OPTIONS.map((className) => {
-              const active = selectedPlan.allClasses || selectedClasses.includes(className);
-              return (
-                <button
-                  type="button"
-                  key={className}
-                  className={`class-chip ${active ? "active" : ""}`}
-                  onClick={() => toggleClass(className)}
-                  disabled={selectedPlan.allClasses}
-                >
-                  {className}
-                </button>
-              );
-            })}
+        <section className="features-section">
+          <h2>What's Included in Your Subscription</h2>
+          <div className="features-list">
+            {SUBSCRIPTION_FEATURES.map((feature, idx) => (
+              <div key={idx} className="feature-item">
+                <span className="feature-check">✓</span>
+                <p>{feature}</p>
+              </div>
+            ))}
           </div>
         </section>
 
-        <button className="plan-pay-btn" type="button" onClick={handlePay} disabled={submitting}>
-          {submitting ? "Preparing payment..." : enrollment?.isPaid ? "Save Plan" : `Pay Rs. ${selectedPlan.amount}`}
+        {selectedPlan && (
+          <div className="summary-card">
+            <div className="summary-header">
+              <h3>Order Summary</h3>
+            </div>
+            <div className="summary-details">
+              <div className="summary-row">
+                <span>Plan:</span>
+                <strong>{selectedPlan.name}</strong>
+              </div>
+              <div className="summary-row">
+                <span>Duration:</span>
+                <strong>{selectedPlan.durationInMonths} months</strong>
+              </div>
+              <div className="summary-row">
+                <span>Price:</span>
+                <strong>₹{selectedPrice}</strong>
+              </div>
+              <div className="summary-row total">
+                <span>Total:</span>
+                <strong>₹{selectedPrice}</strong>
+              </div>
+              <p className="summary-note">
+                ✓ Automatic renewal enabled • ✓ Cancel anytime • ✓ Secure payment with Razorpay
+              </p>
+            </div>
+          </div>
+        )}
+
+        <button className="plan-pay-btn" type="button" onClick={handlePay} disabled={submitting || !selectedPlan}>
+          {submitting ? (
+            <>
+              <span className="btn-loader"></span>
+              Processing...
+            </>
+          ) : enrollment?.isPaid ? (
+            "Continue to Dashboard"
+          ) : (
+            `Subscribe Now - ₹${selectedPrice}`
+          )}
         </button>
+
+        <div className="plan-footer-note">
+          <p>
+            💳 Payments powered by <strong>Razorpay</strong> | 🔒 Secure & encrypted | 📱 Works on all devices
+          </p>
+          {activeSubscriptionId && (
+            <p style={{ fontSize: "11px", opacity: 0.6, marginTop: "5px" }}>
+              Reference Token: {activeSubscriptionId}
+            </p>
+          )}
+        </div>
       </main>
     </div>
   );

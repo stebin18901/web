@@ -1,0 +1,503 @@
+/* ======================= SUBSCRIPTION CHECKOUT ======================= */
+
+.subscription-checkout {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+}
+
+.checkout-container {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  max-width: 1200px;
+  width: 100%;
+  padding: 60px 40px;
+  animation: slideUp 0.5s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ======================= HEADER ======================= */
+
+.checkout-header {
+  text-align: center;
+  margin-bottom: 50px;
+}
+
+.checkout-header h1 {
+  font-size: 2.5rem;
+  color: #1a202c;
+  margin: 0 0 10px 0;
+  font-weight: 700;
+}
+
+.checkout-header p {
+  font-size: 1.1rem;
+  color: #718096;
+  margin: 0;
+}
+
+/* ======================= USER INFO ======================= */
+
+.checkout-user-info {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  background: #f7fafc;
+  padding: 15px 20px;
+  border-radius: 12px;
+  margin-bottom: 30px;
+  border-left: 4px solid #667eea;
+}
+
+.user-badge {
+  font-size: 2rem;
+  flex-shrink: 0;
+}
+
+.user-details {
+  flex: 1;
+}
+
+.user-name {
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.user-email,
+.user-phone {
+  font-size: 0.9rem;
+  color: #718096;
+  margin: 4px 0 0 0;
+}
+
+/* ======================= ERROR MESSAGE ======================= */
+
+.error-message {
+  background: #fed7d7;
+  color: #c53030;
+  padding: 12px 16px;
+  border-radius: 8px;
+  margin-bottom: 20px;
+  border-left: 4px solid #c53030;
+  font-size: 0.95rem;
+  animation: shake 0.3s ease-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}
+
+/* ======================= PLANS GRID ======================= */
+
+.plans-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  gap: 25px;
+  margin-bottom: 50px;
+}
+
+.plan-card {
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 30px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.plan-card:hover {
+  border-color: #667eea;
+  transform: translateY(-5px);
+  box-shadow: 0 15px 35px rgba(102, 126, 234, 0.1);
+}
+
+.plan-card.selected {
+  border-color: #667eea;
+  background: #f0f4ff;
+  box-shadow: 0 15px 35px rgba(102, 126, 234, 0.15);
+}
+
+/* Popular Badge */
+
+.popular-badge {
+  position: absolute;
+  top: -12px;
+  right: -12px;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  padding: 6px 16px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transform: rotate(45deg);
+  transform-origin: top right;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Plan Header */
+
+.plan-header {
+  margin-bottom: 20px;
+}
+
+.plan-header h3 {
+  font-size: 1.4rem;
+  color: #2d3748;
+  margin: 0 0 8px 0;
+  font-weight: 600;
+}
+
+.plan-duration {
+  font-size: 0.9rem;
+  color: #718096;
+  margin: 0;
+}
+
+/* Plan Price */
+
+.plan-price {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  margin-bottom: 25px;
+  padding: 20px 0;
+  border-top: 2px solid #edf2f7;
+  border-bottom: 2px solid #edf2f7;
+}
+
+.currency {
+  font-size: 1rem;
+  color: #667eea;
+}
+
+.amount {
+  font-size: 2.5rem;
+  font-weight: 700;
+  color: #1a202c;
+}
+
+.period {
+  font-size: 0.9rem;
+  color: #718096;
+  margin-left: auto;
+}
+
+/* Plan Features */
+
+.plan-features {
+  margin-bottom: 30px;
+}
+
+.feature-item {
+  font-size: 0.95rem;
+  color: #4a5568;
+  margin: 10px 0;
+  line-height: 1.6;
+}
+
+/* Select Button */
+
+.plan-select-btn {
+  width: 100%;
+  padding: 12px 20px;
+  border: 2px solid #e2e8f0;
+  background: white;
+  color: #667eea;
+  font-weight: 600;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  font-size: 0.95rem;
+}
+
+.plan-select-btn:hover:not(:disabled) {
+  border-color: #667eea;
+  background: #f0f4ff;
+}
+
+.plan-select-btn.selected {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+  border-color: #667eea;
+}
+
+.plan-select-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ======================= COMPARISON ======================= */
+
+.checkout-comparison {
+  background: #f7fafc;
+  padding: 30px;
+  border-radius: 12px;
+  margin-bottom: 40px;
+}
+
+.checkout-comparison h3 {
+  font-size: 1.2rem;
+  color: #2d3748;
+  margin: 0 0 20px 0;
+  text-align: center;
+}
+
+.comparison-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 20px;
+}
+
+.comparison-item {
+  background: white;
+  padding: 15px;
+  border-radius: 8px;
+  text-align: center;
+  border: 1px solid #e2e8f0;
+}
+
+.comp-plan {
+  font-weight: 600;
+  color: #2d3748;
+  margin: 0 0 10px 0;
+  font-size: 0.95rem;
+}
+
+.comp-total {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #667eea;
+  margin: 0 0 5px 0;
+}
+
+.comp-monthly {
+  font-size: 0.85rem;
+  color: #718096;
+  margin: 0;
+}
+
+/* ======================= ACTIONS ======================= */
+
+.checkout-actions {
+  display: grid;
+  grid-template-columns: 1fr 2fr;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.btn-primary,
+.btn-secondary {
+  padding: 14px 28px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 25px rgba(102, 126, 234, 0.3);
+}
+
+.btn-primary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.btn-secondary {
+  background: white;
+  color: #667eea;
+  border: 2px solid #667eea;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: #f0f4ff;
+}
+
+.btn-secondary:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.btn-large {
+  grid-column: 2;
+}
+
+.spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ======================= SECURITY NOTE ======================= */
+
+.security-note {
+  text-align: center;
+  padding: 20px;
+  background: #edf2f7;
+  border-radius: 8px;
+}
+
+.security-note p {
+  font-size: 0.9rem;
+  color: #4a5568;
+  margin: 8px 0;
+}
+
+/* ======================= LOADER ======================= */
+
+.checkout-loader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 60px 20px;
+}
+
+.loader-circle {
+  width: 50px;
+  height: 50px;
+  border: 4px solid rgba(255, 255, 255, 0.3);
+  border-radius: 50%;
+  border-top-color: white;
+  animation: spin 1s linear infinite;
+}
+
+.checkout-loader p {
+  color: white;
+  font-size: 1.1rem;
+}
+
+/* ======================= ERROR CARD ======================= */
+
+.error-card {
+  background: white;
+  padding: 60px 40px;
+  border-radius: 16px;
+  text-align: center;
+}
+
+.error-card h2 {
+  color: #c53030;
+  margin-bottom: 15px;
+}
+
+.error-card p {
+  color: #718096;
+  margin-bottom: 30px;
+  font-size: 1.05rem;
+}
+
+/* ======================= RESPONSIVE ======================= */
+
+@media (max-width: 768px) {
+  .checkout-container {
+    padding: 30px 20px;
+  }
+
+  .checkout-header h1 {
+    font-size: 1.8rem;
+  }
+
+  .plans-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+
+  .checkout-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .btn-large {
+    grid-column: auto;
+  }
+
+  .comparison-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .plan-price {
+    flex-wrap: wrap;
+  }
+
+  .period {
+    margin-left: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .subscription-checkout {
+    padding: 10px;
+  }
+
+  .checkout-container {
+    padding: 20px 15px;
+  }
+
+  .checkout-header h1 {
+    font-size: 1.5rem;
+  }
+
+  .checkout-header p {
+    font-size: 1rem;
+  }
+
+  .plan-card {
+    padding: 20px;
+  }
+
+  .plan-header h3 {
+    font-size: 1.2rem;
+  }
+
+  .amount {
+    font-size: 2rem;
+  }
+
+  .plan-select-btn,
+  .btn-primary,
+  .btn-secondary {
+    padding: 12px 16px;
+    font-size: 0.9rem;
+  }
+}

@@ -10,6 +10,7 @@ import AdminCalendar from "./Admin/AdminCalendar";
 import AdminTemplates from "./Admin/AdminTemplates";
 import CreateTutor from "./Admin/CreateTutor";
 import AdminCreateLeague from "./Admin/AdminCreateLeague";
+import AdminSubscriptionSettings from "./Admin/AdminSubscriptionSettings";
 
 const AdminPanel = () => {
   const [activeTab, setActiveTab] = useState("schoolQuiz"); // Default active tab
@@ -18,6 +19,7 @@ const AdminPanel = () => {
   const tabs = [
     { id: "schoolQuiz", label: "School Quiz" },
     { id: "schools", label: "Schools" },
+    { id: "subscriptions", label: "Subscriptions" },
     { id: "createquiz", label: "Chapter Mgt" },
     { id: "createchapter", label: "Create chapter" },
     { id: "report", label: "Report card" },
@@ -77,6 +79,7 @@ const AdminPanel = () => {
         <div className="tab-content">
           {activeTab === "schoolQuiz" && <SchoolQuiz />}
           {activeTab === "schools" && <Schools />}
+          {activeTab === "subscriptions" && <AdminSubscriptionSettings />}
           {activeTab === "createquiz" && <SchoolQuizSwitch />}
           {activeTab === "createchapter" && <AdminQCreate />}
           {activeTab === "report" && <ReportAdmin />}
