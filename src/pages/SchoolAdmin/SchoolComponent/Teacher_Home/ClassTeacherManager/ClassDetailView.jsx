@@ -26,6 +26,7 @@ const ConfirmDialog = ({ open, message, onConfirm, onCancel }) => {
 export default function ClassDetailView({
   className,
   schoolId,
+  school,
   teachers = [],
   draggedTeacher,
   setDraggedTeacher,
@@ -159,6 +160,8 @@ export default function ClassDetailView({
   const appBaseUrl = configuredBaseUrl || window.location.origin;
   const studentFormLink = `${appBaseUrl}/class-form/${schoolId}/${className}/student`;
   const teacherFormLink = `${appBaseUrl}/class-form/${schoolId}/${className}/teacher`;
+  const selectedPlanName = school?.selectedPlanName || "No plan selected";
+  const planAmount = school?.planAmount || 0;
 
   return (
     <div className="class-detail-container">
@@ -178,8 +181,18 @@ export default function ClassDetailView({
           <h3>Class Form Links</h3>
         </div>
         <div className="form-link-row">
+          <span>School Plan:</span>
+          <strong>{selectedPlanName}</strong>
+        </div>
+        <div className="form-link-row">
           <span>Student Form:</span>
           <a href={studentFormLink} target="_blank" rel="noreferrer">{studentFormLink}</a>
+        </div>
+        <div className="form-link-row">
+          <span>Student Payment:</span>
+          <em>
+            Student registration opens the payment link from the form using the {selectedPlanName} plan{planAmount ? ` (₹${planAmount})` : ""}.
+          </em>
         </div>
         <div className="form-link-row">
           <span>Teacher Form:</span>

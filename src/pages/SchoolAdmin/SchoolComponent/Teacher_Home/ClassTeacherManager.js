@@ -72,7 +72,7 @@ const createDefaultRollSetup = async (schoolId, className) => {
 // =========================================
 // MAIN COMPONENT
 // =========================================
-const ClassTeacherManager = ({ schoolId }) => {
+const ClassTeacherManager = ({ schoolId, school }) => {
   const [sections] = useState(DEFAULT_SECTIONS);
   const [activeSectionId, setActiveSectionId] = useState(DEFAULT_SECTIONS[0].id);
   const [classesMap, setClassesMap] = useState({});
@@ -430,14 +430,12 @@ const ClassTeacherManager = ({ schoolId }) => {
             <ClassDetailView
               className={activeClassDetail}
               schoolId={schoolId}
+              school={school}
               teachers={teachers}
               draggedTeacher={draggedTeacher}
               setDraggedTeacher={setDraggedTeacher}
-              
-              /* 🔹 PASSING PLURAL PROPS TO ClassDetailView */
               selectedTeachers={selectedTeachers}
               setSelectedTeachers={setSelectedTeachers}
-              
               onBack={() => setActiveClassDetail(null)}
               mode="admin"
             />
@@ -507,4 +505,5 @@ const ClassTeacherManager = ({ schoolId }) => {
 };
 
 export default ClassTeacherManager;
+
 

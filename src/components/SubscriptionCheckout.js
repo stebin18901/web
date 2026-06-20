@@ -298,7 +298,7 @@ const SubscriptionCheckout = () => {
                 Processing...
               </>
             ) : (
-              `Subscribe to ${SUBSCRIPTION_PLANS[selectedPlan].name}`
+              `Subscribe to ${SUBSCRIPTION_PLANS[selectedPlan.toUpperCase()].name}`
             )}
           </button>
         </div>

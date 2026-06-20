@@ -1,723 +1,401 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef } from "react";
+import { Link } from "react-router-dom";
 import "./MainHome.css";
+import Footer from "../components/Footer";
+
+const highlights = [
+  "Adaptive self-assessment journeys",
+  "NCERT-aligned practice and revision",
+  "Actionable performance reports",
+  "Motivating leaderboards and streaks",
+];
+
+const stats = [
+  { value: "Classes 6-10", label: "Structured coverage for core school years" },
+  { value: "Daily Practice", label: "Short, focused sessions that build consistency" },
+  { value: "Instant Reports", label: "Clear progress snapshots for students and parents" },
+];
+
+const features = [
+  {
+    title: "Guided Practice",
+    text: "Hints, explanations, and stepwise reinforcement help students learn instead of just guessing answers.",
+  },
+  {
+    title: "Exam-Focused Coverage",
+    text: "Concept practice is aligned with school expectations, revision cycles, and competitive exam habits.",
+  },
+  {
+    title: "Parent Visibility",
+    text: "Performance summaries make it easy for families to understand consistency, strengths, and gaps.",
+  },
+  {
+    title: "Challenge-Driven Learning",
+    text: "Leaderboards, streaks, and weekly targets turn routine homework into something students want to return to.",
+  },
+  {
+    title: "Study Material Hub",
+    text: "Notes, revision support, and practice resources live in one clean mobile-first experience.",
+  },
+  {
+    title: "School Growth Support",
+    text: "Institutions can pair learning outcomes with digital visibility and a stronger academic brand.",
+  },
+];
+
+const steps = [
+  {
+    title: "Join",
+    text: "Students subscribe in minutes and get immediate access to structured learning tools.",
+  },
+  {
+    title: "Practice",
+    text: "Daily quizzes, revision sets, and guided questions build momentum with low friction.",
+  },
+  {
+    title: "Improve",
+    text: "Reports and insights highlight where to focus next, making progress easier to sustain.",
+  },
+];
+
+const planFeatures = [
+  "Unlimited quiz access",
+  "All classes access (6-10)",
+  "Weekly challenges and streaks",
+  "Leaderboards and rankings",
+  "Progress tracking dashboard",
+  "Notes and study materials",
+  "New content updates",
+];
+
+const plans = [
+  {
+    name: "Quarterly",
+    duration: "3 months",
+    price: "Rs 590",
+    meta: "Rs 197/month",
+    ctaClass: "btn btn-outline",
+  },
+  {
+    name: "Half-Yearly",
+    duration: "6 months",
+    price: "Rs 990",
+    meta: "Rs 165/month",
+    ctaClass: "btn btn-secondary",
+  },
+  {
+    name: "Yearly",
+    duration: "12 months",
+    price: "Rs 1590",
+    meta: "Rs 133/month",
+    featured: true,
+    badge: "Best Value",
+    ctaClass: "btn btn-primary",
+  },
+];
 
 export default function MainHome() {
   const canvasRef = useRef(null);
-  const tiltRef = useRef(null);
-  const [submitted, setSubmitted] = useState(false);
 
-  // Smooth scroll helper
   const scrollToId = (id) => {
     const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: "smooth" });
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
-  // Particle canvas + resize + animation
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) return undefined;
+
     const ctx = canvas.getContext("2d");
-    let W, H;
-    let rafId;
-    let stars = [];
-    const STAR_COUNT = 120;
+    let width = 0;
+    let height = 0;
+    let frame = 0;
+    let particles = [];
+    const particleCount = 80;
 
     const resize = () => {
-      W = canvas.width = window.innerWidth;
-      H = canvas.height = window.innerHeight;
-    };
-    const spawn = () => {
-      stars = Array.from({ length: STAR_COUNT }, () => ({
-        x: Math.random() * W,
-        y: Math.random() * H,
-        r: Math.random() * 1.6 + 0.4,
-        v: Math.random() * 0.3 + 0.05,
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+      particles = Array.from({ length: particleCount }, () => ({
+        x: Math.random() * width,
+        y: Math.random() * height,
+        radius: Math.random() * 1.8 + 0.5,
+        speed: Math.random() * 0.25 + 0.05,
+        alpha: Math.random() * 0.35 + 0.1,
       }));
     };
-    const loop = () => {
-      ctx.clearRect(0, 0, W, H);
-      for (const s of stars) {
-        s.x += s.v;
-        if (s.x > W) {
-          s.x = -10;
-          s.y = Math.random() * H;
+
+    const render = () => {
+      ctx.clearRect(0, 0, width, height);
+
+      particles.forEach((particle) => {
+        particle.y -= particle.speed;
+        if (particle.y < -8) {
+          particle.y = height + 8;
+          particle.x = Math.random() * width;
         }
+
         ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-        ctx.fillStyle = "rgba(17,24,39,.7)";
+        ctx.arc(particle.x, particle.y, particle.radius, 0, Math.PI * 2);
+        ctx.fillStyle = `rgba(255, 255, 255, ${particle.alpha})`;
         ctx.fill();
-      }
-      rafId = requestAnimationFrame(loop);
+      });
+
+      frame = requestAnimationFrame(render);
     };
 
     resize();
-    spawn();
-    loop();
+    render();
     window.addEventListener("resize", resize);
 
     return () => {
       window.removeEventListener("resize", resize);
-      if (rafId) cancelAnimationFrame(rafId);
+      cancelAnimationFrame(frame);
     };
   }, []);
 
-  // Parallax tilt
   useEffect(() => {
-    const el = tiltRef.current;
-    if (!el) return;
-    const onMove = (e) => {
-      const r = el.getBoundingClientRect();
-      const x = (e.clientX - r.left) / r.width - 0.5;
-      const y = (e.clientY - r.top) / r.height - 0.5;
-      el.style.transform = `rotateX(${(-y * 6).toFixed(2)}deg) rotateY(${(x * 6).toFixed(2)}deg)`;
-    };
-    const onLeave = () => {
-      el.style.transform = "";
-    };
-    el.addEventListener("mousemove", onMove);
-    el.addEventListener("mouseleave", onLeave);
-    return () => {
-      el.removeEventListener("mousemove", onMove);
-      el.removeEventListener("mouseleave", onLeave);
-    };
-  }, []);
-
-  // Reveal on scroll
-  useEffect(() => {
-    const io = new IntersectionObserver(
+    const elements = document.querySelectorAll(".reveal");
+    const observer = new IntersectionObserver(
       (entries) => {
-        entries.forEach((e) => {
-          if (e.isIntersecting) {
-            e.target.classList.add("show");
-            io.unobserve(e.target);
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            entry.target.classList.add("show");
+            observer.unobserve(entry.target);
           }
         });
       },
-      { threshold: 0.12 }
+      { threshold: 0.14 }
     );
-    document.querySelectorAll(".reveal").forEach((el) => io.observe(el));
-    return () => io.disconnect();
+
+    elements.forEach((element) => observer.observe(element));
+
+    return () => observer.disconnect();
   }, []);
-
-  // Contact form submit
-  const onSubmit = async (e) => {
-    e.preventDefault();
-    const form = e.target;
-    const formData = {
-      schoolName: form[0].value,
-      contactPerson: form[1].value,
-      email: form[2].value,
-      phone: form[3].value,
-      interestedIn: form[4].value,
-    };
-
-    try {
-      await fetch("https://script.google.com/macros/s/AKfycbxTKNqqjLSHfNaxDNzAuUb3E_OrdmgAAUl7JbyKlcnR5fPwhVl90z_tdghTSTwMQ0tQ/exec", {
-        method: "POST",
-        mode: "no-cors",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
-      });
-      setSubmitted(true);
-      alert("Thanks! Your details have been submitted successfully.");
-      form.reset();
-    } catch (error) {
-      console.error("Error:", error);
-      alert("Something went wrong. Please try again later.");
-    }
-  };
-
-
-  const YearNow = new Date().getFullYear();
 
   return (
     <>
-      {/* Animated background layers */}
-      <div className="gradient-bg" />
-      <div className="blob b1" />
-      <div className="blob b2" />
-      <div className="blob b3" />
-      <canvas id="stars" ref={canvasRef} />
+      <div className="home-shell">
+        <div className="gradient-bg" />
+        <div className="blob b1" />
+        <div className="blob b2" />
+        <div className="blob b3" />
+        <canvas id="stars" ref={canvasRef} />
 
-      {/* NAV */}
-      <header className="nav">
-        <div className="container1 bar">
-          <a className="brand" href="#top" aria-label="Hepsy Home">
-            <span className="logo">H</span>
-            <span>Hepsy Enterprise Private Limited</span>
-          </a>
-          <nav className="links">
-            <a href="#overview">Overview</a>
-            <a href="#den">DEN CRM</a>
-            <a href="#pro">DEN CRM Pro</a>
-            <a href="#self">Self Learning</a>
-            <a href="#pricing">Pricing</a>
-            <a href="#contact">Contact</a>
-            <button className="btn" onClick={() => scrollToId("pricing")}>
-              Get Started
-            </button>
-          </nav>
-        </div>
-      </header>
+        <header className="nav">
+          <div className="container1 nav-bar">
+            <a className="brand" href="#top" aria-label="Hepsy Home">
+              <span className="logo">H</span>
+              <span className="brand-copy">
+                <strong>Hepsy</strong>
+                <small>Self Learning Platform</small>
+              </span>
+            </a>
 
-      {/* HERO */}
-      <section className="hero container1" id="overview">
-        <div className="wrap">
-          <div>
-            <span className="eyebrow">
-              <span className="dot" /> DEN – Digital Education Network (CRM + Parent App)
-            </span>
-            <h1 className="h1">Brighter school ↔ parent communication with built-in self learning</h1>
-            <p className="lead">
-              DEN CRM keeps schools and families perfectly in sync — instant announcements, fee and event alerts, zero
-              miscommunication — bundled with Hepsy&apos;s engaging Self Learning Platform.
-            </p>
-            <div className="cta">
-              <button className="btn" onClick={() => scrollToId("pricing")}>
-                See Plans
+            <nav className="links" aria-label="Primary navigation">
+              <a href="#overview">Overview</a>
+              <a href="#platform">Platform</a>
+              <a href="#pricing">Pricing</a>
+              <a href="#schools">Schools</a>
+              <Link to="/login">Student Login</Link>
+              <button className="btn btn-primary nav-cta" onClick={() => scrollToId("pricing")}>
+                Start Learning
               </button>
-              <button className="btn ghost" onClick={() => scrollToId("den")}>
-                Explore Features
-              </button>
-            </div>
+            </nav>
           </div>
+        </header>
 
-          <div className="art" id="tilt" ref={tiltRef}>
-            <img
-              src="/images/Parentapp.png"
-              alt="DEN CRM Dashboard"
-              className="crm-img"
-              style={{
-                width: "100%",
-                maxWidth: 420,
-                borderRadius: "12px",
-                boxShadow: "0 8px 20px rgba(0,0,0,0.2)",
-                transition: "transform 0.3s ease, box-shadow 0.3s ease",
-              }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.transform = "scale(1.03)";
-                e.currentTarget.style.boxShadow = "0 14px 30px rgba(0,0,0,0.3)";
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.transform = "scale(1)";
-                e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.2)";
-              }}
-            />
-          </div>
-        </div>
-      </section>
+        <main>
+          <section className="hero-section" id="overview">
+            <div className="container1 hero-grid">
+              <div className="hero-copy reveal show">
+                <span className="eyebrow">
+                  <span className="dot" /> Smart practice for stronger results
+                </span>
+                <h1 className="h1">A sharper, more motivating home for everyday learning.</h1>
+                <p className="lead">
+                  Hepsy helps students build confidence through guided self-assessment, revision support, and progress
+                  tracking that feels clear, modern, and rewarding.
+                </p>
 
-      {/* MARQUEE */}
-      <div className="marquee">
-        <div className="row">
-          <span className="pill">
-            <span className="emoji">📣</span> Instant Announcements
-          </span>
-          <span className="pill">
-            <span className="emoji">📲</span> Parent App for All
-          </span>
-          <span className="pill">
-            <span className="emoji">🧾</span> Fee Dues Alerts
-          </span>
-          <span className="pill">
-            <span className="emoji">🎉</span> Event Notifications
-          </span>
-          <span className="pill">
-            <span className="emoji">📊</span> Progress Reports
-          </span>
-          <span className="pill">
-            <span className="emoji">🧠</span> Self Assessment
-          </span>
-          <span className="pill">
-            <span className="emoji">🤝</span> Support 9am–8pm
-          </span>
-          {/* loop illusion */}
-          <span className="pill">
-            <span className="emoji">📣</span> Instant Announcements
-          </span>
-          <span className="pill">
-            <span className="emoji">📲</span> Parent App for All
-          </span>
-          <span className="pill">
-            <span className="emoji">🧾</span> Fee Dues Alerts
-          </span>
-          <span className="pill">
-            <span className="emoji">🎉</span> Event Notifications
-          </span>
-          <span className="pill">
-            <span className="emoji">📊</span> Progress Reports
-          </span>
-          <span className="pill">
-            <span className="emoji">🧠</span> Self Assessment
-          </span>
-          <span className="pill">
-            <span className="emoji">🤝</span> Support 9am–8pm
-          </span>
-        </div>
-      </div>
+                <div className="hero-actions">
+                  <Link to="/login" className="btn btn-primary btn-lg">
+                    Student Login
+                  </Link>
+                  <Link to="/subscribe" className="btn btn-secondary btn-lg">
+                    Subscribe Now
+                  </Link>
+                  <button className="btn btn-ghost btn-lg" onClick={() => scrollToId("platform")}>
+                    Explore Platform
+                  </button>
+                </div>
 
-      {/* DEN CRM */}
-      <section className="container1" id="den">
-        <div className="grid-2">
-          <div>
-            <h2 className="section-title">DEN CRM</h2>
-            <p className="section-lead">
-              Interaction between schools and parents is smoother and faster — with no miscommunication.
-            </p>
+                <div className="hero-highlights">
+                  {highlights.map((item) => (
+                    <div className="highlight-chip" key={item}>
+                      <span className="highlight-mark">+</span>
+                      <span>{item}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
 
-            <div className="grid-3">
-              <div className="feature reveal">
-                <h3>On-time Notifications</h3>
-                <p>Announcements and updates arrive right on the phone.</p>
-              </div>
-              <div className="feature reveal">
-                <h3>Fee Dues Alerts</h3>
-                <p>Parents receive timely reminders for dues and payments.</p>
-              </div>
-              <div className="feature reveal">
-                <h3>Events &amp; Calendar</h3>
-                <p>All event notifications, neatly organized.</p>
-              </div>
-              <div className="feature reveal">
-                <h3>Data Management</h3>
-                <p>Manage all school data in one place.</p>
-              </div>
-              <div className="feature reveal">
-                <h3>Parent App for All</h3>
-                <p>Every parent gets access to the app, at no extra cost.</p>
-              </div>
-              <div className="feature reveal">
-                <h3>Support</h3>
-                <p>Assistance provided for schools; customer support available.</p>
+              <div className="hero-visual reveal">
+                <div className="visual-card visual-primary">
+                  <div className="visual-header">
+                    <span className="visual-kicker">Learning Snapshot</span>
+                    <span className="visual-pill">Live Progress</span>
+                  </div>
+                  <h3>Daily performance that students can actually understand.</h3>
+                  <p>
+                    Practice flow, revision targets, and simple milestones all sit inside one clean dashboard.
+                  </p>
+
+                  <div className="visual-metrics">
+                    {stats.map((stat) => (
+                      <div className="metric-card" key={stat.value}>
+                        <strong>{stat.value}</strong>
+                        <span>{stat.label}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="visual-card visual-image-card">
+                  <img src="/images/self.png" alt="Hepsy self learning preview" className="crm-img" />
+                </div>
               </div>
             </div>
+          </section>
 
-            <div className="cta" style={{ marginTop: 18 }}>
-              <button className="btn" onClick={() => scrollToId("pricing")}>
-                View Pricing
-              </button>
-              <button className="btn ghost" onClick={() => scrollToId("contact")}>
-                Talk to Us
-              </button>
+          <section className="trust-strip">
+            <div className="marquee">
+              <div className="row">
+                <span className="pill">Adaptive assessments</span>
+                <span className="pill">NCERT-aligned topics</span>
+                <span className="pill">Parent-friendly reports</span>
+                <span className="pill">Weekly challenges</span>
+                <span className="pill">Notes and revision tools</span>
+                <span className="pill">Student-first design</span>
+                <span className="pill">Adaptive assessments</span>
+                <span className="pill">NCERT-aligned topics</span>
+                <span className="pill">Parent-friendly reports</span>
+                <span className="pill">Weekly challenges</span>
+                <span className="pill">Notes and revision tools</span>
+                <span className="pill">Student-first design</span>
+              </div>
             </div>
-          </div>
+          </section>
 
-          {/* CRM Image Slot */}
-          <div
-            className="reveal"
-            style={{
-              textAlign: "center",
-              display: "flex",
-              flexDirection: "column",
-              alignItems: "center",
-              gap: "20px",
-            }}
-          >
-            {/* Image Row */}
-            <div
-              style={{
-                display: "flex",
-                flexWrap: "wrap",
-                justifyContent: "center",
-                alignItems: "center",
-                gap: "20px",
-              }}
-            >
-
-
-              <img
-                src="/images/Crm.png"
-                alt="DEN CRM Dashboard"
-                className="crm-img"
-                style={{
-                  width: "100%",
-                  maxWidth: 420,
-                  borderRadius: "12px",
-                  boxShadow: "0 8px 20px rgba(0,0,0,0.2)",
-                  transition: "transform 0.3s ease, box-shadow 0.3s ease",
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = "scale(1.03)";
-                  e.currentTarget.style.boxShadow = "0 14px 30px rgba(0,0,0,0.3)";
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = "scale(1)";
-                  e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.2)";
-                }}
-              />
+          <section className="container1 platform-section" id="platform">
+            <div className="section-heading reveal">
+              <span className="section-tag">Platform Experience</span>
+              <h2 className="section-title">Everything students need to stay consistent, not just busy.</h2>
+              <p className="section-subtitle">
+                The homepage now leads with clarity: what Hepsy offers, why it matters, and how quickly students can get
+                value from it.
+              </p>
             </div>
 
+            <div className="feature-grid">
+              {features.map((feature) => (
+                <article className="feature reveal" key={feature.title}>
+                  <div className="feature-icon">{feature.title.charAt(0)}</div>
+                  <h3>{feature.title}</h3>
+                  <p>{feature.text}</p>
+                </article>
+              ))}
+            </div>
+          </section>
 
-
-          </div>
-        </div>
-
-
-      </section>
-
-      {/* DEN CRM PRO */}
-      <section className="container1" id="pro">
-        <div className="grid-2">
-          <div className="reveal">
-            <div
-              className="cta-band"
-              style={{
-                background: "linear-gradient(120deg, var(--bg1), var(--bg2))",
-                color: "#111",
-              }}
-            >
-              <div>
-                <h3 style={{ margin: "0 0 6px" }}>DEN CRM Pro + Hepsy Self Learning</h3>
-                <p style={{ margin: 0 }}>
-                  Interaction between schools and parents is smoother. On-time phone notifications. Manage data for
-                  students and teachers. All event notifications included.
+          <section className="container1 journey-section">
+            <div className="journey-card reveal">
+              <div className="journey-copy">
+                <span className="section-tag">How It Works</span>
+                <h2>Simple enough to start fast, structured enough to improve outcomes.</h2>
+                <p>
+                  A good learning homepage should remove friction. This flow helps students and schools understand the
+                  path from signup to progress without making the page feel crowded.
                 </p>
               </div>
-              <button className="btn" onClick={() => scrollToId("pricing")}>
-                Choose Pro
-              </button>
-            </div>
-          </div>
-          <div>
-            <div className="grid-3">
-              <div className="feature reveal">
-                <h3>Year-long Self Assessment</h3>
-                <p>Included for every student.</p>
-              </div>
-              <div className="feature reveal">
-                <h3>Parent App for All</h3>
-                <p>Provide access to every parent.</p>
-              </div>
-              <div className="feature reveal">
-                <h3>Onboarding Assistance</h3>
-                <p>Help provided in the beginning stage.</p>
-              </div>
-              <div className="feature reveal">
-                <h3>Support Hours</h3>
-                <p>Customer support 9am – 8pm.</p>
-              </div>
-              <div className="feature reveal">
-                <h3>Data Control</h3>
-                <p>Manage students &amp; teachers in one hub.</p>
-              </div>
-              <div className="feature reveal">
-                <h3>No Miscommunication</h3>
-                <p>Clear channels between school &amp; parents.</p>
-              </div>
-            </div>
-          </div>
-        </div>
-        {/* SEE DEMO LINK */}
 
+              <div className="journey-steps">
+                {steps.map((step, index) => (
+                  <div className="journey-step" key={step.title}>
+                    <span className="step-number">0{index + 1}</span>
+                    <div>
+                      <h3>{step.title}</h3>
+                      <p>{step.text}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
 
-      </section>
-
-      {/* SELF LEARNING */}
-      <section className="container1" id="self">
-        <div className="grid-2">
-          <div>
-            <h2 className="section-title">Hepsy Self Learning Platform</h2>
-            <p className="section-lead">
-              Foundation program that boosts self-assessment and daily practice — aligned to NCERT with exam-focused
-              questions.
-            </p>
-            <div className="grid-3">
-              <div className="feature reveal">
-                <h3>Integrated Hints</h3>
-                <p>Questions come with solving hints.</p>
-              </div>
-              <div className="feature reveal">
-                <h3>Relevant Syllabus</h3>
-                <p>All syllabus with relevant topics on NCERT.</p>
-              </div>
-              <div className="feature reveal">
-                <h3>Daily Homework</h3>
-                <p>Homework becomes engaging and fun.</p>
-              </div>
-              <div className="feature reveal">
-                <h3>Parent Reports</h3>
-                <p>All reports sent to parents for tracking.</p>
-              </div>
-              <div className="feature reveal">
-                <h3>School Promotion</h3>
-                <p>Schools get featured on Hepsy social media pages.</p>
-              </div>
-              <div className="feature reveal">
-                <h3>On-site Content Capture</h3>
-                <p>Hepsy team visits schools to take relevant videos for extra marketing.</p>
-              </div>
-            </div>
-          </div>
-          <img
-            src="/images/self.png"
-            alt="DEN CRM Dashboard"
-            className="crm-img"
-            style={{
-              width: "100%",
-              maxWidth: 420,
-              borderRadius: "12px",
-              boxShadow: "0 8px 20px rgba(0,0,0,0.2)",
-              transition: "transform 0.3s ease, box-shadow 0.3s ease",
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = "scale(1.03)";
-              e.currentTarget.style.boxShadow = "0 14px 30px rgba(0,0,0,0.3)";
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = "scale(1)";
-              e.currentTarget.style.boxShadow = "0 8px 20px rgba(0,0,0,0.2)";
-            }}
-          />
-        </div>
-      </section>
-
-      {/* PRICING */}
-      <section className="container1" id="pricing">
-        <h2 className="section-title">Pricing</h2>
-        <p className="section-lead">Simple, student-first pricing. Schools share revenue on the Self Learning plans.</p>
-        <div className="pricing">
-          {/* Plan 1 */}
-          <div className="price-card reveal">
-            <div className="ribbon">Popular</div>
-            <h3>DEN CRM</h3>
-            <div className="price">
-              ₹299 <span className="per">/ 6 months / student</span>
-            </div>
-            <div className="ul">
-              <div className="li">
-                <span className="tick">✓</span>
-                <span>Parent-school interaction is smoother (no miscommunication)</span>
-              </div>
-              <div className="li">
-                <span className="tick">✓</span>
-                <span>On-time notification &amp; announcements on phone</span>
-              </div>
-              <div className="li">
-                <span className="tick">✓</span>
-                <span>Manage all school data; fee dues notifications to parents</span>
-              </div>
-              <div className="li">
-                <span className="tick">✓</span>
-                <span>All event notifications</span>
-              </div>
-              <div className="li">
-                <span className="tick">✓</span>
-                <span>
-                  Self Assessment Program free for 3 months
-                </span>
-              </div>
-              <div className="li">
-                <span className="tick">✓</span>
-                <span>Parent App provided to all parents</span>
-              </div>
-              <div className="li">
-                <span className="tick">✓</span>
-                <span>Assistance provided for schools</span>
-              </div>
-              <div className="li">
-                <span className="tick">✓</span>
-                <span>Customer support</span>
-              </div>
-            </div>
-            <button className="btn" onClick={() => scrollToId("contact")}>
-              Start with DEN CRM
-            </button>
-          </div>
-
-          {/* Plan 2 */}
-          <div className="price-card reveal">
-            <h3>DEN CRM (Annual)</h3>
-            <div className="price">
-              ₹499 <span className="per">/ year / student</span>
-            </div>
-            <div className="ul">
-              <div className="li">
-                <span className="tick">✓</span>
-                <span>All DEN CRM features</span>
-              </div>
-              <div className="li">
-                <span className="tick">✓</span>
-                <span>Parent App for all parents</span>
-              </div>
-              <div className="li">
-                <span className="tick">✓</span>
-                <span>Assistance for schools • Customer support</span>
-              </div>
-            </div>
-            <button className="btn" onClick={() => scrollToId("contact")}>
-              Choose Annual
-            </button>
-          </div>
-
-          {/* Plan 3 */}
-          <div className="price-card reveal">
-            <div className="ribbon" style={{ background: "linear-gradient(90deg, var(--bg1), var(--bg2))" }}>
-              Best Value
-            </div>
-            <h3>DEN CRM Pro + Hepsy Self Learning</h3>
-            <div className="price">
-              ₹599 <span className="per">/ 6 months / student</span>
-            </div>
-            <div className="ul">
-              <div className="li">
-                <span className="tick">✓</span>
-                <span>Year-long Self Assessment for students</span>
-              </div>
-              <div className="li">
-                <span className="tick">✓</span>
-                <span>On-time phone notifications • All events</span>
-              </div>
-              <div className="li">
-                <span className="tick">✓</span>
-                <span>Manage data of students and teachers</span>
-              </div>
-              <div className="li">
-                <span className="tick">✓</span>
-                <span>Parent App for all parents</span>
-              </div>
-              <div className="li">
-                <span className="tick">✓</span>
-                <span>Onboarding assistance • Support 9am–8pm</span>
-              </div>
-              <div className="li">
-                <span className="tick">✓</span>
-                <span>School promotion on Hepsy social media pages</span>
-              </div>
-              <div className="li">
-                <span className="tick">✓</span>
-                <span>Hepsy team visits schools for videos (extra marketing)</span>
-              </div>
-            </div>
-            <button className="btn" onClick={() => scrollToId("contact")}>
-              Upgrade to Pro
-            </button>
-            <div style={{ height: 10 }} />
-            <div className="price">
-              ₹899 <span className="per">/ year / student</span>
+          <section className="container1 pricing-section" id="pricing">
+            <div className="section-heading reveal">
+              <span className="section-tag">Pricing</span>
+              <h2 className="section-title">Straightforward plans with real value at every level.</h2>
+              <p className="section-subtitle">
+                Each plan keeps the same core experience, with the yearly option giving the strongest long-term value.
+              </p>
             </div>
 
-          </div>
-        </div>
-      </section>
+            <div className="pricing">
+              {plans.map((plan) => (
+                <article className={`price-card reveal${plan.featured ? " featured" : ""}`} key={plan.name}>
+                  {plan.badge ? <div className="ribbon">{plan.badge}</div> : null}
+                  <span className="plan-duration">{plan.duration}</span>
+                  <h3>{plan.name}</h3>
+                  <div className="price">
+                    {plan.price} <span className="per">{plan.meta}</span>
+                  </div>
+                  <div className="ul">
+                    {planFeatures.map((feature) => (
+                      <div className="li" key={`${plan.name}-${feature}`}>
+                        <span className="tick">+</span>
+                        <span>{feature}</span>
+                      </div>
+                    ))}
+                  </div>
+                  <Link className={`${plan.ctaClass} w-full`} to="/subscribe">
+                    Subscribe Now
+                  </Link>
+                </article>
+              ))}
+            </div>
+          </section>
 
-      {/* CTA WIDE */}
-      <section className="container1">
-        <div className="cta-band reveal">
-          <div>
-            <h3 style={{ margin: 0 }}>Ready to make communication effortless?</h3>
-            <p style={{ margin: "6px 0 0" }}>
-              Book a quick demo — see the Parent App, CRM dashboard, and the Self Learning experience in action.
-            </p>
-          </div>
-          <button className="btn" onClick={() => scrollToId("contact")}>
-            Book a Demo
-          </button>
-        </div>
-      </section>
+          <section className="container1 schools-section" id="schools">
+            <div className="school-grid">
+              <div className="school-card reveal">
+                <span className="section-tag">For Institutions</span>
+                <h2>Bring your school into the same polished digital experience.</h2>
+                <p>
+                  Schools can use the admin portal to set up classes, organize academic structure, and create a better
+                  learning environment around the student platform.
+                </p>
+                <Link to="/school-admin" className="btn btn-primary btn-lg school-button">
+                  Go to School Admin
+                </Link>
+              </div>
 
-      {/* CONTACT */}
-      <section className="container1" id="contact">
-        <div className="grid-2">
-          <div>
-            <h2 className="section-title">Contact Hepsy</h2>
-            <p className="section-lead">
-              Tell us a bit about your school and the programs you&apos;re interested in. We&apos;ll reach out shortly.
-            </p>
-            <form className="feature" onSubmit={onSubmit}>
-              <label>
-                School Name
-                <br />
-                <input required className="input" type="text" placeholder="e.g., Sunrise Public School" />
-              </label>
-              <label>
-                Contact Person
-                <br />
-                <input required className="input" type="text" placeholder="Your name" />
-              </label>
-              <label>
-                Email
-                <br />
-                <input required className="input" type="email" placeholder="name@school.in" />
-              </label>
-              <label>
-                Phone
-                <br />
-                <input required className="input" type="tel" placeholder="Your phone number" />
-              </label>
-              <label>
-                Interested In
-                <br />
-                <select className="input" required defaultValue="DEN">
-                  <option value="DEN">DEN CRM</option>
-                  <option value="PRO">DEN CRM Pro + Self Learning</option>
-                  <option value="SELF">Hepsy Self Learning Platform</option>
-                </select>
-              </label>
-              <button className="btn" type="submit" disabled={submitted}>
-                {submitted ? "Submitted ✓" : "Submit"}
-              </button>
-            </form>
-          </div>
-          <div className="reveal">
-            <div className="feature">
-              <h3>Hepsy Enterprise Private Limited</h3>
-              <p style={{ margin: ".4rem 0 0" }}>Kerala, India</p>
-              <small>Official CRM &amp; Self Learning solutions for schools.</small>
-              <div style={{ height: 10 }} />
-              <div className="ul">
-                <div className="li">
-                  <span className="tick">✓</span>
-                  <span>Secure • Fast • Mobile-first</span>
-                </div>
-                <div className="li">
-                  <span className="tick">✓</span>
-                  <span>Seamless onboarding support</span>
-                </div>
-                <div className="li">
-                  <span className="tick">✓</span>
-                  <span>Made for Indian schools</span>
+              <div className="school-preview reveal">
+                <div className="school-preview-image" style={{ backgroundImage: "url('/images/sir.png')" }}>
+                  <div className="school-preview-overlay">
+                    <span className="preview-badge">Admin Portal</span>
+                    <h3>Setup, organize, and scale from one place.</h3>
+                    <p>Clean onboarding flow for institutions, class management, and academic configuration.</p>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </div>
-      </section>
+          </section>
+        </main>
+      </div>
 
-      {/* FOOTER */}
-      <footer>
-        <div className="container1 foot">
-          <div>
-            <div className="brand">
-              <span className="logo">H</span>
-              <strong>Hepsy Enterprise Private Limited</strong>
-            </div>
-            <small>
-              © <span>{YearNow}</span> Hepsy Enterprise Pvt Ltd. All rights reserved.
-            </small>
-          </div>
-          <div>
-            <strong>Products</strong>
-            <div>
-              <a href="#den">DEN CRM</a>
-            </div>
-            <div>
-              <a href="#pro">DEN CRM Pro</a>
-            </div>
-            <div>
-              <a href="#self">Self Learning</a>
-            </div>
-          </div>
-          <div>
-            <strong>Get Started</strong>
-            <div>
-              <a href="#pricing">Pricing</a>
-            </div>
-            <div>
-              <a href="#contact">Book a Demo</a>
-            </div>
-          </div>
-        </div>
-      </footer>
+      <Footer />
     </>
   );
 }

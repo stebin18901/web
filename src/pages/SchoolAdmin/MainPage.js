@@ -11,7 +11,6 @@ import {
   Upload,
   Users,
   BarChart3,
-  ClipboardList,
   Megaphone,
 } from "lucide-react";
 import "./MainPage.css";
@@ -39,7 +38,7 @@ const MainPage = ({ school, onLogout }) => {
         <div className="content-container">
           <Routes>
             <Route path="/" element={<Navigate to="home" />} />
-            <Route path="home" element={<TeacherHome schoolId={school.schoolId} />} />
+            <Route path="home" element={<TeacherHome school={school} schoolId={school.schoolId} />} />
             <Route path="upload" element={<UploadStudents schoolId={school.schoolId} />} />
             <Route path="students" element={<StudentDetails schoolId={school.schoolId} />} />
             <Route path="analytics" element={<QuizAnalytics schoolId={school.schoolId} />} />

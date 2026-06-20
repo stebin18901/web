@@ -9,8 +9,7 @@ import {
   where,
 } from "firebase/firestore";
 import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
-import { useLocation, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { auth } from "../firebase/firebaseConfig";
 import { db } from "../firebase/firebaseConfig";
 import {
@@ -142,8 +141,6 @@ const Login = () => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const { user } = useAuth();
-
   const OTP_COOLDOWN_MS = 60000;
 
   // -------------------------------------------------------------------------
@@ -450,11 +447,10 @@ const Login = () => {
         const classes = buildAvailableClasses(rows, [defaultClassName]);
         setAvailableDefaultClasses(classes);
         if (
-          classes.length &&
-          defaultAuthMode === "register" &&
+          defaultClassName &&
           !classes.includes(defaultClassName)
         ) {
-          setDefaultClassName(classes[0]);
+          setDefaultClassName("");
         }
       } catch {
         setAvailableDefaultClasses(defaultClassName ? [defaultClassName] : []);
@@ -480,9 +476,13 @@ const Login = () => {
   }, [students]);
 
   useEffect(() => {
-    if (!classOptions.length) { setSelectedClassName(""); return; }
-    if (!classOptions.includes(selectedClassName))
-      setSelectedClassName(classOptions[0]);
+    if (!classOptions.length) {
+      setSelectedClassName("");
+      return;
+    }
+    if (selectedClassName && !classOptions.includes(selectedClassName)) {
+      setSelectedClassName("");
+    }
   }, [classOptions, selectedClassName]);
 
   const rollOptions = useMemo(() => {
@@ -497,9 +497,13 @@ const Login = () => {
   }, [students, selectedClassName]);
 
   useEffect(() => {
-    if (!rollOptions.length) { setSelectedRollNumber(""); return; }
-    if (!rollOptions.includes(selectedRollNumber))
-      setSelectedRollNumber(rollOptions[0]);
+    if (!rollOptions.length) {
+      setSelectedRollNumber("");
+      return;
+    }
+    if (selectedRollNumber && !rollOptions.includes(selectedRollNumber)) {
+      setSelectedRollNumber("");
+    }
   }, [rollOptions, selectedRollNumber]);
 
   // -------------------------------------------------------------------------
@@ -776,6 +780,22 @@ const Login = () => {
 
       <form className="login-form" onSubmit={handleSubmit}>
         <h1 className="login-title">Student Login</h1>
+        <p className="login-subtitle">
+          Access quizzes, notes, and subscriptions for your school account.
+        </p>
+        <div className="login-public-actions">
+          <Link to="/pricing" className="login-link-button primary">
+            View Pricing Plans
+          </Link>
+          <Link to="/contact" className="login-link-button">
+            Contact Support
+          </Link>
+        </div>
+        <div className="login-trust-links">
+          <Link to="/terms-and-conditions">Terms</Link>
+          <Link to="/privacy-policy">Privacy</Link>
+          <Link to="/refund-policy">Refund Policy</Link>
+        </div>
 
         {error && <div className="login-error">{error}</div>}
         {otpNotice && !error && (
@@ -848,13 +868,16 @@ const Login = () => {
                   required
                 >
                   {loadingDefaultClasses ? (
-                    <option>Loading classes...</option>
+                    <option value="">Loading classes...</option>
                   ) : availableDefaultClasses.length ? (
-                    availableDefaultClasses.map((cn) => (
-                      <option key={cn} value={cn}>
-                        Class {cn}
-                      </option>
-                    ))
+                    <>
+                      <option value="">Select your class</option>
+                      {availableDefaultClasses.map((cn) => (
+                        <option key={cn} value={cn}>
+                          Class {cn}
+                        </option>
+                      ))}
+                    </>
                   ) : (
                     <option value="">No classes available</option>
                   )}
@@ -917,15 +940,18 @@ const Login = () => {
               required
             >
               {loadingStudents ? (
-                <option>Loading classes...</option>
+                <option value="">Loading classes...</option>
               ) : classOptions.length === 0 ? (
-                <option>No classes found</option>
+                <option value="">No classes found</option>
               ) : (
-                classOptions.map((cls) => (
-                  <option key={cls} value={cls}>
-                    Class {cls}
-                  </option>
-                ))
+                <>
+                  <option value="">Select your class</option>
+                  {classOptions.map((cls) => (
+                    <option key={cls} value={cls}>
+                      Class {cls}
+                    </option>
+                  ))}
+                </>
               )}
             </select>
 
@@ -933,19 +959,24 @@ const Login = () => {
               className="login-input"
               value={selectedRollNumber}
               onChange={(e) => setSelectedRollNumber(e.target.value)}
-              disabled={loadingStudents || rollOptions.length === 0}
+              disabled={loadingStudents || !selectedClassName || rollOptions.length === 0}
               required
             >
               {loadingStudents ? (
-                <option>Loading rolls...</option>
+                <option value="">Loading roll numbers...</option>
+              ) : !selectedClassName ? (
+                <option value="">Select class first</option>
               ) : rollOptions.length === 0 ? (
-                <option>No roll numbers found</option>
+                <option value="">No roll numbers found</option>
               ) : (
-                rollOptions.map((roll) => (
-                  <option key={roll} value={roll}>
-                    Roll {roll}
-                  </option>
-                ))
+                <>
+                  <option value="">Select roll number</option>
+                  {rollOptions.map((roll) => (
+                    <option key={roll} value={roll}>
+                      Roll {roll}
+                    </option>
+                  ))}
+                </>
               )}
             </select>
 
@@ -961,7 +992,12 @@ const Login = () => {
             <button
               className="login-button"
               type="submit"
-              disabled={isSubmitting || rollOptions.length === 0}
+              disabled={
+                isSubmitting ||
+                !selectedClassName ||
+                !selectedRollNumber ||
+                rollOptions.length === 0
+              }
             >
               {isSubmitting ? "Signing in..." : "Login"}
             </button>

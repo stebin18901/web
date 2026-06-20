@@ -4,26 +4,77 @@
   justify-content: center;
   align-items: center;
   min-height: 100vh; /* Full viewport height */
-  background-color: #f0f2f5; /* Light grey background */
+  background:
+    radial-gradient(circle at top right, rgba(37, 99, 235, 0.18), transparent 30%),
+    linear-gradient(135deg, #eef4ff, #e2e8f0);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* Modern font */
+  padding: 20px;
 }
 
 /* Card-like container for the login form */
 .school-login-card {
   background-color: #ffffff;
   padding: 40px;
-  border-radius: 12px;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1); /* Soft shadow */
+  border-radius: 24px;
+  box-shadow: 0 24px 50px rgba(15, 23, 42, 0.12); /* Soft shadow */
   width: 100%;
-  max-width: 400px; /* Max width for responsiveness */
+  max-width: 560px; /* Max width for responsiveness */
   text-align: center;
 }
 
+.school-auth-top {
+  text-align: left;
+  margin-bottom: 18px;
+}
+
+.school-auth-kicker {
+  margin: 0 0 8px;
+  color: #2563eb;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 12px;
+}
+
 .school-login-card h2 {
-  margin-bottom: 30px;
-  color: #333;
+  margin-bottom: 10px;
+  color: #0f172a;
   font-size: 1.8em;
   font-weight: 600;
+  text-align: left;
+}
+
+.school-auth-subtitle {
+  margin: 0;
+  color: #475569;
+  text-align: left;
+  line-height: 1.5;
+}
+
+.auth-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  background: #eef2ff;
+  border-radius: 14px;
+  padding: 6px;
+  margin-bottom: 22px;
+}
+
+.auth-toggle button {
+  border: none;
+  background: transparent;
+  color: #475569;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.auth-toggle button.active {
+  background: #ffffff;
+  color: #1d4ed8;
+  box-shadow: 0 6px 18px rgba(37, 99, 235, 0.14);
 }
 
 /* Form group for better spacing of labels and inputs */
@@ -42,28 +93,115 @@
 
 /* Styling for input fields */
 .school-login-card input[type="text"],
-.school-login-card input[type="password"] {
-  width: calc(100% - 20px); /* Full width minus padding */
+.school-login-card input[type="password"],
+.school-login-card input[type="email"],
+.school-login-card input[type="url"],
+.school-login-card select {
+  width: 100%;
   padding: 12px 10px;
   border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 1em;
   color: #333;
   transition: border-color 0.3s ease, box-shadow 0.3s ease; /* Smooth transition */
+  box-sizing: border-box;
+  background: #fff;
 }
 
 .school-login-card input[type="text"]:focus,
-.school-login-card input[type="password"]:focus {
+.school-login-card input[type="password"]:focus,
+.school-login-card input[type="email"]:focus,
+.school-login-card input[type="url"]:focus,
+.school-login-card select:focus {
   border-color: #007bff; /* Highlight on focus */
   box-shadow: 0 0 8px rgba(0, 123, 255, 0.2);
   outline: none; /* Remove default outline */
+}
+
+.plan-helper-card {
+  margin-top: 10px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  text-align: left;
+}
+
+.plan-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.plan-card {
+  border: 1px solid #cbd5e1;
+  border-radius: 16px;
+  background: #fff;
+  padding: 14px 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.plan-card strong,
+.plan-card span,
+.plan-card small {
+  display: block;
+}
+
+.plan-card strong {
+  color: #0f172a;
+  margin-bottom: 4px;
+}
+
+.plan-card span,
+.plan-card small {
+  color: #64748b;
+}
+
+.plan-card .plan-price {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  margin: 10px 0 8px;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.plan-card .currency {
+  color: #2563eb;
+}
+
+.plan-card.selected {
+  border-color: #2563eb;
+  box-shadow: 0 14px 28px rgba(37, 99, 235, 0.14);
+  transform: translateY(-1px);
+}
+
+.plan-card:hover {
+  transform: translateY(-2px);
+}
+
+.plan-helper-card strong {
+  display: block;
+  color: #1e3a8a;
+  margin-bottom: 6px;
+}
+
+.plan-helper-card p,
+.plan-helper-card small {
+  margin: 0;
+  color: #475569;
+  line-height: 1.45;
 }
 
 /* Styling for the login button */
 .login-button {
   width: 100%;
   padding: 14px 20px;
-  background-color: #007bff; /* Primary blue color */
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
   color: white;
   border: none;
   border-radius: 8px;
@@ -103,6 +241,14 @@
 
   .school-login-card h2 {
     font-size: 1.5em;
+  }
+
+  .auth-toggle {
+    grid-template-columns: 1fr;
+  }
+
+  .plan-grid {
+    grid-template-columns: 1fr;
   }
 
   .login-button {

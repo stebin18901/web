@@ -8,13 +8,12 @@ import {
   DEFAULT_PRICING,
   isSubscriptionActive,
   getDaysRemaining,
-  formatPrice,
 } from "../config/subscriptionConfig";
 import "./Pricing.css";
 
 export default function Pricing() {
   const navigate = useNavigate();
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isProcessing] = useState(false); // Controlled externally or via checkout transition
   const [subscription, setSubscription] = useState(null);
   const [userData, setUserData] = useState(null);
   const [pricing, setPricing] = useState(DEFAULT_PRICING);
@@ -34,12 +33,12 @@ export default function Pricing() {
         // Get user data
         const userRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(userRef);
-        const userData = userSnap.exists() ? userSnap.data() : {};
-        setUserData(userData);
+        const fetchedUserData = userSnap.exists() ? userSnap.data() : {};
+        setUserData(fetchedUserData);
 
         // Get subscription if exists
-        if (userData.razorpaySubscriptionId) {
-          const subRef = doc(db, "subscriptions", userData.razorpaySubscriptionId);
+        if (fetchedUserData.razorpaySubscriptionId) {
+          const subRef = doc(db, "subscriptions", fetchedUserData.razorpaySubscriptionId);
           const subSnap = await getDoc(subRef);
           if (subSnap.exists()) {
             setSubscription(subSnap.data());
@@ -50,7 +49,7 @@ export default function Pricing() {
         const settingsRef = doc(
           db,
           "subscriptionSettings",
-          userData.schoolId || "default"
+          fetchedUserData.schoolId || "default"
         );
         const settingsSnap = await getDoc(settingsRef);
         if (settingsSnap.exists()) {
@@ -79,10 +78,9 @@ export default function Pricing() {
       navigate("/login");
       return;
     }
-    // Debug log
-    // eslint-disable-next-line no-console
+    
     console.debug("PricingNew: handleSubscribe", { planId, userId: user.uid });
-    // Navigate to checkout and pass selected plan as query param
+    
     if (planId) {
       navigate(`/subscribe?plan=${encodeURIComponent(planId)}`);
     } else {
@@ -95,11 +93,9 @@ export default function Pricing() {
 
   if (loading) {
     return (
-      <div className="pricing-page">
-        <div className="pricing-loader">
-          <div className="loader-circle"></div>
-          <p>Loading pricing...</p>
-        </div>
+      <div className="pricing-page-loader">
+        <div className="loader-circle"></div>
+        <p>Loading pricing options...</p>
       </div>
     );
   }
@@ -107,23 +103,23 @@ export default function Pricing() {
   return (
     <div className="pricing-page">
       {/* Header */}
-      <div className="pricing-header">
+      <header className="pricing-header">
         <div className="pricing-header-content">
           <h1>🎓 MINT Foundation Platform</h1>
-          <p>Choose your learning journey - Unlimited access to all classes</p>
+          <p>Choose your learning journey — Unlimited access to all classes</p>
           {isActive && subscription && (
             <div className="subscription-badge">
-              ✅ Active Subscription • {daysRemaining} days remaining
+              <span className="badge-icon">✅</span> Active Subscription • {daysRemaining} days remaining
             </div>
           )}
         </div>
-      </div>
+      </header>
 
-      <div className="pricing-container">
-        {/* Current Subscription */}
+      <main className="pricing-container">
+        {/* Current Subscription Section */}
         {isActive && subscription && (
-          <div className="current-subscription">
-            <h2>💳 Your Current Plan</h2>
+          <section className="current-subscription" aria-labelledby="current-sub-heading">
+            <h2 id="current-sub-heading">💳 Your Current Plan</h2>
             <div className="subscription-details">
               <div className="detail-item">
                 <span className="label">Plan:</span>
@@ -153,20 +149,18 @@ export default function Pricing() {
             <button className="btn-manage" onClick={() => navigate("/subscription-status")}>
               Manage Subscription
             </button>
-          </div>
+          </section>
         )}
 
-        {/* Plans Grid */}
-        <div className="pricing-plans">
-          <h2>📋 Choose Your Plan</h2>
+        {/* Plans Grid Section */}
+        <section className="pricing-plans" aria-labelledby="plans-heading">
+          <h2 id="plans-heading" className="section-title">📋 Choose Your Plan</h2>
           <div className="plans-grid">
             {Object.entries(SUBSCRIPTION_PLANS).map(([key, plan]) => {
               const planPrice = pricing[plan.id];
               const isPopular = popularPlan === plan.id;
               const isPlanActive = subscription?.planId === plan.id && isActive;
 
-              // eslint-disable-next-line no-console
-              console.debug("PricingNew: rendering plan", { planId: plan.id, isPopular, isPlanActive });
               return (
                 <div
                   key={plan.id}
@@ -174,46 +168,39 @@ export default function Pricing() {
                     isPlanActive ? "active" : ""
                   }`}
                 >
-                  {/* Popular Badge */}
-                  {isPopular && (
-                    <div className="popular-ribbon">Best Value</div>
-                  )}
+                  {isPopular && <div className="popular-ribbon">Best Value</div>}
+                  {isPlanActive && <div className="active-ribbon">Your Plan</div>}
 
-                  {/* Active Badge */}
-                  {isPlanActive && (
-                    <div className="active-ribbon">Your Plan</div>
-                  )}
-
-                  {/* Plan Content */}
                   <div className="card-content">
                     <h3 className="plan-name">{plan.name}</h3>
                     <p className="plan-duration">{plan.badge}</p>
 
-                    {/* Price */}
                     <div className="plan-price-box">
-                      <span className="currency">₹</span>
-                      <span className="amount">{planPrice}</span>
+                      <div className="price-primary">
+                        <span className="currency">₹</span>
+                        <span className="amount">{planPrice}</span>
+                      </div>
                       <span className="frequency">
-                        ₹{Math.round(planPrice / plan.durationInMonths)}/month
+                        ₹{Math.round(planPrice / plan.durationInMonths)}/mo
                       </span>
                     </div>
 
-                    {/* Features */}
-                    <div className="plan-features">
+                    <ul className="plan-features">
                       {SUBSCRIPTION_FEATURES.map((feature, idx) => (
-                        <p key={idx} className="feature">{feature}</p>
+                        <li key={idx} className="feature">
+                          <span className="feature-check">✓</span> {feature}
+                        </li>
                       ))}
-                    </div>
+                    </ul>
                   </div>
 
-                  {/* Button */}
                   <button
                     className={`subscribe-btn ${isPlanActive ? "current" : ""}`}
                     onClick={() => handleSubscribe(plan.id)}
                     disabled={isPlanActive || isProcessing}
                   >
                     {isPlanActive
-                      ? "✓ Your Current Plan"
+                      ? "Your Current Plan"
                       : isProcessing
                       ? "Processing..."
                       : "Subscribe Now"}
@@ -222,112 +209,113 @@ export default function Pricing() {
               );
             })}
           </div>
-        </div>
+        </section>
 
-        {/* Comparison Table */}
-        <div className="pricing-comparison">
-          <h2>💰 Plan Comparison</h2>
-          <table className="comparison-table">
-            <thead>
-              <tr>
-                <th>Feature</th>
-                <th>{SUBSCRIPTION_PLANS.QUARTERLY.name}</th>
-                <th>{SUBSCRIPTION_PLANS.HALF_YEARLY.name}</th>
-                <th>{SUBSCRIPTION_PLANS.YEARLY.name}</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td className="feature-name">Duration</td>
-                <td>{SUBSCRIPTION_PLANS.QUARTERLY.badge}</td>
-                <td>{SUBSCRIPTION_PLANS.HALF_YEARLY.badge}</td>
-                <td>{SUBSCRIPTION_PLANS.YEARLY.badge}</td>
-              </tr>
-              <tr>
-                <td className="feature-name">Total Price</td>
-                <td className="price">₹{pricing.quarterly}</td>
-                <td className="price">₹{pricing.half_yearly}</td>
-                <td className="price">₹{pricing.yearly}</td>
-              </tr>
-              <tr>
-                <td className="feature-name">Per Month</td>
-                <td>₹{Math.round(pricing.quarterly / 3)}</td>
-                <td>₹{Math.round(pricing.half_yearly / 6)}</td>
-                <td>₹{Math.round(pricing.yearly / 12)}</td>
-              </tr>
-              <tr>
-                <td className="feature-name">Access to All Classes</td>
-                <td>✅</td>
-                <td>✅</td>
-                <td>✅</td>
-              </tr>
-              <tr>
-                <td className="feature-name">Unlimited Quizzes</td>
-                <td>✅</td>
-                <td>✅</td>
-                <td>✅</td>
-              </tr>
-              <tr>
-                <td className="feature-name">Leaderboard Access</td>
-                <td>✅</td>
-                <td>✅</td>
-                <td>✅</td>
-              </tr>
-              <tr>
-                <td className="feature-name">Auto-Renewal</td>
-                <td>✅</td>
-                <td>✅</td>
-                <td>✅</td>
-              </tr>
-              <tr>
-                <td className="feature-name">Cancel Anytime</td>
-                <td>✅</td>
-                <td>✅</td>
-                <td>✅</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
+        {/* Comparison Table Section */}
+        <section className="pricing-comparison" aria-labelledby="comparison-heading">
+          <h2 id="comparison-heading">💰 Plan Comparison</h2>
+          <div className="table-responsive">
+            <table className="comparison-table">
+              <thead>
+                <tr>
+                  <th>Feature</th>
+                  <th>{SUBSCRIPTION_PLANS.QUARTERLY.name}</th>
+                  <th>{SUBSCRIPTION_PLANS.HALF_YEARLY.name}</th>
+                  <th>{SUBSCRIPTION_PLANS.YEARLY.name}</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="feature-name">Duration</td>
+                  <td>{SUBSCRIPTION_PLANS.QUARTERLY.badge}</td>
+                  <td>{SUBSCRIPTION_PLANS.HALF_YEARLY.badge}</td>
+                  <td>{SUBSCRIPTION_PLANS.YEARLY.badge}</td>
+                </tr>
+                <tr>
+                  <td className="feature-name">Total Price</td>
+                  <td className="price">₹{pricing.quarterly}</td>
+                  <td className="price">₹{pricing.half_yearly}</td>
+                  <td className="price">₹{pricing.yearly}</td>
+                </tr>
+                <tr>
+                  <td className="feature-name">Per Month</td>
+                  <td>₹{Math.round(pricing.quarterly / 3)}</td>
+                  <td>₹{Math.round(pricing.half_yearly / 6)}</td>
+                  <td>₹{Math.round(pricing.yearly / 12)}</td>
+                </tr>
+                <tr>
+                  <td className="feature-name">Access to All Classes</td>
+                  <td className="check-cell">✅</td>
+                  <td className="check-cell">✅</td>
+                  <td className="check-cell">✅</td>
+                </tr>
+                <tr>
+                  <td className="feature-name">Unlimited Quizzes</td>
+                  <td className="check-cell">✅</td>
+                  <td className="check-cell">✅</td>
+                  <td className="check-cell">✅</td>
+                </tr>
+                <tr>
+                  <td className="feature-name">Leaderboard Access</td>
+                  <td className="check-cell">✅</td>
+                  <td className="check-cell">✅</td>
+                  <td className="check-cell">✅</td>
+                </tr>
+                <tr>
+                  <td className="feature-name">Auto-Renewal</td>
+                  <td className="check-cell">✅</td>
+                  <td className="check-cell">✅</td>
+                  <td className="check-cell">✅</td>
+                </tr>
+                <tr>
+                  <td className="feature-name">Cancel Anytime</td>
+                  <td className="check-cell">✅</td>
+                  <td className="check-cell">✅</td>
+                  <td className="check-cell">✅</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </section>
 
         {/* FAQ Section */}
-        <div className="faq-section">
-          <h2>❓ Frequently Asked Questions</h2>
+        <section className="faq-section" aria-labelledby="faq-heading">
+          <h2 id="faq-heading">❓ Frequently Asked Questions</h2>
           <div className="faq-grid">
             <div className="faq-item">
               <h4>Can I switch plans?</h4>
-              <p>Yes! You can change your plan anytime. Changes take effect on your next renewal.</p>
+              <p>Yes! You can change your plan anytime. Changes take effect on your next renewal cycle seamlessly.</p>
             </div>
             <div className="faq-item">
               <h4>Can I cancel my subscription?</h4>
-              <p>Absolutely! Cancel auto-renewal anytime without contacting support.</p>
+              <p>Absolutely! Cancel auto-renewal anytime from your dashboard without needing to contact support.</p>
             </div>
             <div className="faq-item">
               <h4>Do I get access to all classes?</h4>
-              <p>Yes! Any subscription plan gives you access to Classes 6, 7, 8, 9, and 10.</p>
+              <p>Yes! Any active tier grants complete unrestricted entry into Classes 6, 7, 8, 9, and 10.</p>
             </div>
             <div className="faq-item">
               <h4>What happens after expiry?</h4>
-              <p>Your subscription will auto-renew on the expiry date if renewal is enabled.</p>
+              <p>Your subscription will automatically extend at the end of the duration if automated renewals remain active.</p>
             </div>
           </div>
-        </div>
+        </section>
 
-        {/* CTA Button */}
+        {/* Action Footers */}
         {!isActive && (
           <div className="cta-section">
-            <h2>Ready to get started?</h2>
-            <button className="cta-button" onClick={handleSubscribe}>
-              Choose Your Plan →
+            <h2>Ready to upscale your learning ecosystem?</h2>
+            <button className="cta-button" onClick={() => handleSubscribe()}>
+              Choose Your Plan Now →
             </button>
           </div>
         )}
 
-        {/* Security Note */}
-        <div className="security-footer">
-          <p>🔒 Secure payment powered by Razorpay</p>
-          <p>Auto-renewal • Cancel anytime • Full access to MINT platform</p>
-        </div>
-      </div>
+        <footer className="security-footer">
+          <p className="security-lock">🔒 Secure cloud payments transaction processed through Razorpay encryption mechanisms</p>
+          <p className="security-subtext">Automatic lifecycle updates • Instant self-cancellation alternative • Full application coverage</p>
+        </footer>
+      </main>
     </div>
   );
 }

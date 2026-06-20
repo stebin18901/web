@@ -11,8 +11,8 @@
   width: 100%;
   max-width: 520px;
   background: #ffffff;
-  border-radius: 14px;
-  box-shadow: 0 8px 28px rgba(15, 23, 42, 0.12);
+  border-radius: 20px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.12);
   padding: 24px;
 }
 
@@ -28,11 +28,53 @@
   margin-top: 14px;
 }
 
-.intake-form input {
+.payment-section {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 14px;
+  background: #f8fafc;
+  border: 1px solid #cbd5e1;
+}
+
+.payment-section-head strong {
+  display: block;
+  margin-top: 2px;
+  color: #0f172a;
+  font-size: 0.95rem;
+}
+
+.generate-link-btn {
+  background: #0f766e;
+}
+
+.plan-summary-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-top: 16px;
+  padding: 14px;
+  border-radius: 14px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+}
+
+.meta-label {
+  display: block;
+  font-size: 0.75rem;
+  color: #475569;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+
+.intake-form input,
+.intake-form select {
   border: 1px solid #cbd5e1;
   border-radius: 8px;
   padding: 10px;
   font-size: 0.95rem;
+  background: #fff;
 }
 
 .intake-form button {
@@ -49,4 +91,24 @@
   margin-top: 12px;
   font-size: 0.9rem;
   color: #1e293b;
+}
+
+.payment-link-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 14px;
+  width: 100%;
+  padding: 12px 14px;
+  border-radius: 10px;
+  text-decoration: none;
+  font-weight: 700;
+  color: #fff;
+  background: linear-gradient(135deg, #059669, #047857);
+}
+
+@media (max-width: 600px) {
+  .plan-summary-card {
+    grid-template-columns: 1fr;
+  }
 }

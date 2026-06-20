@@ -733,36 +733,154 @@ const AdminQCreate = () => {
     });
   };
 
+  const draftInsights = useMemo(() => {
+    const base = {
+      questionCount: 0,
+      sectionCount: 0,
+      chapter: "",
+      subject: "",
+      className: "",
+      isValid: false,
+      errorText: "",
+    };
+    if (!jsonData.trim()) return base;
+    try {
+      const parsed = JSON.parse(jsonData);
+      const sections = new Set((parsed.questions || []).map((q) => q.section).filter(Boolean));
+      return {
+        questionCount: Array.isArray(parsed.questions) ? parsed.questions.length : 0,
+        sectionCount: sections.size,
+        chapter: parsed.metadata?.chapter || "",
+        subject: parsed.metadata?.subject || "",
+        className: parsed.metadata?.class || "",
+        isValid: true,
+        errorText: "",
+      };
+    } catch (err) {
+      return {
+        ...base,
+        errorText: err?.message || "Invalid JSON",
+      };
+    }
+  }, [jsonData]);
+
+  const closeReviewModal = () => {
+    if (isReviewDirty) {
+      const ok = window.confirm("You have unsaved review changes. Close without saving?");
+      if (!ok) return;
+    }
+    setReviewQuizId(null);
+    setReviewSaveMessage("");
+    setImageUploadStatus({});
+  };
+
+  useEffect(() => {
+    const handleEscape = (event) => {
+      if (event.key !== "Escape") return;
+      if (reviewNoteQuizId) {
+        setReviewNoteQuizId(null);
+        return;
+      }
+      if (reviewQuizId) {
+        closeReviewModal();
+      }
+    };
+
+    window.addEventListener("keydown", handleEscape);
+    return () => window.removeEventListener("keydown", handleEscape);
+  }, [reviewQuizId, reviewNoteQuizId, isReviewDirty]);
+
   return (
-    <div className="admin-container">
-      <h2>Quiz Management</h2>
-      <div className="shortform-guide">Short forms: E = Edit, R = Review, D = Delete, RN = Review Note, EN = Edit Note</div>
+    <div className="admin-container chapter-admin-shell">
+      <section className="admin-hero">
+        <div>
+          <span className="eyebrow">Admin / Chapter Studio</span>
+          <h2>Build, review, and polish chapters faster</h2>
+          <p className="hero-copy">
+            Create new chapter quizzes, attach notes, review existing chapters, and now manage images directly inside the review workflow.
+          </p>
+        </div>
+        <div className="hero-stats">
+          <div className="hero-stat-card">
+            <span className="hero-stat-label">Total Chapters</span>
+            <strong>{filteredQuizzes.length}</strong>
+          </div>
+          <div className="hero-stat-card">
+            <span className="hero-stat-label">Draft Questions</span>
+            <strong>{draftInsights.questionCount}</strong>
+          </div>
+          <div className="hero-stat-card">
+            <span className="hero-stat-label">Draft Sections</span>
+            <strong>{draftInsights.sectionCount}</strong>
+          </div>
+        </div>
+      </section>
+
+      <div className="shortform-guide">
+        <strong>Quick actions:</strong> `E` edit JSON, `R` review chapter, `RN` review note, `EN` load note into editor, `D` delete.
+      </div>
 
       {/* Upload Section */}
-      <div className="section">
-        <h3>{pasteEditQuizId ? "Edit Quiz In Paste Section" : "Upload New Quiz"}</h3>
-        <div className="upload-grid">
-          <textarea
-            value={jsonData}
-            onChange={(e) => setJsonData(e.target.value)}
-            placeholder={`Paste your quiz JSON here`}
-            rows={15}
-            style={{ width: "100%", fontFamily: "monospace" }}
-          />
-          <textarea
-            value={noteHtml}
-            onChange={(e) => setNoteHtml(e.target.value)}
-            placeholder={`Paste note HTML here`}
-            rows={15}
-            style={{ width: "100%", fontFamily: "monospace" }}
-          />
+      <div className="section section-elevated">
+        <div className="section-heading-row">
+          <div>
+            <h3>{pasteEditQuizId ? "Edit Chapter Draft" : "Create Chapter"}</h3>
+            <p className="section-copy">
+              Paste the quiz JSON and optional notes together so the chapter is ready for review immediately after upload.
+            </p>
+          </div>
+          <div className="draft-pill-row">
+            <span className={`draft-pill ${draftInsights.isValid ? "ok" : jsonData.trim() ? "warn" : ""}`}>
+              {jsonData.trim() ? (draftInsights.isValid ? "JSON ready" : "Needs fixing") : "Draft empty"}
+            </span>
+            {draftInsights.chapter && <span className="draft-pill soft">{draftInsights.chapter}</span>}
+            {draftInsights.subject && <span className="draft-pill soft">{draftInsights.subject}</span>}
+            {draftInsights.className && <span className="draft-pill soft">Class {draftInsights.className}</span>}
+          </div>
         </div>
-        <div style={{ marginTop: 10 }}>
+
+        <div className="upload-grid upload-grid-polished">
+          <div className="editor-panel">
+            <div className="editor-panel-head">
+              <h4>Quiz JSON</h4>
+              <span>{draftInsights.questionCount} questions</span>
+            </div>
+            <textarea
+              className="editor-textarea"
+              value={jsonData}
+              onChange={(e) => setJsonData(e.target.value)}
+              placeholder={`Paste your quiz JSON here`}
+              rows={18}
+            />
+            {!draftInsights.isValid && draftInsights.errorText && (
+              <div className="inline-warning">JSON issue: {draftInsights.errorText}</div>
+            )}
+          </div>
+
+          <div className="editor-panel">
+            <div className="editor-panel-head">
+              <h4>Chapter Note HTML</h4>
+              <span>{noteHtml.trim() ? "Attached" : "Optional"}</span>
+            </div>
+            <textarea
+              className="editor-textarea"
+              value={noteHtml}
+              onChange={(e) => setNoteHtml(e.target.value)}
+              placeholder={`Paste note HTML here`}
+              rows={18}
+            />
+            <div className="helper-copy">
+              Tip: after upload, open <strong>Review</strong> on the chapter card to add question images, option images, and explanation images.
+            </div>
+          </div>
+        </div>
+
+        <div className="create-actions">
           <button onClick={handleUpload} disabled={!jsonData || isLoading}>
             {isLoading ? (pasteEditQuizId ? "Updating..." : "Uploading...") : (pasteEditQuizId ? "Update Quiz" : "Upload Quiz")}
           </button>
           {pasteEditQuizId && (
-            <button type="button" onClick={cancelPasteEdit} style={{ marginLeft: 8, background: "#777" }}>
+            <button type="button" onClick={cancelPasteEdit} className="secondary-btn">
               Cancel Edit
             </button>
           )}
@@ -772,8 +890,13 @@ const AdminQCreate = () => {
       {error && <div className="error">{error}</div>}
 
       {/* Filter Section */}
-      <div className="section">
-        <h3>Filter Quizzes</h3>
+      <div className="section section-elevated">
+        <div className="section-heading-row">
+          <div>
+            <h3>Filter Chapters</h3>
+            <p className="section-copy">Narrow the list, then sort chapter order for a specific class and subject combination.</p>
+          </div>
+        </div>
         <div className="filters">
           <select value={String(filterClass)} onChange={(e) => setFilterClass(e.target.value)}>
             {classOptions.map((cls, idx) => (
@@ -805,8 +928,13 @@ const AdminQCreate = () => {
       </div>
 
       {/* Quiz List */}
-      <div className="section">
-        <h3>Existing Quizzes ({filteredQuizzes.length})</h3>
+      <div className="section section-elevated">
+        <div className="section-heading-row">
+          <div>
+            <h3>Existing Chapters ({filteredQuizzes.length})</h3>
+            <p className="section-copy">Use review to inspect the full chapter, upload images, update question text, and save changes without leaving this screen.</p>
+          </div>
+        </div>
         {isLoading && !filteredQuizzes.length ? (
           <p>Loading quizzes...</p>
         ) : (
@@ -859,17 +987,36 @@ const AdminQCreate = () => {
 
       {/* Review Modal with LaTeX rendering (complete) */}
       {reviewQuizId && (
-        <div className="modal" onMouseDown={(e) => e.target === e.currentTarget && setReviewQuizId(null)}>
+        <div className="modal" onMouseDown={(e) => e.target === e.currentTarget && closeReviewModal()}>
           <div className="modal-content">
             <div className="modal-header">
-              <h3>Quiz Review</h3>
-              <button onClick={() => setReviewQuizId(null)} className="close-btn">
-                &times;
-              </button>
+              <div>
+                <h3>Chapter Review</h3>
+                <p className="modal-subtitle">Edit content, upload images, and save when you are done.</p>
+              </div>
+              <div className="modal-header-actions">
+                <button
+                  type="button"
+                  className="secondary-btn"
+                  onClick={closeReviewModal}
+                >
+                  Close Review
+                </button>
+                <button
+                  type="button"
+                  onClick={saveReviewQuiz}
+                  disabled={!isReviewDirty || isSavingReview}
+                >
+                  {isSavingReview ? "Saving..." : "Save Changes"}
+                </button>
+                <button onClick={closeReviewModal} className="close-btn" aria-label="Close review modal">
+                  &times;
+                </button>
+              </div>
             </div>
 
             {reviewDraft ? (
-              <div className="preview-container review-only">
+              <div className="preview-container">
                 <div className="metadata-section">
                   <div className="metadata-grid">
                     <div className="metadata-item">
@@ -1101,6 +1248,25 @@ const AdminQCreate = () => {
                       </div>
                     ))}
                   </div>
+
+                  <div className="review-save-row">
+                    <button
+                      type="button"
+                      onClick={saveReviewQuiz}
+                      disabled={!isReviewDirty || isSavingReview}
+                    >
+                      {isSavingReview ? "Saving..." : "Save Review Changes"}
+                    </button>
+                    <button
+                      type="button"
+                      className="secondary-btn"
+                      onClick={closeReviewModal}
+                    >
+                      Close Review
+                    </button>
+                    {isReviewDirty && <span className="muted-note">Unsaved changes</span>}
+                    {!!reviewSaveMessage && <span className="save-success">{reviewSaveMessage}</span>}
+                  </div>
                 </div>
 
               </div>
@@ -1128,40 +1294,287 @@ const AdminQCreate = () => {
       )}
 
       <style>{`
-        .admin-container { padding: 20px; max-width: 1200px; margin: 0 auto; }
-        .shortform-guide { margin-bottom: 12px; padding: 10px; border: 1px solid #d8e2ff; background: #f4f7ff; border-radius: 8px; font-size: 13px; }
-        .upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .section { margin-bottom: 30px; background: #f5f5f5; border-radius: 8px; padding: 20px; }
-        .filters { display: flex; gap: 15px; align-items: center; }
-        select { padding: 8px 12px; }
+        .admin-container {
+          padding: 24px;
+          max-width: 1280px;
+          margin: 0 auto;
+          color: #10203a;
+        }
+        .chapter-admin-shell {
+          background:
+            radial-gradient(circle at top left, rgba(103, 154, 255, 0.2), transparent 30%),
+            linear-gradient(180deg, #f4f8ff 0%, #eef4fb 100%);
+        }
+        .admin-hero {
+          display: grid;
+          grid-template-columns: minmax(0, 1.6fr) minmax(280px, 1fr);
+          gap: 18px;
+          align-items: stretch;
+          background: linear-gradient(135deg, #0f2857 0%, #18418c 56%, #2f6edb 100%);
+          color: #fff;
+          padding: 28px;
+          border-radius: 24px;
+          margin-bottom: 18px;
+          box-shadow: 0 24px 50px rgba(16, 32, 58, 0.22);
+        }
+        .eyebrow {
+          display: inline-block;
+          margin-bottom: 8px;
+          padding: 6px 10px;
+          border-radius: 999px;
+          background: rgba(255,255,255,0.12);
+          font-size: 12px;
+          letter-spacing: 0.08em;
+          text-transform: uppercase;
+        }
+        .admin-hero h2 {
+          margin: 0 0 10px;
+          font-size: clamp(1.9rem, 3vw, 2.7rem);
+          line-height: 1.08;
+        }
+        .hero-copy {
+          margin: 0;
+          max-width: 720px;
+          color: rgba(255,255,255,0.86);
+          line-height: 1.6;
+        }
+        .hero-stats {
+          display: grid;
+          gap: 12px;
+        }
+        .hero-stat-card {
+          background: rgba(255,255,255,0.12);
+          border: 1px solid rgba(255,255,255,0.18);
+          border-radius: 18px;
+          padding: 16px 18px;
+          backdrop-filter: blur(10px);
+        }
+        .hero-stat-label {
+          display: block;
+          margin-bottom: 6px;
+          color: rgba(255,255,255,0.76);
+          font-size: 12px;
+          text-transform: uppercase;
+          letter-spacing: 0.08em;
+        }
+        .hero-stat-card strong {
+          font-size: 1.8rem;
+          font-weight: 800;
+        }
+        .shortform-guide {
+          margin-bottom: 16px;
+          padding: 14px 16px;
+          border: 1px solid #d7e4ff;
+          background: rgba(255,255,255,0.82);
+          border-radius: 16px;
+          font-size: 13px;
+          color: #36507b;
+          box-shadow: 0 10px 20px rgba(47, 110, 219, 0.08);
+        }
+        .upload-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+        .upload-grid-polished {
+          align-items: stretch;
+        }
+        .section {
+          margin-bottom: 24px;
+          background: #f5f5f5;
+          border-radius: 8px;
+          padding: 20px;
+        }
+        .section-elevated {
+          background: rgba(255,255,255,0.9);
+          border: 1px solid #dce6f8;
+          border-radius: 24px;
+          padding: 24px;
+          box-shadow: 0 18px 36px rgba(17, 41, 82, 0.08);
+        }
+        .section-heading-row {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          gap: 16px;
+          margin-bottom: 16px;
+          flex-wrap: wrap;
+        }
+        .section-heading-row h3 {
+          margin: 0 0 6px;
+          font-size: 1.35rem;
+          color: #132d5d;
+        }
+        .section-copy {
+          margin: 0;
+          color: #58719d;
+          line-height: 1.55;
+        }
+        .draft-pill-row {
+          display: flex;
+          gap: 8px;
+          flex-wrap: wrap;
+        }
+        .draft-pill {
+          display: inline-flex;
+          align-items: center;
+          border-radius: 999px;
+          padding: 8px 12px;
+          background: #edf3ff;
+          color: #325ca8;
+          font-size: 12px;
+          font-weight: 700;
+        }
+        .draft-pill.ok {
+          background: #e9f8ee;
+          color: #1f8a4c;
+        }
+        .draft-pill.warn {
+          background: #fff4de;
+          color: #b26a00;
+        }
+        .draft-pill.soft {
+          font-weight: 600;
+        }
+        .editor-panel {
+          background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+          border: 1px solid #d9e6fb;
+          border-radius: 20px;
+          padding: 16px;
+          min-width: 0;
+        }
+        .editor-panel-head {
+          display: flex;
+          justify-content: space-between;
+          gap: 10px;
+          align-items: center;
+          margin-bottom: 12px;
+        }
+        .editor-panel-head h4 {
+          margin: 0;
+          color: #17376f;
+          font-size: 1rem;
+        }
+        .editor-panel-head span {
+          color: #5c77a6;
+          font-size: 12px;
+          font-weight: 700;
+        }
+        .editor-textarea {
+          width: 100%;
+          min-height: 360px;
+          border: 1px solid #cddcf6;
+          border-radius: 16px;
+          padding: 14px 16px;
+          font-family: Consolas, "Courier New", monospace;
+          font-size: 13px;
+          color: #193154;
+          background: #fdfefe;
+          resize: vertical;
+          box-sizing: border-box;
+        }
+        .editor-textarea:focus {
+          outline: none;
+          border-color: #2f6edb;
+          box-shadow: 0 0 0 4px rgba(47, 110, 219, 0.14);
+        }
+        .helper-copy,
+        .inline-warning {
+          margin-top: 10px;
+          font-size: 12px;
+          line-height: 1.5;
+        }
+        .helper-copy { color: #58719d; }
+        .inline-warning {
+          color: #a05600;
+          background: #fff5e4;
+          border: 1px solid #ffd89a;
+          border-radius: 12px;
+          padding: 10px 12px;
+        }
+        .create-actions {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-top: 16px;
+          flex-wrap: wrap;
+        }
+        .filters { display: flex; gap: 15px; align-items: center; flex-wrap: wrap; }
+        select {
+          padding: 10px 12px;
+          border-radius: 12px;
+          border: 1px solid #cddcf6;
+          background: #fff;
+          color: #17376f;
+        }
         .quiz-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
-        .quiz-card { background: white; padding: 15px; border-radius: 6px; box-shadow: 0 2px 5px rgba(0,0,0,0.08); }
+        .quiz-card {
+          background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+          padding: 18px;
+          border-radius: 18px;
+          box-shadow: 0 12px 28px rgba(16,32,58,0.08);
+          border: 1px solid #dbe7fb;
+        }
+        .quiz-card h4 {
+          margin: 0 0 8px;
+          color: #163364;
+        }
+        .quiz-card p {
+          margin: 6px 0;
+          color: #5f759a;
+        }
         .actions { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
-        button { padding: 8px 14px; cursor: pointer; border: none; border-radius: 6px; background: #4a6bdf; color: white; transition: background .15s; }
+        button {
+          padding: 10px 14px;
+          cursor: pointer;
+          border: none;
+          border-radius: 12px;
+          background: linear-gradient(135deg, #2458be 0%, #2f6edb 100%);
+          color: white;
+          font-weight: 700;
+          transition: transform .15s, box-shadow .15s, filter .15s;
+          box-shadow: 0 10px 18px rgba(47, 110, 219, 0.18);
+        }
         button:hover { filter: brightness(.95); }
+        button:disabled {
+          opacity: 0.6;
+          cursor: not-allowed;
+          box-shadow: none;
+          transform: none;
+        }
+        .secondary-btn {
+          background: #eef3fb;
+          color: #22406f;
+          box-shadow: none;
+          border: 1px solid #cedcf2;
+        }
         .danger { background: #ff5555; }
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.45); display: flex; align-items: center; justify-content: center; z-index: 1000; }
-        .modal-content { background: white; border-radius: 14px; width: 92%; max-width: 1100px; max-height: 88vh; overflow: auto; padding: 22px; box-shadow: 0 20px 50px rgba(0,0,0,0.2); }
+        .modal-content { background: white; border-radius: 24px; width: 92%; max-width: 1100px; max-height: 88vh; overflow: auto; padding: 22px; box-shadow: 0 20px 50px rgba(0,0,0,0.2); }
         .modal-actions { margin-top: 12px; display: flex; gap: 10px; }
         .note-preview { border: 1px solid #eee; border-radius: 8px; padding: 12px; max-height: 55vh; overflow: auto; background: #fff; }
         .error { color: #cc0000; margin: 10px 0; padding: 10px; background: #fff0f0; border-radius: 6px; }
 
         /* Preview Modal Specific */
         .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
-        .close-btn { background: none; border: none; font-size: 26px; cursor: pointer; color: #666; }
+        .modal-header-actions {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          flex-wrap: wrap;
+        }
+        .modal-subtitle {
+          margin: 6px 0 0;
+          color: #61789e;
+          font-size: 14px;
+        }
+        .close-btn {
+          background: transparent;
+          border: 1px solid #d5def1;
+          box-shadow: none;
+          font-size: 26px;
+          cursor: pointer;
+          color: #666;
+          line-height: 1;
+          padding: 4px 12px;
+        }
         .preview-container { display: flex; flex-direction: column; gap: 20px; }
-        .preview-container.review-only .section-toolbar,
-        .preview-container.review-only .section-actions,
-        .preview-container.review-only .upload-label,
-        .preview-container.review-only .mini-danger-btn,
-        .preview-container.review-only .inline-delete-btn,
-        .preview-container.review-only .review-save-row {
-          display: none !important;
-        }
-        .preview-container.review-only .review-input {
-          pointer-events: none;
-          background: #f7f8fb;
-        }
         .metadata-section { background: #f8f9fa; padding: 12px; border-radius: 8px; border-left: 4px solid #4a6bdf; }
         .metadata-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
         .metadata-item { display: flex; flex-direction: column; }
@@ -1212,7 +1625,20 @@ const AdminQCreate = () => {
         .muted-note { font-size: 12px; color: #777; }
         .mini-danger-btn { border: none; background: #ff5555; color: #fff; border-radius: 6px; padding: 6px 10px; font-size: 12px; cursor: pointer; }
         .option-delete-btn { margin-top: 8px; display: inline-block; }
-        .review-save-row { position: sticky; bottom: 0; z-index: 2; display: flex; align-items: center; gap: 10px; margin-top: 8px; background: #fff; border-top: 1px solid #eee; padding-top: 12px; }
+        .review-save-row {
+          position: sticky;
+          bottom: 0;
+          z-index: 2;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-top: 8px;
+          background: rgba(255,255,255,0.96);
+          border-top: 1px solid #d9e3f5;
+          padding-top: 14px;
+          padding-bottom: 6px;
+          flex-wrap: wrap;
+        }
         .save-success { font-size: 12px; color: #14833b; }
         .answer-section { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
         .answer-label { font-weight: 100; color: #666; }
@@ -1221,10 +1647,42 @@ const AdminQCreate = () => {
         .explanation-label { display: block; font-size: 13px; color: #666; font-weight: 100; margin-bottom: 6px; }
         .explanation-text { color: #444; line-height: 1.6; }
 
+        @media (max-width: 900px) {
+          .admin-hero {
+            grid-template-columns: 1fr;
+          }
+          .upload-grid {
+            grid-template-columns: 1fr;
+          }
+        }
         @media (max-width: 600px) {
+          .admin-container {
+            padding: 14px;
+          }
+          .admin-hero {
+            padding: 20px;
+            border-radius: 18px;
+          }
           .modal-content { width: 95%; padding: 12px; }
           .metadata-grid { grid-template-columns: 1fr; }
           .upload-grid { grid-template-columns: 1fr; }
+          .modal-header,
+          .modal-header-actions,
+          .review-save-row {
+            align-items: stretch;
+          }
+          .modal-header {
+            flex-direction: column;
+          }
+          .modal-header-actions {
+            width: 100%;
+          }
+          .modal-header-actions button,
+          .review-save-row button,
+          .create-actions button,
+          .filters button {
+            width: 100%;
+          }
         }
       `}</style>
     </div>

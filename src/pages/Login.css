@@ -176,7 +176,7 @@
 }
 
 .login-form::before {
-  content: "QuizMint.";
+  content: "Hepsy";
   position: absolute;
   top: clamp(30px, 4vw, 52px);
   left: clamp(30px, 4vw, 58px);
@@ -187,7 +187,7 @@
 }
 
 .login-form::after {
-  content: "By continuing, you agree to our terms and privacy policy.";
+  content: "Student access is secured with OTP or school-issued credentials.";
   margin-top: 28px;
   padding-left: 52px;
   min-height: 42px;
@@ -225,6 +225,61 @@
   content: "Welcome Back";
   display: block;
   font-size: clamp(2rem, 3vw, 3rem);
+}
+
+.login-subtitle {
+  margin: 0 0 18px;
+  color: #4b5563;
+  font-size: 0.98rem;
+  line-height: 1.6;
+  font-weight: 600;
+}
+
+.login-public-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.login-link-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 18px;
+  color: #1d4ed8;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 14px;
+  text-decoration: none;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.login-link-button.primary {
+  color: #ffffff;
+  background: linear-gradient(135deg, #2563eb 0%, #0f5cff 100%);
+  border-color: transparent;
+}
+
+.login-trust-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 0 0 18px;
+}
+
+.login-trust-links a {
+  color: #6b7280;
+  text-decoration: none;
+  font-size: 0.92rem;
+  font-weight: 700;
+}
+
+.login-trust-links a:hover,
+.login-link-button:hover {
+  opacity: 0.92;
 }
 
 .login-error {
@@ -448,5 +503,10 @@ select.login-input {
   .login-title {
     margin-top: 0;
     font-size: 2.15rem;
+  }
+
+  .login-public-actions,
+  .login-trust-links {
+    flex-direction: column;
   }
 }

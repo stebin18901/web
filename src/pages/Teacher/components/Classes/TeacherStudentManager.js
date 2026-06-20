@@ -6,6 +6,7 @@ import {
   getDocs,
   deleteDoc,
   updateDoc,
+  getDoc,
 } from "firebase/firestore";
 import { db } from "../../../../firebase/firebaseConfig";
 import "./TeacherStudentManager.css";
@@ -81,6 +82,13 @@ const TeacherStudentManager = ({ teacher }) => {
       const classId = `${normalizedId}_${assignedClass}`;
       const roll = newStudent.studentId.trim();
 
+      // Fetch school's plan config
+      const schoolSnap = await getDoc(doc(db, "schools", normalizedId));
+      const schoolData = schoolSnap.exists() ? schoolSnap.data() : {};
+      const selectedPlanId = schoolData.selectedPlanId || "";
+      const selectedPlanName = schoolData.selectedPlanName || "";
+      const planAmount = Number(schoolData.planAmount || 0);
+
       const accountData = {
         fullName: newStudent.name.trim(),
         rollNumber: roll,
@@ -90,6 +98,12 @@ const TeacherStudentManager = ({ teacher }) => {
         email: `${roll}@${normalizedId}.edu`,
         role: "student",
         updatedAt: new Date().toISOString(),
+        selectedPlanId,
+        selectedPlanName,
+        planAmount,
+        paymentStatus: planAmount ? "pending" : "none",
+        registrationStatus: planAmount ? "pending_payment" : "free",
+        isPaid: false,
       };
 
       const accRef = doc(db, "studentAccounts", roll);

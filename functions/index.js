@@ -753,6 +753,7 @@ exports.createCustomPaymentLink = functions.https.onRequest((req, res) => {
       const {
         userId,
         studentId,
+        studentAccountId,
         name,
         email,
         phone,
@@ -760,6 +761,10 @@ exports.createCustomPaymentLink = functions.https.onRequest((req, res) => {
         amount,
         schoolId,
         schoolName,
+        className,
+        rollNumber,
+        planId,
+        planName,
         callbackUrl,
       } = req.body;
 
@@ -797,7 +802,13 @@ exports.createCustomPaymentLink = functions.https.onRequest((req, res) => {
           purpose: purpose || "premium",
           userId,
           studentId: studentId || userId,
+          studentAccountId: studentAccountId || studentId || userId,
           schoolId: schoolId || "",
+          schoolName: schoolName || "",
+          className: className || "",
+          rollNumber: rollNumber || "",
+          planId: planId || "",
+          planName: planName || "",
         },
         notify: { sms: !!phone, email: !!email },
         callback_url: returnUrl,
@@ -845,6 +856,11 @@ exports.verifyPayment = functions.https.onRequest(async (req, res) => {
       const studentId = notes.studentId || userId;
 
       if (purpose === "defaultSchool" && studentId) {
+        const studentAccountId = notes.studentAccountId || studentId;
+        const className = notes.className || "";
+        const rollNumber = notes.rollNumber || "";
+        const classId = notes.schoolId && className ? `${notes.schoolId}_${className}` : "";
+
         await admin
           .firestore()
           .collection("defaultSchoolEnrollments")
@@ -852,6 +868,84 @@ exports.verifyPayment = functions.https.onRequest(async (req, res) => {
           .set(
             {
               isPaid: true,
+              paymentId: payment.id,
+              paymentLinkId: payment.id,
+              amount: payment.amount / 100,
+              planId: notes.planId || "",
+              planName: notes.planName || "",
+              schoolId: notes.schoolId || "",
+              schoolName: notes.schoolName || "",
+              className,
+              rollNumber,
+              paidAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+            },
+            { merge: true }
+          );
+
+        if (studentAccountId) {
+          await admin
+            .firestore()
+            .collection("studentAccounts")
+            .doc(studentAccountId)
+            .set(
+              {
+                paymentStatus: "paid",
+                registrationStatus: "active",
+                paymentId: payment.id,
+                paymentLinkId: payment.id,
+                amount: payment.amount / 100,
+                planId: notes.planId || "",
+                planName: notes.planName || "",
+                schoolId: notes.schoolId || "",
+                schoolName: notes.schoolName || "",
+                className,
+                rollNumber,
+                paidAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              },
+              { merge: true }
+            );
+        }
+
+        if (classId && rollNumber) {
+          await admin
+            .firestore()
+            .collection("classes")
+            .doc(classId)
+            .collection("students")
+            .doc(String(rollNumber))
+            .set(
+              {
+                paymentStatus: "paid",
+                registrationStatus: "active",
+                paymentId: payment.id,
+                paymentLinkId: payment.id,
+                amount: payment.amount / 100,
+                planId: notes.planId || "",
+                planName: notes.planName || "",
+                schoolId: notes.schoolId || "",
+                schoolName: notes.schoolName || "",
+                paidAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              },
+              { merge: true }
+            );
+        }
+      } else if (purpose === "schoolRegistration" && userId) {
+        await admin
+          .firestore()
+          .collection("schools")
+          .doc(userId)
+          .set(
+            {
+              schoolId: notes.schoolId || userId,
+              schoolName: notes.schoolName || notes.name || "School",
+              email: notes.email || "",
+              planId: notes.planId || "",
+              planName: notes.planName || "",
+              paymentStatus: "paid",
+              registrationStatus: "active",
               paymentId: payment.id,
               paymentLinkId: payment.id,
               amount: payment.amount / 100,

@@ -184,7 +184,7 @@ const PlanSelection = () => {
       // --- UPDATE YOUR OPTIONS OBJECT TO THIS EXACT FORMAT ---
       // --- CLEAN SUBSCRIPTION OPTIONS FORMAT ---
       const options = {
-        key: "rzp_test_SINM6r07wHAFN6", 
+        key: "rzp_test_T3LNGYAdtoRfzf", 
         subscription_id: data.subscriptionId, // ONLY use subscription_id (NO amount, NO currency)
         name: "MINT Entrance Foundation",
         description: `${selectedPlan.name} Subscription`,

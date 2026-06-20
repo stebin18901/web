@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from "react";
 import Papa from "papaparse";
 import { db } from "../../../firebase/firebaseConfig";
-import { collection, doc, writeBatch } from "firebase/firestore";
+import { collection, doc, writeBatch, getDoc } from "firebase/firestore";
 
 const normalize = (value) => String(value || "").trim();
 
@@ -47,6 +47,13 @@ const UploadStudents = ({ schoolId }) => {
     setUploadStatus("Uploading students...");
 
     try {
+      // fetch school's current plan configuration to attach to student records
+      const schoolSnap = await getDoc(doc(db, "schools", normalizedSchoolId));
+      const schoolData = schoolSnap.exists() ? schoolSnap.data() : {};
+      const selectedPlanId = schoolData.selectedPlanId || "";
+      const selectedPlanName = schoolData.selectedPlanName || "";
+      const planAmount = Number(schoolData.planAmount || 0);
+
       const batch = writeBatch(db);
 
       students.forEach((student) => {
@@ -56,6 +63,12 @@ const UploadStudents = ({ schoolId }) => {
         batch.set(ref, {
           ...student,
           schoolId: normalizedSchoolId,
+          selectedPlanId,
+          selectedPlanName,
+          planAmount,
+          paymentStatus: planAmount ? "pending" : "none",
+          registrationStatus: planAmount ? "pending_payment" : "free",
+          isPaid: false,
           createdAt: new Date(),
         });
       });

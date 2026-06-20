@@ -1,27 +1,38 @@
 export const DEFAULT_SCHOOL_SETTINGS_COLLECTION = "appSettings";
 export const DEFAULT_SCHOOL_SETTINGS_DOC = "defaultSchool";
 export const DEFAULT_SCHOOL_PLANS = {
-  single: {
-    id: "single",
-    name: "Single Class",
-    amount: 1000,
-    maxClasses: 1,
-  },
-  multi: {
-    id: "multi",
-    name: "Multi Class",
-    amount: 1800,
-    maxClasses: 3,
-  },
-  mega: {
-    id: "mega",
-    name: "Mega Plan",
-    amount: 2600,
+  quarterly: {
+    id: "quarterly",
+    name: "Quarterly",
+    amount: 590,
     maxClasses: 999,
     allClasses: true,
+    durationLabel: "3 Months",
+    description: "Quarterly school access with plan-based student registration payment.",
+    suggestedStudentPaymentLabel: "Pay Quarterly Registration",
+  },
+  half_yearly: {
+    id: "half_yearly",
+    name: "Half-Yearly",
+    amount: 990,
+    maxClasses: 999,
+    allClasses: true,
+    durationLabel: "6 Months",
+    description: "Half-yearly school access with plan-based student registration payment.",
+    suggestedStudentPaymentLabel: "Pay Half-Yearly Registration",
+  },
+  yearly: {
+    id: "yearly",
+    name: "Yearly",
+    amount: 1590,
+    maxClasses: 999,
+    allClasses: true,
+    durationLabel: "12 Months",
+    description: "Full-year school access with plan-based student registration payment.",
+    suggestedStudentPaymentLabel: "Pay Yearly Registration",
   },
 };
-export const DEFAULT_SCHOOL_PAYMENT_AMOUNT = DEFAULT_SCHOOL_PLANS.single.amount;
+export const DEFAULT_SCHOOL_PAYMENT_AMOUNT = DEFAULT_SCHOOL_PLANS.quarterly.amount;
 export const DEFAULT_SCHOOL_PAYMENT_AMOUNT_PAISE = DEFAULT_SCHOOL_PAYMENT_AMOUNT * 100;
 export const DEFAULT_SCHOOL_CLASS_OPTIONS = [
   "1",
@@ -48,7 +59,9 @@ export const normalizeClassName = (value) =>
   String(value || "")
     .trim()
     .replace(/^class\s*/i, "");
-export const getDefaultSchoolPlan = (planId) => DEFAULT_SCHOOL_PLANS[planId] || DEFAULT_SCHOOL_PLANS.single;
+export const getDefaultSchoolPlan = (planId) =>
+  DEFAULT_SCHOOL_PLANS[planId] || DEFAULT_SCHOOL_PLANS.quarterly;
+export const buildSchoolPlanOptions = () => Object.values(DEFAULT_SCHOOL_PLANS);
 export const getUniqueClasses = (classes) => {
   const seen = new Set();
   return (Array.isArray(classes) ? classes : [])
