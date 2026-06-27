@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import {
-  createUserWithEmailAndPassword,
   onAuthStateChanged,
   signInWithEmailAndPassword,
   signOut,
@@ -17,7 +16,111 @@ import {
 } from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "../../firebase/firebaseConfig";
+import { normalizeSchoolId } from "../../config/defaultSchool";
 import "./SchoolLogin.css";
+
+const normalizeEmail = (value) => String(value || "").trim().toLowerCase();
+
+const resolveSchoolById = async (rawIdentifier) => {
+  const cleanIdentifier = String(rawIdentifier || "").trim();
+  const normalizedIdentifier = normalizeSchoolId(cleanIdentifier);
+
+  if (!normalizedIdentifier) return null;
+
+  const directCandidates = [cleanIdentifier, normalizedIdentifier].filter(Boolean);
+  for (const candidate of directCandidates) {
+    const snap = await getDoc(doc(db, "schools", candidate));
+    if (snap.exists()) {
+      return { docId: snap.id, data: snap.data() };
+    }
+  }
+
+  const bySchoolId = await getDocs(
+    query(collection(db, "schools"), where("schoolId", "==", normalizedIdentifier), limit(1))
+  );
+  if (!bySchoolId.empty) {
+    const first = bySchoolId.docs[0];
+    return { docId: first.id, data: first.data() };
+  }
+
+  const allSchools = await getDocs(collection(db, "schools"));
+  const matched = allSchools.docs.find((entry) => {
+    const data = entry.data() || {};
+    return normalizeSchoolId(data.schoolId || entry.id) === normalizedIdentifier;
+  });
+
+  return matched ? { docId: matched.id, data: matched.data() } : null;
+};
+
+const resolveSchoolByEmail = async (rawEmail) => {
+  const cleanEmail = normalizeEmail(rawEmail);
+  if (!cleanEmail) return null;
+
+  const emailFields = ["loginEmail", "email"];
+  for (const fieldName of emailFields) {
+    const snap = await getDocs(
+      query(collection(db, "schools"), where(fieldName, "==", cleanEmail), limit(1))
+    );
+    if (!snap.empty) {
+      const first = snap.docs[0];
+      return { docId: first.id, data: first.data() };
+    }
+  }
+
+  const allSchools = await getDocs(collection(db, "schools"));
+  const matched = allSchools.docs.find((entry) => {
+    const data = entry.data() || {};
+    return [data.loginEmail, data.email].some((value) => normalizeEmail(value) === cleanEmail);
+  });
+
+  return matched ? { docId: matched.id, data: matched.data() } : null;
+};
+
+const resolveSchoolRecord = async (identifier) => {
+  const cleanIdentifier = String(identifier || "").trim();
+  if (!cleanIdentifier) return null;
+
+  if (cleanIdentifier.includes("@")) {
+    return resolveSchoolByEmail(cleanIdentifier);
+  }
+
+  return resolveSchoolById(cleanIdentifier);
+};
+
+const resolveSchoolForUser = async (user) => {
+  if (!user) return null;
+
+  const direct = await getDoc(doc(db, "schools", user.uid));
+  if (direct.exists()) {
+    return { docId: direct.id, data: direct.data() };
+  }
+
+  const byEmail = await resolveSchoolByEmail(user.email || "");
+  if (byEmail) return byEmail;
+
+  const allSchools = await getDocs(collection(db, "schools"));
+  const matched = allSchools.docs.find((entry) => {
+    const data = entry.data() || {};
+    return String(data.ownerUid || "") === user.uid;
+  });
+
+  return matched ? { docId: matched.id, data: matched.data() } : null;
+};
+
+const buildSchoolPayload = (schoolData, fallbackDocId = "") => {
+  const resolvedSchoolId = normalizeSchoolId(
+    schoolData.schoolId || fallbackDocId || schoolData.id || ""
+  );
+
+  return {
+    ...schoolData,
+    id: fallbackDocId || schoolData.id || resolvedSchoolId,
+    schoolId: resolvedSchoolId,
+    schoolName: schoolData.schoolName || schoolData.name || "School",
+    email: normalizeEmail(schoolData.loginEmail || schoolData.email || ""),
+    loginEmail: normalizeEmail(schoolData.loginEmail || schoolData.email || ""),
+  };
+};
 
 const SchoolLogin = ({ onLoginSuccess }) => {
   const navigate = useNavigate();
@@ -32,13 +135,8 @@ const SchoolLogin = ({ onLoginSuccess }) => {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const openSchoolAdmin = useCallback((schoolData) => {
-    const payload = {
-      ...schoolData,
-      schoolId: schoolData.schoolId || schoolData.id || "",
-      schoolName: schoolData.schoolName || schoolData.name || "School",
-    };
-
+  const openSchoolAdmin = useCallback((schoolData, fallbackDocId = "") => {
+    const payload = buildSchoolPayload(schoolData, fallbackDocId);
     localStorage.setItem("schoolData", JSON.stringify(payload));
     onLoginSuccess?.(payload);
     navigate("/school-admin/home", { replace: true });
@@ -56,13 +154,13 @@ const SchoolLogin = ({ onLoginSuccess }) => {
           return;
         }
 
-        const schoolSnap = await getDoc(doc(db, "schools", user.uid));
-        if (!schoolSnap.exists()) {
+        const schoolRecord = await resolveSchoolForUser(user);
+        if (!schoolRecord) {
           setLoading(false);
           return;
         }
 
-        openSchoolAdmin(schoolSnap.data());
+        openSchoolAdmin(schoolRecord.data, schoolRecord.docId);
       } catch (err) {
         setError(err.message || "Unable to load school account");
       } finally {
@@ -84,40 +182,39 @@ const SchoolLogin = ({ onLoginSuccess }) => {
 
     try {
       const cleanName = schoolName.trim();
-      const cleanSchoolId = schoolIdInput.trim().toLowerCase();
-      const cleanEmail = email.trim().toLowerCase();
+      const cleanSchoolId = normalizeSchoolId(schoolIdInput);
+      const cleanEmail = normalizeEmail(email);
       const cleanPassword = password.trim();
 
-      if (!cleanName || !cleanSchoolId || !cleanEmail || !cleanPassword) {
-        throw new Error("Please fill school name, school ID, email, and password.");
+      if (!cleanName || !cleanSchoolId || !cleanPassword) {
+        throw new Error("Please fill school name, school ID, and password.");
       }
 
-      const schoolQuery = query(
-        collection(db, "schools"),
-        where("schoolId", "==", cleanSchoolId),
-        limit(1)
-      );
-      const existingSchool = await getDocs(schoolQuery);
-      if (!existingSchool.empty) {
+      const existingById = await resolveSchoolById(cleanSchoolId);
+      if (existingById) {
         throw new Error("This school ID is already in use.");
       }
 
-      const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, cleanPassword);
-      const user = userCredential.user;
+      if (cleanEmail) {
+        const existingByEmail = await resolveSchoolByEmail(cleanEmail);
+        if (existingByEmail) {
+          throw new Error("This email is already linked to another school.");
+        }
+      }
 
       const schoolData = {
         schoolId: cleanSchoolId,
         schoolName: cleanName,
         email: cleanEmail,
         loginEmail: cleanEmail,
-        ownerUid: user.uid,
+        password: cleanPassword,
         registrationMode: "school-account",
         updatedAt: new Date().toISOString(),
         createdAt: new Date().toISOString(),
       };
 
-      await setDoc(doc(db, "schools", user.uid), schoolData, { merge: true });
-      openSchoolAdmin(schoolData);
+      await setDoc(doc(db, "schools", cleanSchoolId), schoolData, { merge: true });
+      openSchoolAdmin(schoolData, cleanSchoolId);
     } catch (err) {
       setError(err.message || "Registration failed");
     } finally {
@@ -132,47 +229,46 @@ const SchoolLogin = ({ onLoginSuccess }) => {
     setSubmitting(true);
 
     try {
-      const cleanIdentifier = loginId.trim().toLowerCase();
+      const cleanIdentifier = String(loginId || "").trim();
       const cleanPassword = password.trim();
 
       if (!cleanIdentifier || !cleanPassword) {
         throw new Error("Please enter school ID or email and password.");
       }
 
-      let resolvedEmail = cleanIdentifier;
-      if (!cleanIdentifier.includes("@")) {
-        const schoolQuery = query(
-          collection(db, "schools"),
-          where("schoolId", "==", cleanIdentifier),
-          limit(1)
-        );
-        const schoolSnap = await getDocs(schoolQuery);
-        if (schoolSnap.empty) {
-          throw new Error("No school found for this school ID.");
-        }
-
-        const schoolData = schoolSnap.docs[0].data();
-        resolvedEmail = String(
-          schoolData.loginEmail || schoolData.email || ""
-        ).trim().toLowerCase();
-
-        if (!resolvedEmail) {
-          throw new Error("This school account is missing a login email.");
+      const schoolRecord = await resolveSchoolRecord(cleanIdentifier);
+      if (schoolRecord) {
+        const storedPassword = String(schoolRecord.data?.password || "").trim();
+        if (storedPassword && storedPassword === cleanPassword) {
+          openSchoolAdmin(schoolRecord.data, schoolRecord.docId);
+          return;
         }
       }
 
-      const userCredential = await signInWithEmailAndPassword(auth, resolvedEmail, cleanPassword);
-      const user = userCredential.user;
+      const fallbackEmail = cleanIdentifier.includes("@")
+        ? normalizeEmail(cleanIdentifier)
+        : normalizeEmail(
+            schoolRecord?.data?.loginEmail || schoolRecord?.data?.email || ""
+          );
 
-      const schoolSnap = await getDoc(doc(db, "schools", user.uid));
-      if (!schoolSnap.exists()) {
+      if (!fallbackEmail) {
+        throw new Error("Invalid school ID or password.");
+      }
+
+      const userCredential = await signInWithEmailAndPassword(auth, fallbackEmail, cleanPassword);
+      const resolvedSchool = await resolveSchoolForUser(userCredential.user);
+
+      if (!resolvedSchool) {
         await signOut(auth).catch(() => {});
-        throw new Error("No school profile found. Please register first.");
+        throw new Error("No school profile found for this account.");
       }
 
-      openSchoolAdmin(schoolSnap.data());
+      openSchoolAdmin(resolvedSchool.data, resolvedSchool.docId);
     } catch (err) {
-      setError(err.message || "Login failed");
+      const messageText = err?.code === "auth/invalid-credential"
+        ? "Invalid school email or password."
+        : err.message || "Login failed";
+      setError(messageText);
     } finally {
       setSubmitting(false);
     }
@@ -195,7 +291,7 @@ const SchoolLogin = ({ onLoginSuccess }) => {
           <p className="school-auth-kicker">School onboarding</p>
           <h2>{mode === "register" ? "Register Your School" : "School Login"}</h2>
           <p className="school-auth-subtitle">
-            Create a school account with a permanent school ID. Login supports both school ID and email.
+            School login supports both school ID and email. This now matches the school records managed from admin.
           </p>
         </div>
 

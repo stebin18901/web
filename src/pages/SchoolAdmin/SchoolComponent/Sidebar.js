@@ -8,6 +8,7 @@ import {
   ChevronRight,
   GraduationCap,
   LogOut,
+  Link2,
 } from "lucide-react";
 import "./Sidebar.css";
 
@@ -16,10 +17,12 @@ export default function Sidebar({
   sidebarTitle = "School Admin",
   sidebarLogo = null,
   links = [],
+  commonFormLink = "",
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [tooltip, setTooltip] = useState({ text: "", x: 0, y: 0, visible: false });
+  const [copyMessage, setCopyMessage] = useState("");
 
   const showTooltip = (e, text) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -32,6 +35,20 @@ export default function Sidebar({
   };
 
   const hideTooltip = () => setTooltip({ ...tooltip, visible: false });
+
+  const handleCopyCommonLink = async () => {
+    if (!commonFormLink) return;
+
+    try {
+      await navigator.clipboard.writeText(commonFormLink);
+      setCopyMessage("Common form link copied");
+      setTimeout(() => setCopyMessage(""), 2000);
+      setIsOpen(false);
+    } catch {
+      setCopyMessage("Unable to copy link");
+      setTimeout(() => setCopyMessage(""), 2000);
+    }
+  };
 
   return (
     <>
@@ -87,6 +104,37 @@ export default function Sidebar({
 
         {/* === Footer === */}
         <div className="sa-sidebar-footer">
+          {commonFormLink && (
+            <>
+              <button
+                className="sa-sidebar-link sa-share-link"
+                onClick={handleCopyCommonLink}
+                onMouseEnter={(e) => showTooltip(e, "Copy common form link")}
+                onMouseLeave={hideTooltip}
+              >
+                <div className="sa-icon-wrap">
+                  <Link2 size={20} strokeWidth={2} />
+                </div>
+                <span className="sa-link-text">Copy Common Link</span>
+              </button>
+
+              {!collapsed && (
+                <a
+                  href={commonFormLink}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="sa-common-link-preview"
+                >
+                  Open shared student form
+                </a>
+              )}
+
+              {!collapsed && copyMessage && (
+                <p className="sa-common-link-status">{copyMessage}</p>
+              )}
+            </>
+          )}
+
           <button
             className="sa-sidebar-link logout"
             onClick={onLogout}

@@ -180,6 +180,32 @@
   padding: 12px;
   border-top: 1px solid rgba(0, 0, 0, 0.05);
 }
+.sa-share-link {
+  width: 100%;
+  border: none;
+  background: rgba(34, 197, 94, 0.1);
+  color: #166534;
+  cursor: pointer;
+}
+.sa-share-link:hover {
+  background: rgba(34, 197, 94, 0.16);
+}
+.sa-common-link-preview {
+  display: block;
+  margin: 4px 10px 10px;
+  font-size: 0.82rem;
+  color: #2563eb;
+  text-decoration: none;
+  word-break: break-word;
+}
+.sa-common-link-preview:hover {
+  text-decoration: underline;
+}
+.sa-common-link-status {
+  margin: 0 10px 10px;
+  font-size: 0.78rem;
+  color: #166534;
+}
 .sa-sidebar-link.logout {
   color: #ef4444;
 }

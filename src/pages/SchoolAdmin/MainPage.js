@@ -30,6 +30,9 @@ const MainPage = ({ school, onLogout }) => {
     { name: "Quiz Analytics", path: "/school-admin/analytics", icon: BarChart3 },
     { name: "Announcements", path: "/school-admin/announcements", icon: Megaphone },
   ];
+  const commonFormLink = currentSchool?.schoolId
+    ? `${window.location.origin}/school-form/${currentSchool.schoolId}/student`
+    : "";
 
   return (
     <div className="main-layout">
@@ -37,6 +40,7 @@ const MainPage = ({ school, onLogout }) => {
         sidebarTitle={currentSchool?.schoolName || "School Admin"}
         sidebarLogo={currentSchool?.schoolLogo}
         links={sidebarLinks}
+        commonFormLink={commonFormLink}
         onLogout={onLogout}
       />
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { addDoc, collection, doc, getDoc, getDocs, query, setDoc, where } from "firebase/firestore";
 import { RecaptchaVerifier, signInWithPhoneNumber, signOut } from "firebase/auth";
@@ -28,6 +28,7 @@ export default function ClassIntakeForm() {
   const [otpNotice, setOtpNotice] = useState("");
   const [lastOtpRequestTime, setLastOtpRequestTime] = useState(0);
   const OTP_COOLDOWN_MS = 60000;
+  const recaptchaWidgetIdRef = useRef(null);
 
   const schoolIdValue = useMemo(() => normalize(schoolId), [schoolId]);
   const normalizedSchoolId = useMemo(() => schoolIdValue.toLowerCase(), [schoolIdValue]);
@@ -122,11 +123,42 @@ export default function ClassIntakeForm() {
         // Ignore cleanup failures
       }
       window.classIntakeRecaptchaVerifier = null;
+      recaptchaWidgetIdRef.current = null;
     }
     const container = document.getElementById("class-intake-recaptcha");
     if (container) {
       container.innerHTML = '<div id="class-intake-recaptcha-inner"></div>';
     }
+  };
+
+  const ensureRecaptchaVerifier = async () => {
+    const verifierContainer = document.getElementById("class-intake-recaptcha-inner");
+    if (!verifierContainer) {
+      throw new Error("reCAPTCHA container not found. Please refresh the page.");
+    }
+
+    if (!window.classIntakeRecaptchaVerifier) {
+      window.classIntakeRecaptchaVerifier = new RecaptchaVerifier(
+        auth,
+        "class-intake-recaptcha-inner",
+        {
+          size: "invisible",
+          callback: () => {
+            setStatus("");
+          },
+          "expired-callback": () => {
+            setStatus("reCAPTCHA expired. Please try sending OTP again.");
+            clearRecaptchaVerifier();
+          },
+        }
+      );
+    }
+
+    if (recaptchaWidgetIdRef.current === null) {
+      recaptchaWidgetIdRef.current = await window.classIntakeRecaptchaVerifier.render();
+    }
+
+    return window.classIntakeRecaptchaVerifier;
   };
 
   const resetOtpState = () => {
@@ -149,23 +181,13 @@ export default function ClassIntakeForm() {
       }
 
       clearRecaptchaVerifier();
-
-      const verifierContainer = document.getElementById("class-intake-recaptcha-inner");
-      if (!verifierContainer) {
-        setStatus("reCAPTCHA container not found. Please refresh the page.");
-        return false;
-      }
-
-      window.classIntakeRecaptchaVerifier = new RecaptchaVerifier(
-        auth,
-        "class-intake-recaptcha-inner",
-        { size: "invisible" }
-      );
+      auth.languageCode = "en";
+      const verifier = await ensureRecaptchaVerifier();
 
       const confirmation = await signInWithPhoneNumber(
         auth,
         `+91${cleanPhone}`,
-        window.classIntakeRecaptchaVerifier
+        verifier
       );
 
       setLastOtpRequestTime(Date.now());
