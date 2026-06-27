@@ -1,0 +1,139 @@
+.school-plan-settings {
+  max-width: 980px;
+  margin: 0 auto;
+  color: #111827;
+}
+
+.school-plan-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.school-plan-header p {
+  margin: 0 0 4px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.school-plan-header h2 {
+  margin: 0;
+  font-size: 26px;
+}
+
+.school-plan-header button {
+  border: 0;
+  background: #2563eb;
+  color: #fff;
+  border-radius: 8px;
+  padding: 11px 18px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.school-plan-header button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.school-plan-alert {
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 16px;
+  font-weight: 700;
+}
+
+.school-plan-alert.error {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.school-plan-alert.success {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.school-plan-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 14px;
+}
+
+.school-plan-card {
+  text-align: left;
+  border: 1px solid #dbe3ef;
+  background: #fff;
+  border-radius: 8px;
+  padding: 18px;
+  cursor: pointer;
+  min-height: 190px;
+}
+
+.school-plan-card.selected {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.14);
+}
+
+.school-plan-card span {
+  display: block;
+  color: #475569;
+  font-weight: 700;
+}
+
+.school-plan-card strong {
+  display: block;
+  margin-top: 10px;
+  font-size: 30px;
+  color: #111827;
+}
+
+.school-plan-card small {
+  display: block;
+  margin-top: 4px;
+  color: #2563eb;
+  font-weight: 700;
+}
+
+.school-plan-card p {
+  margin: 14px 0 0;
+  color: #64748b;
+  line-height: 1.45;
+}
+
+.school-plan-summary {
+  margin-top: 18px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.school-plan-summary span {
+  display: block;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.school-plan-summary strong {
+  display: block;
+  margin-top: 6px;
+  font-size: 20px;
+}
+
+.school-plan-summary p {
+  margin: 8px 0 0;
+  color: #475569;
+}
+
+@media (max-width: 640px) {
+  .school-plan-header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

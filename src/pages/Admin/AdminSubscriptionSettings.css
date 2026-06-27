@@ -1,26 +1,24 @@
 /* ======================= ADMIN SUBSCRIPTION SETTINGS ======================= */
 
 .admin-subscription-settings {
-  padding: 20px;
-  background: #f7fafc;
-  min-height: 100vh;
+  padding: 12px;
+  background: linear-gradient(180deg, #f8fbff 0%, #f3f8fd 100%);
+  min-height: 100%;
 }
 
 .settings-container {
-  max-width: 1000px;
+  max-width: 1080px;
   margin: 0 auto;
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border-radius: 18px;
+  box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
   overflow: hidden;
 }
-
-/* ======================= HEADER ======================= */
 
 .settings-header {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
-  padding: 30px 25px;
+  padding: 24px 22px;
   border-bottom: none;
 }
 
@@ -36,11 +34,9 @@
   font-size: 0.95rem;
 }
 
-/* ======================= ALERTS ======================= */
-
 .alert {
   padding: 15px 20px;
-  margin: 20px;
+  margin: 16px;
   border-radius: 8px;
   font-size: 0.95rem;
   border-left: 4px solid;
@@ -70,10 +66,8 @@
   border-color: #22543d;
 }
 
-/* ======================= FORM ======================= */
-
 .settings-form {
-  padding: 30px;
+  padding: 22px;
 }
 
 .form-section {
@@ -91,7 +85,7 @@
 .form-input,
 .form-select {
   width: 100%;
-  max-width: 400px;
+  max-width: 460px;
   padding: 10px 12px;
   border: 1px solid #cbd5e0;
   border-radius: 6px;
@@ -114,7 +108,64 @@
   margin-bottom: 0;
 }
 
-/* ======================= DIVIDER ======================= */
+.toggle-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 20px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.toggle-label {
+  margin-bottom: 4px;
+}
+
+.switch {
+  position: relative;
+  display: inline-flex;
+  width: 56px;
+  height: 32px;
+  flex-shrink: 0;
+}
+
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.slider {
+  position: absolute;
+  inset: 0;
+  cursor: pointer;
+  background: #cbd5e0;
+  border-radius: 999px;
+  transition: background 0.2s ease;
+}
+
+.slider::before {
+  content: "";
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  left: 4px;
+  top: 4px;
+  background: #fff;
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.18);
+}
+
+.switch input:checked + .slider {
+  background: #2563eb;
+}
+
+.switch input:checked + .slider::before {
+  transform: translateX(24px);
+}
 
 .divider {
   height: 1px;
@@ -122,26 +173,28 @@
   margin: 30px 0;
 }
 
-/* ======================= PRICING CARDS ======================= */
-
 .pricing-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 20px;
-  margin-bottom: 30px;
+  gap: 16px;
+  margin-bottom: 24px;
 }
 
 .price-card {
   background: #f7fafc;
   border: 2px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 20px;
+  border-radius: 14px;
+  padding: 18px;
   transition: all 0.3s ease;
 }
 
 .price-card:hover {
   border-color: #667eea;
   box-shadow: 0 8px 16px rgba(102, 126, 234, 0.1);
+}
+
+.price-card-muted {
+  opacity: 0.72;
 }
 
 .price-header {
@@ -200,8 +253,6 @@
   text-align: center;
 }
 
-/* ======================= RADIO GROUP ======================= */
-
 .radio-group {
   display: flex;
   gap: 20px;
@@ -231,14 +282,13 @@
   accent-color: #667eea;
 }
 
-/* ======================= PRICE COMPARISON ======================= */
-
 .price-comparison {
   background: #f7fafc;
   border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  padding: 20px;
-  margin-bottom: 30px;
+  border-radius: 14px;
+  padding: 18px;
+  margin-bottom: 24px;
+  overflow-x: auto;
 }
 
 .price-comparison h4 {
@@ -249,6 +299,7 @@
 
 .comparison-table {
   width: 100%;
+  min-width: 720px;
   border-collapse: collapse;
   font-size: 0.9rem;
 }
@@ -293,13 +344,11 @@
   border-radius: 4px;
 }
 
-/* ======================= FORM ACTIONS ======================= */
-
 .form-actions {
   display: grid;
   grid-template-columns: auto 1fr;
   gap: 15px;
-  margin-bottom: 30px;
+  margin-bottom: 24px;
 }
 
 .btn-save,
@@ -339,13 +388,11 @@
   cursor: not-allowed;
 }
 
-/* ======================= INFO BOX ======================= */
-
 .info-box {
   background: #edf2f7;
   border-left: 4px solid #667eea;
-  padding: 20px;
-  margin: 30px;
+  padding: 18px;
+  margin: 0 22px 22px;
   border-radius: 6px;
 }
 
@@ -366,8 +413,6 @@
   margin-bottom: 8px;
   line-height: 1.5;
 }
-
-/* ======================= LOADER ======================= */
 
 .settings-loader {
   display: flex;
@@ -398,16 +443,19 @@
   font-size: 0.95rem;
 }
 
-/* ======================= RESPONSIVE ======================= */
-
 @media (max-width: 768px) {
+  .admin-subscription-settings {
+    padding: 0;
+  }
+
   .settings-container {
     margin: 0;
     border-radius: 0;
+    box-shadow: none;
   }
 
   .settings-header {
-    padding: 20px 15px;
+    padding: 18px 15px;
   }
 
   .settings-header h2 {
@@ -415,7 +463,7 @@
   }
 
   .settings-form {
-    padding: 20px 15px;
+    padding: 16px 14px;
   }
 
   .pricing-cards {
@@ -425,6 +473,11 @@
   .form-input,
   .form-select {
     max-width: 100%;
+  }
+
+  .toggle-card {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .form-actions {
@@ -446,11 +499,11 @@
   }
 
   .info-box {
-    margin: 20px 15px;
+    margin: 0 14px 16px;
   }
 
   .alert {
-    margin: 15px;
+    margin: 14px;
   }
 }
 

@@ -5,6 +5,18 @@
 
 // ==================== SUBSCRIPTION PLANS ====================
 export const SUBSCRIPTION_PLANS = {
+  WEEKLY_TEST: {
+    id: "weekly_test",
+    name: "Test",
+    durationInWeeks: 0,
+    durationInMonths: 0,
+    durationInDays: 8,
+    badge: "8 Days",
+    description: "8-day test subscription for Razorpay payment validation",
+    billingDivisor: 1,
+    billingLabel: "8 days",
+    isTestPlan: true,
+  },
   QUARTERLY: {
     id: "quarterly",
     name: "Quarterly",
@@ -35,7 +47,7 @@ export const SUBSCRIPTION_PLANS = {
 };
 
 // Plan IDs array for iteration
-export const PLAN_IDS = ["quarterly", "half_yearly", "yearly"];
+export const PLAN_IDS = ["weekly_test", "quarterly", "half_yearly", "yearly"];
 
 // ==================== FEATURES INCLUDED ====================
 export const SUBSCRIPTION_FEATURES = [
@@ -50,9 +62,14 @@ export const SUBSCRIPTION_FEATURES = [
 
 // ==================== DEFAULT PRICING ====================
 export const DEFAULT_PRICING = {
-  quarterly: 499,
-  half_yearly: 899,
-  yearly: 1499,
+  weekly_test: 1,
+  quarterly: 590,
+  half_yearly: 990,
+  yearly: 1599,
+};
+
+export const DEFAULT_PLAN_VISIBILITY = {
+  weekly_test: false,
 };
 
 // ==================== FIREBASE COLLECTIONS ====================
@@ -96,6 +113,26 @@ export const getPlanById = (planId) => {
   return plan || SUBSCRIPTION_PLANS.YEARLY;
 };
 
+export const getSubscriptionPricingFromSettings = (settings = {}) => ({
+  weekly_test: Number(settings.weeklyTestPrice) || DEFAULT_PRICING.weekly_test,
+  quarterly: Number(settings.quarterlyPrice) || DEFAULT_PRICING.quarterly,
+  half_yearly:
+    Number(settings.halfYearlyPrice) || DEFAULT_PRICING.half_yearly,
+  yearly: Number(settings.yearlyPrice) || DEFAULT_PRICING.yearly,
+});
+
+export const isPlanVisible = (planId, settings = {}) => {
+  if (planId === "weekly_test") {
+    return Boolean(settings.testPlanEnabled);
+  }
+  return true;
+};
+
+export const getVisibleSubscriptionPlans = (settings = {}) =>
+  Object.values(SUBSCRIPTION_PLANS).filter((plan) =>
+    isPlanVisible(plan.id, settings)
+  );
+
 /**
  * Format duration for display
  */
@@ -111,8 +148,20 @@ export const calculateExpiryDate = (startDate, planId) => {
   const plan = getPlanById(planId);
   if (!plan) return new Date();
   const date = new Date(startDate);
+  if (plan.durationInDays) {
+    date.setDate(date.getDate() + plan.durationInDays);
+    return date;
+  }
   date.setMonth(date.getMonth() + plan.durationInMonths);
   return date;
+};
+
+export const getPlanBillingText = (planId, amount) => {
+  const plan = getPlanById(planId);
+  const divisor = plan.billingDivisor || plan.durationInMonths || 1;
+  const unitPrice = Math.round(Number(amount || 0) / divisor);
+  const label = plan.billingLabel || "month";
+  return `${formatPrice(unitPrice)}/${label}`;
 };
 
 /**
@@ -120,10 +169,10 @@ export const calculateExpiryDate = (startDate, planId) => {
  */
 export const isSubscriptionActive = (subscription) => {
   if (!subscription) return false;
-  if (subscription.subscriptionActive === false) return false;
-  
   const expiryDate = new Date(subscription.expiryDate);
-  return expiryDate > new Date();
+  if (expiryDate <= new Date()) return false;
+  if (subscription.cancellationScheduled) return true;
+  return subscription.subscriptionActive !== false;
 };
 
 /**
@@ -160,6 +209,16 @@ export const getSubscriptionStatusMessage = (subscription) => {
   const daysLeft = getDaysRemaining(subscription.expiryDate);
   const renewalDate = new Date(subscription.expiryDate).toLocaleDateString();
 
+  if (subscription.cancellationScheduled || subscription.autoRenewal === false) {
+    return {
+      status: "cancellation_pending",
+      message: `Active - Cancels on ${renewalDate}`,
+      icon: "âš ï¸",
+      daysLeft,
+      renewalDate,
+    };
+  }
+
   if (daysLeft <= 7) {
     return {
       status: "expiring_soon",
@@ -183,6 +242,8 @@ export const getSubscriptionStatusMessage = (subscription) => {
  */
 export const getPeriodFromPlanId = (planId) => {
   switch (planId) {
+    case "weekly_test":
+      return "weekly";
     case "quarterly":
       return "3monthly";
     case "half_yearly":

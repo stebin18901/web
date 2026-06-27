@@ -12,6 +12,17 @@ import "./PaymentSuccess.css";
 const MAX_POLL_ATTEMPTS = 10;
 const POLL_INTERVAL_MS = 3000; // 3 seconds between each retry
 
+const getDeviceLabel = () => {
+  if (typeof navigator === "undefined") return "Unknown device";
+  const ua = navigator.userAgent || "";
+  if (/android/i.test(ua)) return "Android device";
+  if (/iphone|ipad|ipod/i.test(ua)) return "iPhone / iPad";
+  if (/windows/i.test(ua)) return "Windows device";
+  if (/macintosh|mac os x/i.test(ua)) return "Mac device";
+  if (/linux/i.test(ua)) return "Linux device";
+  return "Browser device";
+};
+
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
@@ -41,6 +52,10 @@ const buildSession = (studentId, data) => ({
   planName: data.planName || "",
   planMaxClasses: data.planMaxClasses || 1,
   razorpaySubscriptionId: data.razorpaySubscriptionId || "",
+  expiryDate: data.expiryDate || "",
+  startDate: data.startDate || "",
+  loggedInAt: new Date().toISOString(),
+  deviceLabel: getDeviceLabel(),
 });
 
 /**
@@ -51,7 +66,7 @@ const buildSession = (studentId, data) => ({
  *   2. If razorpaySubscriptionId exists, cross-check the subscriptions doc
  *      to confirm subscriptionActive is not explicitly false
  *
- * Returns: { paid: boolean, enrollment: object | null }
+ * Returns: { paid: boolean, enrollment: object | null, subscription: object | null }
  */
 const checkPaidStatus = async (studentId) => {
   const enrollmentSnap = await getDoc(
@@ -65,26 +80,55 @@ const checkPaidStatus = async (studentId) => {
   const enrollment = enrollmentSnap.data();
 
   // Not marked paid yet
-  if (!enrollment.isPaid || !enrollment.planId) {
-    return { paid: false, enrollment };
-  }
-
-  // Paid flag is set — optionally verify subscription doc
   const subId = enrollment.razorpaySubscriptionId;
   if (subId) {
     try {
       const subSnap = await getDoc(doc(db, "subscriptions", subId));
-      if (subSnap.exists() && subSnap.data().subscriptionActive === false) {
-        // Webhook explicitly marked it inactive (cancelled before first charge?)
-        return { paid: false, enrollment };
+      if (subSnap.exists()) {
+        const subscription = subSnap.data() || {};
+        const status = String(
+          subscription.razorpayStatus || subscription.status || ""
+        ).toLowerCase();
+        const hasValidExpiry =
+          !subscription.expiryDate ||
+          new Date(subscription.expiryDate).getTime() > Date.now();
+
+        if (subscription.subscriptionActive === false) {
+          return { paid: false, enrollment, subscription };
+        }
+
+        if (
+          hasValidExpiry &&
+          (subscription.subscriptionActive === true ||
+            ["active", "authenticated"].includes(status))
+        ) {
+          return {
+            paid: true,
+            enrollment: {
+              ...enrollment,
+              expiryDate: subscription.expiryDate || enrollment.expiryDate || "",
+              startDate: subscription.startDate || enrollment.startDate || "",
+              planId: enrollment.planId || subscription.planId || "",
+              planName: enrollment.planName || subscription.planName || "",
+            },
+            subscription,
+          };
+        }
+
+        if (!enrollment.isPaid || !enrollment.planId) {
+          return { paid: false, enrollment, subscription };
+        }
       }
-      // Either doc doesn't exist yet (webhook lag) or it's active — trust isPaid
     } catch {
-      // Firestore error reading subscriptions — trust isPaid flag
+      // Firestore read failed — trust enrollment fallback below
     }
   }
 
-  return { paid: true, enrollment };
+  if (!enrollment.isPaid || !enrollment.planId) {
+    return { paid: false, enrollment, subscription: null };
+  }
+
+  return { paid: true, enrollment, subscription: null };
 };
 
 // ---------------------------------------------------------------------------
@@ -255,18 +299,23 @@ const PaymentSuccess = () => {
                 <button onClick={handleRetry}>Check Again</button>
                 <button
                   className="secondary"
-                  onClick={() => navigate("/", { replace: true })}
+                  onClick={() => navigate("/plan-selection?enrollmentId=" + encodeURIComponent(defaultStudentId), { replace: true })}
                 >
-                  Back to Login
+                  Back to Payment
                 </button>
               </>
             ) : (
               <button
                 className="secondary"
-                onClick={() => navigate("/", { replace: true })}
+                onClick={() =>
+                  navigate(
+                    `/plan-selection?enrollmentId=${encodeURIComponent(defaultStudentId)}`,
+                    { replace: true }
+                  )
+                }
                 disabled={status === "checking"}
               >
-                Back to Login
+                Back to Payment
               </button>
             )}
           </div>

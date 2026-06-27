@@ -36,6 +36,8 @@ import QuizAttemptReport from "./pages/QuizAttemptReport";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import PlanSelection from "./pages/PlanSelection";
 import SchoolRegistrationSuccess from "./pages/SchoolRegistrationSuccess";
+import QuizDemoSharePage from "./pages/QuizDemoSharePage";
+import Downloads from "./pages/Downloads";
 
 // --- STEP 3 IMPORTS: Compliance Components ---
 import Footer from "./components/Footer";
@@ -46,8 +48,31 @@ import RefundPolicy from "./pages/policies/RefundPolicy";
 
 const PrivateRoute = ({ element }) => {
   const { user } = useAuth();
-  const studentSession = localStorage.getItem("schoolStudentSession");
-  return user || studentSession ? element : <Navigate to="/login" replace />;
+  const rawStudentSession = localStorage.getItem("schoolStudentSession");
+
+  if (rawStudentSession) {
+    try {
+      const studentSession = JSON.parse(rawStudentSession);
+      if (studentSession?.accessMode === "school-auth") {
+        const paymentStatus = String(studentSession.paymentStatus || "").toLowerCase();
+        const registrationStatus = String(studentSession.registrationStatus || "").toLowerCase();
+        const paid =
+          studentSession.isPaid === true ||
+          paymentStatus === "paid" ||
+          registrationStatus === "active";
+
+        if (!paid) {
+          localStorage.removeItem("schoolStudentSession");
+          return <Navigate to="/login" replace />;
+        }
+      }
+    } catch {
+      localStorage.removeItem("schoolStudentSession");
+      return <Navigate to="/login" replace />;
+    }
+  }
+
+  return user || rawStudentSession ? element : <Navigate to="/login" replace />;
 };
 
 const AppContent = () => {
@@ -76,8 +101,9 @@ const AppContent = () => {
           <Route path="/school-admin/login" element={<SchoolAdmin />} />
           <Route path="/school-admin/*" element={<SchoolAdmin />} />
           <Route path="/school-auth/:token" element={<SchoolMagicAuth />} />
-          <Route path="/sa/:token" element={<SchoolMagicAuth mode="logout" />} />
+          <Route path="/sa/:token" element={<SchoolMagicAuth />} />
           <Route path="/sl/:token" element={<SchoolMagicAuth mode="logout" />} />
+          <Route path="/school-form/:schoolId/:type" element={<ClassIntakeForm />} />
           <Route path="/class-form/:schoolId/:className/:type" element={<ClassIntakeForm />} />
           <Route path="/about" element={<AboutPage />} />
           <Route path="/pricing" element={<PricingNew />} />
@@ -86,6 +112,8 @@ const AppContent = () => {
           <Route path="/plan-selection" element={<PlanSelection />} />
           <Route path="/payment-success" element={<PaymentSuccess />} />
           <Route path="/school-registration-success" element={<SchoolRegistrationSuccess />} />
+          <Route path="/quiz-demo-share" element={<QuizDemoSharePage />} />
+          <Route path="/downloads" element={<Downloads />} />
           <Route path="/test" element={<NotesViewer />} />
           
           {/* --- STEP 3 ROUTES: Public Policy Routes --- */}

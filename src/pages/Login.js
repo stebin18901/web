@@ -14,8 +14,11 @@ import { auth } from "../firebase/firebaseConfig";
 import { db } from "../firebase/firebaseConfig";
 import {
   buildAvailableClasses,
+  CREATE_PAYMENT_LINK_URL,
   DEFAULT_SCHOOL_SETTINGS_COLLECTION,
   DEFAULT_SCHOOL_SETTINGS_DOC,
+  MAX_PARENT_ACCOUNTS_PER_PHONE,
+  getDefaultSchoolPlan,
   getUniqueClasses,
   normalizePhone,
   normalizeClassName,
@@ -31,6 +34,16 @@ const buildDefaultSchoolSession = (id, enrollment, schoolContext) => {
   const selectedClasses = getUniqueClasses(
     enrollment.selectedClasses || [enrollment.className]
   );
+  const getDeviceLabel = () => {
+    if (typeof navigator === "undefined") return "Unknown device";
+    const ua = navigator.userAgent || "";
+    if (/android/i.test(ua)) return "Android device";
+    if (/iphone|ipad|ipod/i.test(ua)) return "iPhone / iPad";
+    if (/windows/i.test(ua)) return "Windows device";
+    if (/macintosh|mac os x/i.test(ua)) return "Mac device";
+    if (/linux/i.test(ua)) return "Linux device";
+    return "Browser device";
+  };
   return {
     id,
     name: enrollment.name || enrollment.phone || "Student",
@@ -49,6 +62,10 @@ const buildDefaultSchoolSession = (id, enrollment, schoolContext) => {
     planMaxClasses:
       enrollment.planMaxClasses || selectedClasses.length || 1,
     razorpaySubscriptionId: enrollment.razorpaySubscriptionId || "",
+    expiryDate: enrollment.expiryDate || "",
+    startDate: enrollment.startDate || "",
+    loggedInAt: new Date().toISOString(),
+    deviceLabel: getDeviceLabel(),
   };
 };
 
@@ -112,6 +129,55 @@ const checkSubscriptionStatus = async (enrollment, enrollmentId) => {
   }
 };
 
+const isSchoolStudentPaid = (student) => {
+  const paymentStatus = String(student?.paymentStatus || "").toLowerCase();
+  const registrationStatus = String(student?.registrationStatus || "").toLowerCase();
+  return (
+    student?.isPaid === true ||
+    paymentStatus === "paid" ||
+    registrationStatus === "active"
+  );
+};
+
+const resolvePaymentUrl = (paymentData) =>
+  String(
+    paymentData?.payment_url ||
+      paymentData?.short_url ||
+      paymentData?.url ||
+      paymentData?.link ||
+      paymentData?.paymentLink ||
+      ""
+  ).trim();
+
+const sortLinkedAccounts = (accounts) =>
+  [...accounts].sort((a, b) => {
+    const classCompare = String(a.className || "").localeCompare(
+      String(b.className || ""),
+      undefined,
+      { numeric: true }
+    );
+    if (classCompare !== 0) return classCompare;
+
+    const rollCompare = String(a.rollNumber || "").localeCompare(
+      String(b.rollNumber || ""),
+      undefined,
+      { numeric: true }
+    );
+    if (rollCompare !== 0) return rollCompare;
+
+    return String(a.name || "").localeCompare(String(b.name || ""));
+  });
+
+const buildDefaultEnrollmentId = (schoolId, phone, studentName, className) => {
+  const slug = `${studentName}-${className}`
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 24) || "student";
+
+  return `${schoolId}_${phone}_${slug}_${Date.now().toString(36)}`;
+};
+
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -138,6 +204,9 @@ const Login = () => {
   const [error, setError] = useState("");
   const [otpNotice, setOtpNotice] = useState("");
   const [lastOtpRequestTime, setLastOtpRequestTime] = useState(0);
+  const [defaultPhoneVerified, setDefaultPhoneVerified] = useState(false);
+  const [linkedAccounts, setLinkedAccounts] = useState([]);
+  const [selectedLinkedAccountId, setSelectedLinkedAccountId] = useState("");
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -239,6 +308,67 @@ const Login = () => {
     setOtpCode("");
     setConfirmationResult(null);
     setOtpNotice("");
+    setDefaultPhoneVerified(false);
+    setLinkedAccounts([]);
+    setSelectedLinkedAccountId("");
+  };
+
+  const getLinkedAccountsForPhone = async (cleanPhone) => {
+    const phoneQuery = query(
+      collection(db, "defaultSchoolEnrollments"),
+      where("phone", "==", cleanPhone)
+    );
+    const snap = await getDocs(phoneQuery);
+    const seen = new Set();
+
+    return sortLinkedAccounts(
+      snap.docs
+        .map((entry) => ({
+          id: entry.id,
+          ...entry.data(),
+        }))
+        .filter((entry) => {
+          const schoolId = normalizeSchoolId(entry.schoolId);
+          const accessMode = String(entry.accessMode || "default-school").toLowerCase();
+          return (
+            schoolId === schoolContext?.schoolId &&
+            (accessMode === "default-school" || accessMode === "school-plan")
+          );
+        })
+        .filter((entry) => {
+          if (seen.has(entry.id)) return false;
+          seen.add(entry.id);
+          return true;
+        })
+    );
+  };
+
+  const continueWithLinkedAccount = async (enrollmentId, enrollmentData, context) => {
+    const status = await checkSubscriptionStatus(enrollmentData, enrollmentId);
+
+    if (status === "active") {
+      localStorage.setItem(
+        "schoolStudentSession",
+        JSON.stringify(
+          buildDefaultSchoolSession(enrollmentId, enrollmentData, context)
+        )
+      );
+      navigate("/dashboard");
+      return;
+    }
+
+    if (status === "pending") {
+      navigate(`/plan-selection?enrollmentId=${encodeURIComponent(enrollmentId)}`);
+      return;
+    }
+
+    if (status === "expired") {
+      setError("Your subscription has expired. Please renew your plan to continue.");
+      navigate(`/plan-selection?enrollmentId=${encodeURIComponent(enrollmentId)}`);
+      return;
+    }
+
+    navigate(`/plan-selection?enrollmentId=${encodeURIComponent(enrollmentId)}`);
   };
 
   // -------------------------------------------------------------------------
@@ -330,6 +460,7 @@ const Login = () => {
           if (parsed?.schoolId) {
             setSchoolContext({
               schoolId: normalizeSchoolId(parsed.schoolId),
+              schoolDocId: parsed.schoolDocId || parsed.schoolId,
               schoolName: parsed.schoolName || parsed.schoolId,
               accessMode: "school-auth",
             });
@@ -520,7 +651,7 @@ const Login = () => {
         return;
       }
 
-      // ── Default-school flow (OTP-based) ──────────────────────────────────
+      // Default-school flow (OTP-based)
       if (schoolContext.accessMode === "default-school") {
         const cleanPhone = normalizePhone(phone);
         if (cleanPhone.length !== 10) {
@@ -528,104 +659,158 @@ const Login = () => {
           return;
         }
 
-        const enrollmentId = `${schoolContext.schoolId}_${cleanPhone}`;
-        const enrollmentRef = doc(db, "defaultSchoolEnrollments", enrollmentId);
-        const enrollmentSnap = await getDoc(enrollmentRef);
-        const existingEnrollment = enrollmentSnap.exists()
-          ? enrollmentSnap.data()
-          : null;
-
-        // ── LOGIN ───────────────────────────────────────────────────────────
         if (defaultAuthMode === "login") {
-          if (!existingEnrollment) {
-            setError(
-              "No registration found for this phone number. Please register first."
-            );
-            return;
-          }
-
-          // Step 1: send OTP
           if (!otpSent) {
-            const notice = existingEnrollment.isPaid
-              ? "OTP sent to this phone number."
-              : "Registration found. Enter OTP to continue to payment.";
-            setOtpNotice(notice);
+            const existingAccounts = await getLinkedAccountsForPhone(cleanPhone);
+            if (!existingAccounts.length) {
+              setError(
+                "No child accounts were found for this phone number. Please register first."
+              );
+              return;
+            }
+
+            setLinkedAccounts(existingAccounts);
+            setOtpNotice(
+              existingAccounts.length > 1
+                ? `We found ${existingAccounts.length} child accounts on this phone number. Enter OTP to choose one.`
+                : "OTP sent to this phone number."
+            );
             const success = await sendOtp(cleanPhone);
-            if (!success) { setIsSubmitting(false); return; }
+            if (!success) {
+              setIsSubmitting(false);
+              return;
+            }
             setIsSubmitting(false);
             return;
           }
 
-          // Step 2: verify OTP
-          const otpVerified = await verifyOtp();
-          if (!otpVerified) return;
+          if (!defaultPhoneVerified) {
+            const otpVerified = await verifyOtp();
+            if (!otpVerified) return;
 
-          // Step 3: check subscription status
-          const status = await checkSubscriptionStatus(
-            existingEnrollment,
-            enrollmentId
-          );
+            setDefaultPhoneVerified(true);
 
-          if (status === "active") {
-            // Full access — write session and go to dashboard
-            localStorage.setItem(
-              "schoolStudentSession",
-              JSON.stringify(
-                buildDefaultSchoolSession(
-                  enrollmentId,
-                  existingEnrollment,
-                  schoolContext
-                )
-              )
+            const existingAccounts = await getLinkedAccountsForPhone(cleanPhone);
+            if (!existingAccounts.length) {
+              setError(
+                "No child accounts were found for this phone number. Please register first."
+              );
+              return;
+            }
+
+            setLinkedAccounts(existingAccounts);
+
+            if (existingAccounts.length === 1) {
+              const [singleAccount] = existingAccounts;
+              setSelectedLinkedAccountId(singleAccount.id);
+              await continueWithLinkedAccount(
+                singleAccount.id,
+                singleAccount,
+                schoolContext
+              );
+              return;
+            }
+
+            const nextSelectedId =
+              selectedLinkedAccountId &&
+              existingAccounts.some((entry) => entry.id === selectedLinkedAccountId)
+                ? selectedLinkedAccountId
+                : existingAccounts[0].id;
+
+            setSelectedLinkedAccountId(nextSelectedId);
+            setOtpNotice(
+              `Phone verified. Choose which child account to continue with. ${existingAccounts.length}/${MAX_PARENT_ACCOUNTS_PER_PHONE} account slots are in use.`
             );
-            navigate("/dashboard");
+            setIsSubmitting(false);
             return;
           }
 
-          if (status === "pending") {
-            navigate(
-              `/plan-selection?enrollmentId=${encodeURIComponent(enrollmentId)}`
-            );
+          if (!selectedLinkedAccountId) {
+            setError("Choose a child account to continue.");
             return;
           }
 
-          if (status === "expired") {
-            setError(
-              "Your subscription has expired. Please renew your plan to continue."
+          const selectedEnrollment =
+            linkedAccounts.find((entry) => entry.id === selectedLinkedAccountId) ||
+            (await getLinkedAccountsForPhone(cleanPhone)).find(
+              (entry) => entry.id === selectedLinkedAccountId
             );
-            navigate(
-              `/plan-selection?enrollmentId=${encodeURIComponent(enrollmentId)}`
-            );
+
+          if (!selectedEnrollment) {
+            setError("That child account could not be found. Please verify again.");
+            resetOtp();
             return;
           }
 
-          // status === "unpaid" — never paid or no planId
-          navigate(
-            `/plan-selection?enrollmentId=${encodeURIComponent(enrollmentId)}`
+          await continueWithLinkedAccount(
+            selectedEnrollment.id,
+            selectedEnrollment,
+            schoolContext
           );
           return;
         }
 
-        // ── REGISTER ────────────────────────────────────────────────────────
         const cleanName = defaultName.trim();
         const cleanClassName = normalizeClassName(defaultClassName);
-        if (!cleanName) { setError("Enter student name."); return; }
-        if (!cleanClassName) { setError("Select a class."); return; }
+        if (!cleanName) {
+          setError("Enter student name.");
+          return;
+        }
+        if (!cleanClassName) {
+          setError("Select a class.");
+          return;
+        }
 
-        // Step 1: send OTP
         if (!otpSent) {
           const success = await sendOtp(cleanPhone);
-          if (!success) { setIsSubmitting(false); return; }
+          if (!success) {
+            setIsSubmitting(false);
+            return;
+          }
           setIsSubmitting(false);
           return;
         }
 
-        // Step 2: verify OTP
-        const otpVerified = await verifyOtp();
-        if (!otpVerified) return;
+        if (!defaultPhoneVerified) {
+          const otpVerified = await verifyOtp();
+          if (!otpVerified) return;
+          setDefaultPhoneVerified(true);
+        }
+
+        const existingAccounts = await getLinkedAccountsForPhone(cleanPhone);
+        setLinkedAccounts(existingAccounts);
+
+        const matchingAccount = existingAccounts.find(
+          (entry) =>
+            String(entry.name || "").trim().toLowerCase() === cleanName.toLowerCase() &&
+            normalizeClassName(entry.className) === cleanClassName
+        );
+
+        if (
+          !matchingAccount &&
+          existingAccounts.length >= MAX_PARENT_ACCOUNTS_PER_PHONE
+        ) {
+          setError(
+            `A single parent phone number can be linked to a maximum of ${MAX_PARENT_ACCOUNTS_PER_PHONE} child accounts.`
+          );
+          return;
+        }
+
+        const enrollmentId =
+          matchingAccount?.id ||
+          buildDefaultEnrollmentId(
+            schoolContext.schoolId,
+            cleanPhone,
+            cleanName,
+            cleanClassName
+          );
+        const enrollmentRef = doc(db, "defaultSchoolEnrollments", enrollmentId);
+        const existingEnrollment = matchingAccount || null;
 
         const enrollmentPayload = {
           phone: cleanPhone,
+          parentPhone: cleanPhone,
+          parentAccountKey: `${schoolContext.schoolId}_${cleanPhone}`,
           name: cleanName,
           schoolId: schoolContext.schoolId,
           schoolName: schoolContext.schoolName,
@@ -636,7 +821,6 @@ const Login = () => {
         };
 
         if (!existingEnrollment) {
-          // New registration
           await setDoc(enrollmentRef, {
             ...enrollmentPayload,
             isPaid: false,
@@ -648,14 +832,9 @@ const Login = () => {
           return;
         }
 
-        // Existing registration — check subscription
-        const status = await checkSubscriptionStatus(
-          existingEnrollment,
-          enrollmentId
-        );
+        const status = await checkSubscriptionStatus(existingEnrollment, enrollmentId);
 
         if (status === "active") {
-          // Already paid & active — update profile fields and go to dashboard
           await setDoc(enrollmentRef, enrollmentPayload, { merge: true });
           localStorage.setItem(
             "schoolStudentSession",
@@ -689,13 +868,11 @@ const Login = () => {
           );
         }
 
-        navigate(
-          `/plan-selection?enrollmentId=${encodeURIComponent(enrollmentId)}`
-        );
+        navigate(`/plan-selection?enrollmentId=${encodeURIComponent(enrollmentId)}`);
         return;
       }
 
-      // ── School-auth flow (PIN-based) ──────────────────────────────────────
+      // School-auth flow (PIN-based)
       if (!selectedClassName || !selectedRollNumber) {
         setError("Please choose class and roll number.");
         return;
@@ -707,11 +884,127 @@ const Login = () => {
           String(s.rollNumber || s.roll || "").trim() === selectedRollNumber
       );
 
-      if (!student) { setError("Student not found."); return; }
+      if (!student) {
+        setError("Student not found.");
+        return;
+      }
 
       const studentPin = String(student.pin || student.password || "").trim();
       if (!studentPin || studentPin !== pin.trim()) {
         setError("Invalid PIN.");
+        return;
+      }
+
+      const getOrCreateSchoolStudentPaymentUrl = async () => {
+        let schoolSnap = schoolContext.schoolDocId
+          ? await getDoc(doc(db, "schools", schoolContext.schoolDocId))
+          : null;
+        if (!schoolSnap || !schoolSnap.exists()) {
+          schoolSnap = await getDoc(doc(db, "schools", schoolContext.schoolId));
+        }
+        const schoolData = schoolSnap.exists() ? schoolSnap.data() : {};
+        const planId =
+          student.selectedPlanId || student.planId || schoolData.selectedPlanId || "quarterly";
+        const plan = getDefaultSchoolPlan(planId);
+        const planAmount = Number(
+          student.planAmount || schoolData.planAmount || plan.amount || 0
+        );
+        const schoolPlanId = schoolData.selectedPlanId || planId;
+        const schoolPlan = getDefaultSchoolPlan(schoolPlanId);
+        const schoolPlanAmount = Number(schoolData.planAmount || schoolPlan.amount || 0);
+        const savedPlanMatches =
+          student.paymentUrl &&
+          (student.selectedPlanId || student.planId) === schoolPlanId &&
+          Number(student.planAmount || 0) === schoolPlanAmount;
+
+        if (savedPlanMatches) return student.paymentUrl;
+
+        const paymentPlanId = schoolPlanId;
+        const paymentPlanName = schoolData.selectedPlanName || schoolPlan.name;
+        const paymentPlanAmount = schoolPlanAmount || planAmount;
+
+        if (!paymentPlanAmount) {
+          throw new Error(
+            "Payment plan is not configured for this school. Please contact the school admin."
+          );
+        }
+
+        const enrollmentId = student.id;
+        const callbackUrl = `${window.location.origin}/payment-success?defaultStudentId=${encodeURIComponent(enrollmentId)}`;
+        const response = await fetch(CREATE_PAYMENT_LINK_URL, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userId: enrollmentId,
+            studentId: enrollmentId,
+            studentAccountId: enrollmentId,
+            name: student.fullName || student.name || `Roll ${selectedRollNumber}`,
+            phone: student.phone || "",
+            purpose: "defaultSchool",
+            amount: paymentPlanAmount,
+            schoolId: schoolContext.schoolId,
+            schoolName: schoolContext.schoolName,
+            className: selectedClassName,
+            rollNumber: selectedRollNumber,
+            planId: paymentPlanId,
+            planName: paymentPlanName,
+            callbackUrl,
+          }),
+        });
+
+        const paymentData = await response.json();
+        if (!response.ok) {
+          throw new Error(paymentData.error || "Failed to create payment link.");
+        }
+
+        const paymentUrl = resolvePaymentUrl(paymentData);
+        if (!paymentUrl) {
+          throw new Error("Payment link was not returned. Please contact support.");
+        }
+
+        const paymentPayload = {
+          selectedPlanId: paymentPlanId,
+          selectedPlanName: paymentPlanName,
+          planId: paymentPlanId,
+          planName: paymentPlanName,
+          planAmount: paymentPlanAmount,
+          paymentStatus: "pending",
+          registrationStatus: "pending_payment",
+          paymentLinkId: paymentData.paymentLinkId || "",
+          paymentUrl,
+          updatedAt: new Date().toISOString(),
+        };
+
+        await setDoc(doc(db, "studentAccounts", enrollmentId), paymentPayload, { merge: true });
+        await setDoc(
+          doc(db, "defaultSchoolEnrollments", enrollmentId),
+          {
+            phone: student.phone || "",
+            parentPhone: student.phone || "",
+            parentAccountKey: student.phone
+              ? `${schoolContext.schoolId}_${normalizePhone(student.phone)}`
+              : "",
+            name: student.fullName || student.name || `Roll ${selectedRollNumber}`,
+            schoolId: schoolContext.schoolId,
+            schoolName: schoolContext.schoolName,
+            className: selectedClassName,
+            rollNumber: selectedRollNumber,
+            accessMode: "school-plan",
+            selectedClasses: [selectedClassName],
+            isPaid: false,
+            pin: studentPin,
+            ...paymentPayload,
+          },
+          { merge: true }
+        );
+
+        return paymentUrl;
+      };
+
+      if (!isSchoolStudentPaid(student)) {
+        const paymentUrl = await getOrCreateSchoolStudentPaymentUrl();
+        setError("Payment is required before opening the dashboard. Redirecting to payment...");
+        window.location.assign(paymentUrl);
         return;
       }
 
@@ -724,6 +1017,11 @@ const Login = () => {
         schoolName: schoolContext.schoolName,
         schoolId: schoolContext.schoolId,
         accessMode: "school-auth",
+        isPaid: true,
+        paymentStatus: student.paymentStatus || "paid",
+        registrationStatus: student.registrationStatus || "active",
+        planId: student.selectedPlanId || student.planId || "",
+        planName: student.selectedPlanName || student.planName || "",
       };
 
       localStorage.setItem("schoolStudentSession", JSON.stringify(session));
@@ -818,8 +1116,9 @@ const Login = () => {
               </p>
             </div>
             <p className="default-school-note">
-              Register once with name, default class, and phone. Choose a plan
-              after registration.
+              One parent phone number can manage up to{" "}
+              <strong>{MAX_PARENT_ACCOUNTS_PER_PHONE}</strong> child accounts.
+              Register each child once, then choose a plan for that child.
             </p>
 
             <div className="default-auth-tabs">
@@ -908,6 +1207,35 @@ const Login = () => {
               />
             )}
 
+            {defaultAuthMode === "login" &&
+              defaultPhoneVerified &&
+              linkedAccounts.length > 1 && (
+                <div className="linked-accounts-panel">
+                  <p className="linked-accounts-title">Choose Child Account</p>
+                  <div className="linked-accounts-list">
+                    {linkedAccounts.map((account) => (
+                      <button
+                        key={account.id}
+                        type="button"
+                        className={`linked-account-card ${
+                          selectedLinkedAccountId === account.id ? "active" : ""
+                        }`}
+                        onClick={() => {
+                          setSelectedLinkedAccountId(account.id);
+                          setError("");
+                        }}
+                      >
+                        <strong>{account.name || "Student"}</strong>
+                        <span>
+                          Class {account.className || "-"}
+                          {account.rollNumber ? ` • Roll ${account.rollNumber}` : ""}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
             <button
               className="login-button"
               type="submit"
@@ -917,6 +1245,10 @@ const Login = () => {
                 ? otpSent
                   ? "Verifying..."
                   : "Sending OTP..."
+                : defaultAuthMode === "login" &&
+                  defaultPhoneVerified &&
+                  linkedAccounts.length > 1
+                ? "Continue With Selected Child"
                 : otpSent
                 ? defaultAuthMode === "register"
                   ? "Verify & Continue"

@@ -93,6 +93,12 @@
   color: #1e293b;
 }
 
+.otp-notice {
+  margin: 0;
+  font-size: 0.85rem;
+  color: #0f766e;
+}
+
 .payment-link-button {
   display: inline-flex;
   align-items: center;

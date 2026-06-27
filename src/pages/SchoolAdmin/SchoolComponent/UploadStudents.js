@@ -11,6 +11,7 @@ const UploadStudents = ({ schoolId }) => {
   const [manual, setManual] = useState({ fullName: "", className: "", section: "", rollNumber: "", pin: "" });
 
   const normalizedSchoolId = useMemo(() => normalize(schoolId).toLowerCase(), [schoolId]);
+  const rawSchoolId = useMemo(() => normalize(schoolId), [schoolId]);
 
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
@@ -48,7 +49,10 @@ const UploadStudents = ({ schoolId }) => {
 
     try {
       // fetch school's current plan configuration to attach to student records
-      const schoolSnap = await getDoc(doc(db, "schools", normalizedSchoolId));
+      let schoolSnap = rawSchoolId ? await getDoc(doc(db, "schools", rawSchoolId)) : null;
+      if (!schoolSnap || !schoolSnap.exists()) {
+        schoolSnap = await getDoc(doc(db, "schools", normalizedSchoolId));
+      }
       const schoolData = schoolSnap.exists() ? schoolSnap.data() : {};
       const selectedPlanId = schoolData.selectedPlanId || "";
       const selectedPlanName = schoolData.selectedPlanName || "";

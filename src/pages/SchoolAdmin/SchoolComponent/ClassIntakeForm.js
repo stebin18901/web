@@ -1,28 +1,33 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
-import { addDoc, collection, doc, getDoc, setDoc } from "firebase/firestore";
-import { db } from "../../../firebase/firebaseConfig";
+import { useNavigate, useParams } from "react-router-dom";
+import { addDoc, collection, doc, getDoc, getDocs, query, setDoc, where } from "firebase/firestore";
+import { RecaptchaVerifier, signInWithPhoneNumber, signOut } from "firebase/auth";
+import { auth, db } from "../../../firebase/firebaseConfig";
 import {
-  CREATE_PAYMENT_LINK_URL,
   DEFAULT_SCHOOL_CLASS_OPTIONS,
-  getDefaultSchoolPlan,
+  MAX_PARENT_ACCOUNTS_PER_PHONE,
   getUniqueClasses,
 } from "../../../config/defaultSchool";
 import "./ClassIntakeForm.css";
 
 const normalize = (v) => String(v || "").trim();
+const normalizePhone = (value) => String(value || "").replace(/\D/g, "").slice(-10);
 
 export default function ClassIntakeForm() {
+  const navigate = useNavigate();
   const { schoolId, className, type } = useParams();
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
   const [schoolName, setSchoolName] = useState("School");
-  const [schoolConfig, setSchoolConfig] = useState({
-    selectedPlanId: "",
-    selectedPlanName: "",
-    planAmount: 0,
-  });
   const [paymentLinkToShow, setPaymentLinkToShow] = useState("");
+  const [availableClassOptions, setAvailableClassOptions] = useState([]);
+  const [otpCode, setOtpCode] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+  const [otpVerified, setOtpVerified] = useState(false);
+  const [confirmationResult, setConfirmationResult] = useState(null);
+  const [otpNotice, setOtpNotice] = useState("");
+  const [lastOtpRequestTime, setLastOtpRequestTime] = useState(0);
+  const OTP_COOLDOWN_MS = 60000;
 
   const schoolIdValue = useMemo(() => normalize(schoolId), [schoolId]);
   const normalizedSchoolId = useMemo(() => schoolIdValue.toLowerCase(), [schoolIdValue]);
@@ -32,15 +37,18 @@ export default function ClassIntakeForm() {
     () =>
       getUniqueClasses([
         normalizedClassName,
+        ...availableClassOptions,
         ...DEFAULT_SCHOOL_CLASS_OPTIONS.map((value) => String(value)),
       ]),
-    [normalizedClassName]
+    [availableClassOptions, normalizedClassName]
   );
 
   const [studentForm, setStudentForm] = useState({
     fullName: "",
     className: "",
     rollNumber: "",
+    phone: "",
+    pin: "",
   });
 
   const [teacherForm, setTeacherForm] = useState({
@@ -48,39 +56,166 @@ export default function ClassIntakeForm() {
     email: "",
     phone: "",
     subject: "",
+    className: "",
   });
 
   useEffect(() => {
     const fetchSchoolMeta = async () => {
       if (!schoolIdValue && !normalizedSchoolId) return;
       try {
-        let snap = schoolIdValue ? await getDoc(doc(db, "schools", schoolIdValue)) : null;
-        if ((!snap || !snap.exists()) && normalizedSchoolId) {
-          snap = await getDoc(doc(db, "schools", normalizedSchoolId));
+        let schoolSnap = schoolIdValue ? await getDoc(doc(db, "schools", schoolIdValue)) : null;
+        if ((!schoolSnap || !schoolSnap.exists()) && normalizedSchoolId) {
+          schoolSnap = await getDoc(doc(db, "schools", normalizedSchoolId));
         }
-        if (snap?.exists()) {
-          const data = snap.data();
-          const plan = getDefaultSchoolPlan(data.selectedPlanId);
+
+        if (schoolSnap?.exists()) {
+          const data = schoolSnap.data();
           setSchoolName(data.schoolName || "School");
-          setSchoolConfig({
-            selectedPlanId: data.selectedPlanId || "",
-            selectedPlanName: data.selectedPlanName || plan.name || "No plan selected",
-            planAmount: Number(data.planAmount || plan.amount || 0),
-          });
-          setStudentForm((prev) => ({
-            ...prev,
-            className: prev.className || normalizedClassName || classOptions[0] || "",
-          }));
         } else {
           setSchoolName("School");
         }
+
+        const classesSnap = await getDocs(
+          query(collection(db, "classes"), where("schoolId", "==", schoolIdValue || normalizedSchoolId))
+        );
+        const discoveredClasses = classesSnap.docs
+          .map((entry) => String(entry.data()?.className || "").toUpperCase())
+          .filter(Boolean)
+          .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
+
+        setAvailableClassOptions(discoveredClasses);
+        const defaultClassName = normalizedClassName || discoveredClasses[0] || DEFAULT_SCHOOL_CLASS_OPTIONS[0] || "";
+        setStudentForm((prev) => ({
+          ...prev,
+          className: prev.className || defaultClassName,
+        }));
+        setTeacherForm((prev) => ({
+          ...prev,
+          className: prev.className || defaultClassName,
+        }));
       } catch {
         setSchoolName("School");
       }
     };
 
     fetchSchoolMeta();
-  }, [classOptions, normalizedClassName, schoolIdValue, normalizedSchoolId]);
+  }, [normalizedClassName, normalizedSchoolId, schoolIdValue]);
+
+  useEffect(() => {
+    return () => {
+      if (window.classIntakeRecaptchaVerifier) {
+        try {
+          window.classIntakeRecaptchaVerifier.clear();
+        } catch {
+          // Ignore cleanup failures
+        }
+        window.classIntakeRecaptchaVerifier = null;
+      }
+    };
+  }, []);
+
+  const clearRecaptchaVerifier = () => {
+    if (window.classIntakeRecaptchaVerifier) {
+      try {
+        window.classIntakeRecaptchaVerifier.clear();
+      } catch {
+        // Ignore cleanup failures
+      }
+      window.classIntakeRecaptchaVerifier = null;
+    }
+    const container = document.getElementById("class-intake-recaptcha");
+    if (container) {
+      container.innerHTML = '<div id="class-intake-recaptcha-inner"></div>';
+    }
+  };
+
+  const resetOtpState = () => {
+    clearRecaptchaVerifier();
+    setOtpCode("");
+    setOtpSent(false);
+    setOtpVerified(false);
+    setConfirmationResult(null);
+    setOtpNotice("");
+  };
+
+  const sendOtp = async (cleanPhone) => {
+    try {
+      const now = Date.now();
+      const elapsed = now - lastOtpRequestTime;
+      if (lastOtpRequestTime > 0 && elapsed < OTP_COOLDOWN_MS) {
+        const secs = Math.ceil((OTP_COOLDOWN_MS - elapsed) / 1000);
+        setStatus(`Please wait ${secs} seconds before requesting another OTP.`);
+        return false;
+      }
+
+      clearRecaptchaVerifier();
+
+      const verifierContainer = document.getElementById("class-intake-recaptcha-inner");
+      if (!verifierContainer) {
+        setStatus("reCAPTCHA container not found. Please refresh the page.");
+        return false;
+      }
+
+      window.classIntakeRecaptchaVerifier = new RecaptchaVerifier(
+        auth,
+        "class-intake-recaptcha-inner",
+        { size: "invisible" }
+      );
+
+      const confirmation = await signInWithPhoneNumber(
+        auth,
+        `+91${cleanPhone}`,
+        window.classIntakeRecaptchaVerifier
+      );
+
+      setLastOtpRequestTime(Date.now());
+      setConfirmationResult(confirmation);
+      setOtpSent(true);
+      setOtpVerified(false);
+      setOtpNotice("OTP sent to this phone number.");
+      setStatus("");
+      return true;
+    } catch (err) {
+      console.error("Error sending class intake OTP:", err);
+      clearRecaptchaVerifier();
+
+      let message = "Failed to send OTP. Please try again.";
+      if (err.code === "auth/too-many-requests") {
+        message = "Too many OTP requests. Please wait a few minutes before trying again.";
+      } else if (err.code === "auth/invalid-phone-number") {
+        message = "Invalid phone number format.";
+      } else if (err.code === "auth/operation-not-allowed") {
+        message = "Phone authentication is not enabled. Please contact support.";
+      } else if (err.message) {
+        message = err.message;
+      }
+
+      setStatus(message);
+      return false;
+    }
+  };
+
+  const verifyOtp = async () => {
+    if (!confirmationResult) {
+      setStatus("Please send OTP first.");
+      return false;
+    }
+    if (otpCode.trim().length < 4) {
+      setStatus("Enter the OTP.");
+      return false;
+    }
+
+    try {
+      await confirmationResult.confirm(otpCode.trim());
+      setOtpVerified(true);
+      setOtpNotice("Phone number verified.");
+      await signOut(auth).catch(() => {});
+      return true;
+    } catch {
+      setStatus("Invalid OTP. Please try again.");
+      return false;
+    }
+  };
 
   const ensureClassExists = async (selectedClassName) => {
     const resolvedClassName = normalize(selectedClassName || normalizedClassName).toUpperCase();
@@ -103,57 +238,39 @@ export default function ClassIntakeForm() {
     return classId;
   };
 
-  const generatePaymentLink = async ({ enrollmentId, fullName, roll, planAmount, selectedClassName }) => {
-    const paymentCallback = `${window.location.origin}/payment-success?defaultStudentId=${encodeURIComponent(enrollmentId)}`;
-    const response = await fetch(CREATE_PAYMENT_LINK_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        userId: enrollmentId,
-        studentId: enrollmentId,
-        studentAccountId: enrollmentId,
-        name: fullName,
-        purpose: "defaultSchool",
-        amount: planAmount,
-        schoolId: normalizedSchoolId,
-        schoolName,
-        className: selectedClassName,
-        rollNumber: roll,
-        planId: schoolConfig.selectedPlanId,
-        planName: schoolConfig.selectedPlanName,
-        callbackUrl: paymentCallback,
-      }),
-    });
-
-    const paymentData = await response.json();
-    if (!response.ok) {
-      throw new Error(paymentData.error || "Failed to create payment link");
-    }
-
-    const paymentUrl = resolvePaymentUrl(paymentData);
-    if (!paymentUrl) {
-      throw new Error("No payment link returned.");
-    }
-
-    return { ...paymentData, paymentUrl };
-  };
-
-  const resolvePaymentUrl = (paymentData) =>
-    normalize(
-      paymentData?.payment_url ||
-        paymentData?.short_url ||
-        paymentData?.url ||
-        paymentData?.link ||
-        paymentData?.paymentLink ||
-        ""
+  const getLinkedAccountsForPhone = async (cleanPhone) => {
+    const phoneQuery = query(
+      collection(db, "defaultSchoolEnrollments"),
+      where("phone", "==", cleanPhone)
     );
+    const snap = await getDocs(phoneQuery);
+
+    return snap.docs
+      .map((entry) => ({
+        id: entry.id,
+        ...entry.data(),
+      }))
+      .filter((entry) => normalize(entry.schoolId).toLowerCase() === normalizedSchoolId);
+  };
 
   const submitStudent = async (e) => {
     e.preventDefault();
     const selectedClassName = normalize(studentForm.className || normalizedClassName).toUpperCase();
+    const cleanPhone = normalizePhone(studentForm.phone);
+    const cleanPin = normalize(studentForm.pin);
 
-    if (!studentForm.fullName || !selectedClassName || !studentForm.rollNumber) {
-      setStatus("Please fill name, class, and roll number.");
+    if (!studentForm.fullName || !selectedClassName || !studentForm.rollNumber || !cleanPin || !cleanPhone) {
+      setStatus("Please fill name, class, roll number, PIN, and phone number.");
+      return;
+    }
+
+    if (cleanPhone.length !== 10) {
+      setStatus("Enter a valid 10-digit phone number.");
+      return;
+    }
+
+    if (cleanPin.length < 4) {
+      setStatus("Enter a PIN with at least 4 characters.");
       return;
     }
 
@@ -162,72 +279,71 @@ export default function ClassIntakeForm() {
     setPaymentLinkToShow("");
 
     try {
-      const classId = await ensureClassExists(selectedClassName);
-      const roll = normalize(studentForm.rollNumber);
-      const plan = getDefaultSchoolPlan(schoolConfig.selectedPlanId);
-      const planAmount = Number(schoolConfig.planAmount || plan.amount || 0);
-      if (!planAmount) {
-        setStatus("Please configure a school plan before collecting payments.");
+      if (!otpSent) {
+        const sent = await sendOtp(cleanPhone);
+        if (!sent) {
+          setLoading(false);
+          return;
+        }
+        setLoading(false);
         return;
       }
 
+      if (!otpVerified) {
+        const verified = await verifyOtp();
+        if (!verified) {
+          setLoading(false);
+          return;
+        }
+      }
+
+      const linkedAccounts = await getLinkedAccountsForPhone(cleanPhone);
+      const classId = await ensureClassExists(selectedClassName);
+      const roll = normalize(studentForm.rollNumber);
       const enrollmentId = `${normalizedSchoolId}_${selectedClassName}_${roll}`;
       const fullName = normalize(studentForm.fullName);
-      const paymentData = await generatePaymentLink({
-        enrollmentId,
-        fullName,
-        roll,
-        planAmount,
-        selectedClassName,
-      });
-      const paymentUrl = paymentData.paymentUrl;
-      const autoPin = roll;
+      const currentLinkedAccount = linkedAccounts.find((entry) => entry.id === enrollmentId);
+
+      if (!currentLinkedAccount && linkedAccounts.length >= MAX_PARENT_ACCOUNTS_PER_PHONE) {
+        setStatus(`A single parent phone number can be linked to a maximum of ${MAX_PARENT_ACCOUNTS_PER_PHONE} child accounts.`);
+        return;
+      }
 
       const studentPayload = {
         fullName,
         className: selectedClassName,
         rollNumber: roll,
-        pin: autoPin,
+        phone: cleanPhone,
+        parentPhone: cleanPhone,
+        parentAccountKey: `${normalizedSchoolId}_${cleanPhone}`,
+        pin: cleanPin,
         schoolId: normalizedSchoolId,
         schoolIdRaw: schoolIdValue || normalizedSchoolId,
         schoolName,
         createdAt: new Date(),
         source: "class_form",
-        selectedPlanId: schoolConfig.selectedPlanId || "",
-        selectedPlanName: schoolConfig.selectedPlanName || "",
-        planAmount,
-        paymentStatus: "pending",
-        registrationStatus: "pending_payment",
-        paymentLinkId: paymentData.paymentLinkId || "",
-        paymentUrl,
+        paymentStatus: "pending_plan_selection",
+        registrationStatus: "pending_plan_selection",
       };
 
-      await setDoc(doc(db, "studentAccounts", enrollmentId), studentPayload, {
-        merge: true,
-      });
+      await setDoc(doc(db, "studentAccounts", enrollmentId), studentPayload, { merge: true });
 
       await setDoc(
         doc(db, "defaultSchoolEnrollments", enrollmentId),
         {
-          phone: "",
+          phone: cleanPhone,
+          parentPhone: cleanPhone,
+          parentAccountKey: `${normalizedSchoolId}_${cleanPhone}`,
           name: fullName,
           schoolId: normalizedSchoolId,
           schoolName,
           className: selectedClassName,
-          rollNumber: roll,
           accessMode: "school-plan",
           selectedClasses: [selectedClassName],
-          selectedPlanId: schoolConfig.selectedPlanId || "",
-          selectedPlanName: schoolConfig.selectedPlanName || "",
-          planId: schoolConfig.selectedPlanId || "",
-          planName: schoolConfig.selectedPlanName || "",
-          planAmount,
-          pin: autoPin,
+          pin: cleanPin,
           isPaid: false,
-          paymentStatus: "pending",
-          registrationStatus: "pending_payment",
-          paymentLinkId: paymentData.paymentLinkId || "",
-          paymentUrl,
+          paymentStatus: "pending_plan_selection",
+          registrationStatus: "pending_plan_selection",
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         },
@@ -239,13 +355,14 @@ export default function ClassIntakeForm() {
         {
           rollNumber: roll,
           name: fullName,
+          phone: cleanPhone,
+          parentPhone: cleanPhone,
           className: selectedClassName,
           createdAt: new Date(),
           source: "class_form",
-          paymentStatus: "pending",
-          registrationStatus: "pending_payment",
-          planId: schoolConfig.selectedPlanId || "",
-          planName: schoolConfig.selectedPlanName || "",
+          pin: cleanPin,
+          paymentStatus: "pending_plan_selection",
+          registrationStatus: "pending_plan_selection",
         },
         { merge: true }
       );
@@ -259,15 +376,17 @@ export default function ClassIntakeForm() {
         { merge: true }
       );
 
-      setPaymentLinkToShow(paymentUrl);
-      setStatus(`Open the payment link to complete registration for ${selectedClassName}.`);
+      setStatus(`Details saved for ${selectedClassName}. Continue to choose a plan.`);
       setStudentForm({
         fullName: "",
         className: normalizedClassName || classOptions[0] || "",
         rollNumber: "",
+        phone: "",
+        pin: "",
       });
+      resetOtpState();
 
-      window.location.assign(paymentUrl);
+      navigate(`/plan-selection?enrollmentId=${encodeURIComponent(enrollmentId)}`, { replace: true });
     } catch (err) {
       setStatus(`Submission failed: ${err.message}`);
     } finally {
@@ -277,8 +396,10 @@ export default function ClassIntakeForm() {
 
   const submitTeacher = async (e) => {
     e.preventDefault();
-    if (!teacherForm.name || !teacherForm.email) {
-      setStatus("Please fill teacher name and email.");
+    const selectedClassName = normalize(teacherForm.className || normalizedClassName || classOptions[0]).toUpperCase();
+
+    if (!teacherForm.name || !teacherForm.email || !selectedClassName) {
+      setStatus("Please fill teacher name, email, and class/division.");
       return;
     }
 
@@ -286,7 +407,7 @@ export default function ClassIntakeForm() {
     setStatus("");
 
     try {
-      const classId = await ensureClassExists(normalizedClassName || classOptions[0] || "");
+      const classId = await ensureClassExists(selectedClassName);
       const teacherRef = await addDoc(collection(db, "users"), {
         name: normalize(teacherForm.name),
         email: normalize(teacherForm.email).toLowerCase(),
@@ -294,7 +415,7 @@ export default function ClassIntakeForm() {
         subject: normalize(teacherForm.subject),
         role: "teacher",
         schoolId: schoolIdValue || normalizedSchoolId,
-        assignedClass: normalizedClassName,
+        assignedClass: selectedClassName,
         createdAt: new Date(),
         source: "class_form",
       });
@@ -315,7 +436,7 @@ export default function ClassIntakeForm() {
       await setDoc(classRef, { team: nextTeam, updatedAt: new Date() }, { merge: true });
 
       setStatus("Teacher details submitted successfully.");
-      setTeacherForm({ name: "", email: "", phone: "", subject: "" });
+      setTeacherForm({ name: "", email: "", phone: "", subject: "", className: normalizedClassName || classOptions[0] || "" });
     } catch (err) {
       setStatus(`Submission failed: ${err.message}`);
     } finally {
@@ -334,14 +455,20 @@ export default function ClassIntakeForm() {
         {formType === "student" && (
           <div className="plan-summary-card">
             <div>
-              <span className="meta-label">Selected School Plan</span>
-              <strong>{schoolConfig.selectedPlanName || "Not configured"}</strong>
+              <span className="meta-label">Plan Selection</span>
+              <strong>Choose after form submission</strong>
             </div>
             <div>
-              <span className="meta-label">Plan Amount</span>
-              <strong>{schoolConfig.planAmount ? `₹${schoolConfig.planAmount}` : "No plan configured"}</strong>
+              <span className="meta-label">What happens next</span>
+              <strong>OTP, details saved, plan choice, payment</strong>
             </div>
           </div>
+        )}
+
+        {formType === "student" && (
+          <p className="status-message" style={{ marginTop: 12 }}>
+            Parent phone number can be linked to up to {MAX_PARENT_ACCOUNTS_PER_PHONE} child accounts.
+          </p>
         )}
 
         {formType === "student" ? (
@@ -355,7 +482,7 @@ export default function ClassIntakeForm() {
               value={studentForm.className || normalizedClassName || ""}
               onChange={(e) => setStudentForm((p) => ({ ...p, className: e.target.value }))}
             >
-              <option value="">Select Class</option>
+              <option value="">Select Class / Division</option>
               {classOptions.map((option) => (
                 <option key={option} value={option}>
                   {option}
@@ -367,12 +494,45 @@ export default function ClassIntakeForm() {
               onChange={(e) => setStudentForm((p) => ({ ...p, rollNumber: e.target.value }))}
               placeholder="Roll Number"
             />
-            <button type="submit" disabled={loading || !schoolConfig.planAmount}>
+            <input
+              value={studentForm.pin}
+              onChange={(e) => {
+                setStudentForm((p) => ({ ...p, pin: e.target.value }));
+                if (otpSent || otpVerified) resetOtpState();
+              }}
+              placeholder="Create PIN"
+              type="password"
+            />
+            <input
+              value={studentForm.phone}
+              onChange={(e) => {
+                setStudentForm((p) => ({ ...p, phone: e.target.value }));
+                if (otpSent || otpVerified) resetOtpState();
+              }}
+              placeholder="Phone Number"
+              inputMode="numeric"
+            />
+            {otpSent && (
+              <input
+                value={otpCode}
+                onChange={(e) => setOtpCode(e.target.value)}
+                placeholder="Enter OTP"
+                inputMode="numeric"
+              />
+            )}
+            {otpNotice && <p className="otp-notice">{otpNotice}</p>}
+            <button type="submit" disabled={loading}>
               {loading
-                ? "Opening payment..."
-                : schoolConfig.planAmount
-                ? `Pay ₹${schoolConfig.planAmount}`
-                : "Select plan first"}
+                ? !otpSent
+                  ? "Sending OTP..."
+                  : !otpVerified
+                  ? "Verifying OTP..."
+                  : "Opening plans..."
+                : !otpSent
+                ? "Send OTP"
+                : !otpVerified
+                ? "Verify OTP & Continue"
+                : "Continue to Plans"}
             </button>
           </form>
         ) : (
@@ -387,6 +547,17 @@ export default function ClassIntakeForm() {
               onChange={(e) => setTeacherForm((p) => ({ ...p, email: e.target.value }))}
               placeholder="Teacher Email"
             />
+            <select
+              value={teacherForm.className || normalizedClassName || ""}
+              onChange={(e) => setTeacherForm((p) => ({ ...p, className: e.target.value }))}
+            >
+              <option value="">Select Class / Division</option>
+              {classOptions.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
             <input
               value={teacherForm.phone}
               onChange={(e) => setTeacherForm((p) => ({ ...p, phone: e.target.value }))}
@@ -404,6 +575,9 @@ export default function ClassIntakeForm() {
         )}
 
         {status && <p className="status-message">{status}</p>}
+        <div id="class-intake-recaptcha">
+          <div id="class-intake-recaptcha-inner"></div>
+        </div>
 
         {paymentLinkToShow && (
           <a

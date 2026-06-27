@@ -17,6 +17,12 @@ import "./MainPage.css";
 import Announcement from "./SchoolComponent/Announcement";
 
 const MainPage = ({ school, onLogout }) => {
+  const [currentSchool, setCurrentSchool] = React.useState(school);
+
+  React.useEffect(() => {
+    setCurrentSchool(school);
+  }, [school]);
+
   const sidebarLinks = [
     { name: "Dashboard", path: "/school-admin/home", icon: LayoutDashboard },
     { name: "Upload Students", path: "/school-admin/upload", icon: Upload },
@@ -28,8 +34,8 @@ const MainPage = ({ school, onLogout }) => {
   return (
     <div className="main-layout">
       <Sidebar
-        sidebarTitle={school?.schoolName || "School Admin"}
-        sidebarLogo={school?.schoolLogo}
+        sidebarTitle={currentSchool?.schoolName || "School Admin"}
+        sidebarLogo={currentSchool?.schoolLogo}
         links={sidebarLinks}
         onLogout={onLogout}
       />
@@ -38,11 +44,11 @@ const MainPage = ({ school, onLogout }) => {
         <div className="content-container">
           <Routes>
             <Route path="/" element={<Navigate to="home" />} />
-            <Route path="home" element={<TeacherHome school={school} schoolId={school.schoolId} />} />
-            <Route path="upload" element={<UploadStudents schoolId={school.schoolId} />} />
-            <Route path="students" element={<StudentDetails schoolId={school.schoolId} />} />
-            <Route path="analytics" element={<QuizAnalytics schoolId={school.schoolId} />} />
-            <Route path="announcements" element={<Announcement schoolId={school.schoolId} />} />
+            <Route path="home" element={<TeacherHome school={currentSchool} schoolId={currentSchool.schoolId} />} />
+            <Route path="upload" element={<UploadStudents schoolId={currentSchool.schoolId} />} />
+            <Route path="students" element={<StudentDetails schoolId={currentSchool.schoolId} />} />
+            <Route path="analytics" element={<QuizAnalytics schoolId={currentSchool.schoolId} />} />
+            <Route path="announcements" element={<Announcement schoolId={currentSchool.schoolId} />} />
             <Route path="*" element={<h2>Page Not Found</h2>} />
           </Routes>
         </div>

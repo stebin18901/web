@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { db } from "../../firebase/firebaseConfig";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, limit, query, updateDoc, where } from "firebase/firestore";
 import "./SchoolMagicAuth.css";
 
 const SchoolMagicAuth = ({ mode = "auth" }) => {
@@ -16,6 +16,56 @@ const SchoolMagicAuth = ({ mode = "auth" }) => {
     if (token.length < 12) return token;
     return `${token.slice(0, 6)}...${token.slice(-4)}`;
   }, [token]);
+
+  const resolveSchool = async (linkData) => {
+    const normalizedSchoolId = String(linkData.schoolId || "").trim().toLowerCase();
+    const candidates = [
+      String(linkData.schoolDocId || "").trim(),
+      normalizedSchoolId,
+    ].filter(Boolean);
+
+    for (const candidate of [...new Set(candidates)]) {
+      const snap = await getDoc(doc(db, "schools", candidate));
+      if (snap.exists()) {
+        return {
+          id: normalizedSchoolId || String(snap.data().schoolId || snap.id).trim().toLowerCase(),
+          docId: candidate,
+          data: snap.data(),
+        };
+      }
+    }
+
+    if (normalizedSchoolId) {
+      const matches = await getDocs(
+        query(collection(db, "schools"), where("schoolId", "==", normalizedSchoolId), limit(1))
+      );
+      if (!matches.empty) {
+        const match = matches.docs[0];
+        return {
+          id: normalizedSchoolId,
+          docId: match.id,
+          data: match.data(),
+        };
+      }
+
+      const allSchools = await getDocs(collection(db, "schools"));
+      const normalizedMatch = allSchools.docs.find((schoolDoc) => {
+        const data = schoolDoc.data();
+        return [schoolDoc.id, data.schoolId]
+          .filter(Boolean)
+          .some((value) => String(value).trim().toLowerCase() === normalizedSchoolId);
+      });
+      if (normalizedMatch) {
+        return {
+          id: normalizedSchoolId,
+          docId: normalizedMatch.id,
+          data: normalizedMatch.data(),
+        };
+      }
+    }
+
+    return null;
+  };
 
   const handleAuthenticate = async () => {
     if (!token) return;
@@ -44,19 +94,20 @@ const SchoolMagicAuth = ({ mode = "auth" }) => {
         return;
       }
 
-      const schoolId = String(linkData.schoolId || "").trim();
+      const schoolId = String(linkData.schoolId || "").trim().toLowerCase();
       if (!schoolId) {
         setError("School ID missing in auth link.");
         return;
       }
 
-      const schoolSnap = await getDoc(doc(db, "schools", schoolId));
-      if (!schoolSnap.exists()) {
+      const school = await resolveSchool(linkData);
+      if (!school) {
         setError(`School not found for this ${isLogout ? "logout" : "auth"} link.`);
         return;
       }
 
-      const schoolData = schoolSnap.data();
+      const schoolData = school.data;
+      const resolvedSchoolId = school.id || schoolId;
       if (isLogout) {
         let active = null;
         try {
@@ -65,7 +116,7 @@ const SchoolMagicAuth = ({ mode = "auth" }) => {
         } catch {
           active = null;
         }
-        if (!active?.schoolId || String(active.schoolId).trim().toLowerCase() === schoolId) {
+        if (!active?.schoolId || String(active.schoolId).trim().toLowerCase() === resolvedSchoolId) {
           localStorage.removeItem("studentSchoolAccess");
           localStorage.removeItem("schoolStudentSession");
         }
@@ -73,8 +124,9 @@ const SchoolMagicAuth = ({ mode = "auth" }) => {
         localStorage.setItem(
           "studentSchoolAccess",
           JSON.stringify({
-            schoolId,
-            schoolName: schoolData.schoolName || schoolId,
+            schoolId: resolvedSchoolId,
+            schoolDocId: school.docId || linkData.schoolDocId || resolvedSchoolId,
+            schoolName: schoolData.schoolName || linkData.schoolName || resolvedSchoolId,
             authenticatedAt: new Date().toISOString(),
             source: "magic-link",
           })
@@ -88,10 +140,10 @@ const SchoolMagicAuth = ({ mode = "auth" }) => {
 
       setMessage(
         isLogout
-          ? `Student access logged out for ${schoolData.schoolName || schoolId}. Redirecting to login...`
-          : `Student access enabled for ${schoolData.schoolName || schoolId}. Redirecting to login...`
+          ? `Student access logged out for ${schoolData.schoolName || linkData.schoolName || resolvedSchoolId}. Redirecting to login...`
+          : `Student access enabled for ${schoolData.schoolName || linkData.schoolName || resolvedSchoolId}. Redirecting to login...`
       );
-      setTimeout(() => navigate("/"), 900);
+      setTimeout(() => navigate("/login"), 900);
     } catch (err) {
       setError("Auth failed: " + err.message);
     } finally {

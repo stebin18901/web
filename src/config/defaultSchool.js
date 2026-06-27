@@ -1,5 +1,6 @@
 export const DEFAULT_SCHOOL_SETTINGS_COLLECTION = "appSettings";
 export const DEFAULT_SCHOOL_SETTINGS_DOC = "defaultSchool";
+export const MAX_PARENT_ACCOUNTS_PER_PHONE = 5;
 export const DEFAULT_SCHOOL_PLANS = {
   quarterly: {
     id: "quarterly",

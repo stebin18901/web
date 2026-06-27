@@ -13,8 +13,10 @@ const AdminSubscriptionSettings = () => {
   const [currency, setCurrency] = useState("INR");
   const [discountBanner, setDiscountBanner] = useState("");
   const [popularPlan, setPopularPlan] = useState("yearly");
+  const [testPlanEnabled, setTestPlanEnabled] = useState(false);
 
   // Price states
+  const [weeklyTestPrice, setWeeklyTestPrice] = useState(DEFAULT_PRICING.weekly_test);
   const [quarterlyPrice, setQuarterlyPrice] = useState(DEFAULT_PRICING.quarterly);
   const [halfYearlyPrice, setHalfYearlyPrice] = useState(DEFAULT_PRICING.half_yearly);
   const [yearlyPrice, setYearlyPrice] = useState(DEFAULT_PRICING.yearly);
@@ -29,12 +31,23 @@ const AdminSubscriptionSettings = () => {
 
         if (settingsSnap.exists()) {
           const data = settingsSnap.data();
+          setWeeklyTestPrice(data.weeklyTestPrice || DEFAULT_PRICING.weekly_test);
           setQuarterlyPrice(data.quarterlyPrice || DEFAULT_PRICING.quarterly);
           setHalfYearlyPrice(data.halfYearlyPrice || DEFAULT_PRICING.half_yearly);
           setYearlyPrice(data.yearlyPrice || DEFAULT_PRICING.yearly);
           setCurrency(data.currency || "INR");
           setDiscountBanner(data.discountBanner || "");
           setPopularPlan(data.popularPlan || "yearly");
+          setTestPlanEnabled(Boolean(data.testPlanEnabled));
+        } else {
+          setWeeklyTestPrice(DEFAULT_PRICING.weekly_test);
+          setQuarterlyPrice(DEFAULT_PRICING.quarterly);
+          setHalfYearlyPrice(DEFAULT_PRICING.half_yearly);
+          setYearlyPrice(DEFAULT_PRICING.yearly);
+          setCurrency("INR");
+          setDiscountBanner("");
+          setPopularPlan("yearly");
+          setTestPlanEnabled(false);
         }
 
         setError("");
@@ -53,6 +66,11 @@ const AdminSubscriptionSettings = () => {
     e.preventDefault();
 
     // Validation
+    if (testPlanEnabled && Number(weeklyTestPrice) < 1) {
+      setError("Test plan price must be at least 1");
+      return;
+    }
+
     if (quarterlyPrice < 10 || halfYearlyPrice < 10 || yearlyPrice < 10) {
       setError("Prices must be at least ₹10");
       return;
@@ -73,6 +91,8 @@ const AdminSubscriptionSettings = () => {
         settingsRef,
         {
           schoolId,
+          weeklyTestPrice: parseFloat(weeklyTestPrice),
+          testPlanEnabled,
           quarterlyPrice: parseFloat(quarterlyPrice),
           halfYearlyPrice: parseFloat(halfYearlyPrice),
           yearlyPrice: parseFloat(yearlyPrice),
@@ -149,8 +169,50 @@ const AdminSubscriptionSettings = () => {
 
           <div className="divider" />
 
+          <div className="form-section">
+            <div className="toggle-card">
+              <div>
+                <label className="form-label toggle-label">Weekly Test Plan Card</label>
+                <p className="form-help">
+                  Turns the 1 Rs test Razorpay plan card on or off for users.
+                </p>
+              </div>
+              <label className="switch">
+                <input
+                  type="checkbox"
+                  checked={testPlanEnabled}
+                  onChange={(e) => setTestPlanEnabled(e.target.checked)}
+                />
+                <span className="slider"></span>
+              </label>
+            </div>
+          </div>
+
           {/* Pricing Cards */}
           <div className="pricing-cards">
+            <div className={`price-card ${testPlanEnabled ? "" : "price-card-muted"}`}>
+              <div className="price-header">
+                <h4>{SUBSCRIPTION_PLANS.WEEKLY_TEST.name}</h4>
+                <p className="price-duration">
+                  {SUBSCRIPTION_PLANS.WEEKLY_TEST.badge} • Test only
+                </p>
+              </div>
+              <div className="price-input-group">
+                <span className="currency-symbol">â‚¹</span>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={weeklyTestPrice}
+                  onChange={(e) => setWeeklyTestPrice(e.target.value)}
+                  className="price-input"
+                />
+              </div>
+              <p className="price-monthly">
+                Hidden from users until the switch above is enabled
+              </p>
+            </div>
+
             {/* Quarterly */}
             <div className="price-card">
               <div className="price-header">
@@ -224,7 +286,9 @@ const AdminSubscriptionSettings = () => {
           <div className="form-section">
             <label className="form-label">⭐ Popular Plan (Show "Best Value" Badge)</label>
             <div className="radio-group">
-              {Object.values(SUBSCRIPTION_PLANS).map((plan) => (
+              {Object.values(SUBSCRIPTION_PLANS)
+                .filter((plan) => !plan.isTestPlan)
+                .map((plan) => (
                 <label key={plan.id} className="radio-label">
                   <input
                     type="radio"
@@ -269,6 +333,15 @@ const AdminSubscriptionSettings = () => {
                 </tr>
               </thead>
               <tbody>
+                <tr>
+                  <td className="plan-name">
+                    {SUBSCRIPTION_PLANS.WEEKLY_TEST.name}
+                  </td>
+                  <td>1 week</td>
+                  <td className="price">₹{weeklyTestPrice}</td>
+                  <td>₹{weeklyTestPrice}</td>
+                  <td>{testPlanEnabled ? "Shown" : "Hidden"}</td>
+                </tr>
                 <tr>
                   <td className="plan-name">
                     {SUBSCRIPTION_PLANS.QUARTERLY.name}
@@ -320,6 +393,8 @@ const AdminSubscriptionSettings = () => {
               type="button"
               className="btn-reset"
               onClick={() => {
+                setWeeklyTestPrice(DEFAULT_PRICING.weekly_test);
+                setTestPlanEnabled(false);
                 setQuarterlyPrice(DEFAULT_PRICING.quarterly);
                 setHalfYearlyPrice(DEFAULT_PRICING.half_yearly);
                 setYearlyPrice(DEFAULT_PRICING.yearly);
@@ -347,6 +422,7 @@ const AdminSubscriptionSettings = () => {
             <li>Changes reflect instantly on the pricing page</li>
             <li>Use different school IDs for school-specific pricing</li>
             <li>Minimum price: ₹10</li>
+            <li>The 8-day test plan supports 1 Rs pricing and is hidden by default</li>
             <li>All prices are in INR unless changed</li>
             <li>Users with active subscriptions keep their plan</li>
             <li>New subscriptions use the updated pricing</li>

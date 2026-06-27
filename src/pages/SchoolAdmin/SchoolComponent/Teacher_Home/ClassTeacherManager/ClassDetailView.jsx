@@ -30,7 +30,7 @@ export default function ClassDetailView({
   teachers = [],
   draggedTeacher,
   setDraggedTeacher,
-  selectedTeachers = [], // Accept selected list
+  selectedTeachers = [],
   setSelectedTeachers,
   onBack,
   teacher = null,
@@ -72,7 +72,6 @@ export default function ClassDetailView({
     return () => { unsubRoll(); unsubStudents(); };
   }, [className, schoolId]);
 
-  // 🔹 Logic to handle one or many teachers
   const upsertTeachersToClass = async (teachersToProcess) => {
     if (mode !== "admin" || !teachersToProcess.length) return;
     setLoading(true);
@@ -95,7 +94,7 @@ export default function ClassDetailView({
       });
 
       await updateDoc(ref, { team, updatedAt: new Date() });
-      if (setSelectedTeachers) setSelectedTeachers([]); // Clear selection after adding
+      if (setSelectedTeachers) setSelectedTeachers([]);
     } finally {
       setLoading(false);
     }
@@ -105,10 +104,9 @@ export default function ClassDetailView({
     e.preventDefault();
     if (mode !== "admin" || !draggedTeacher) return;
 
-    // If the dragged teacher is part of the selected group, add the whole group
-    const isPartOfSelection = selectedTeachers.some(t => t.id === draggedTeacher.id);
+    const isPartOfSelection = selectedTeachers.some((t) => t.id === draggedTeacher.id);
     const listToAdd = isPartOfSelection ? selectedTeachers : [draggedTeacher];
-    
+
     upsertTeachersToClass(listToAdd);
     setDraggedTeacher(null);
   };
@@ -122,7 +120,7 @@ export default function ClassDetailView({
       const data = snap.exists() ? snap.data() : {};
       const team = Array.isArray(data.team) ? [...data.team] : [];
       const idx = team.findIndex((t) => t.userId === teacherId);
-      
+
       if (idx !== -1) {
         const updatedSubs = new Set(team[idx].subjects || []);
         updatedSubs.add(draggedSubject);
@@ -150,29 +148,27 @@ export default function ClassDetailView({
     });
   };
 
-  const filteredTeam = mode === "teacher" 
-    ? (classData?.team || []).filter(t => t.email === teacher?.email || t.email === classData?.classTeacherEmail)
+  const filteredTeam = mode === "teacher"
+    ? (classData?.team || []).filter((t) => t.email === teacher?.email || t.email === classData?.classTeacherEmail)
     : (classData?.team || []);
 
   if (!classData) return <div className="class-detail-container"><Loader2 className="spin" /> Loading...</div>;
 
   const configuredBaseUrl = (process.env.REACT_APP_PUBLIC_BASE_URL || "").trim().replace(/\/$/, "");
   const appBaseUrl = configuredBaseUrl || window.location.origin;
-  const studentFormLink = `${appBaseUrl}/class-form/${schoolId}/${className}/student`;
+  const studentFormLink = `${appBaseUrl}/school-form/${schoolId}/student`;
   const teacherFormLink = `${appBaseUrl}/class-form/${schoolId}/${className}/teacher`;
-  const selectedPlanName = school?.selectedPlanName || "No plan selected";
-  const planAmount = school?.planAmount || 0;
 
   return (
     <div className="class-detail-container">
       <div className="detail-header">
-        {onBack && <button className="back-btn" onClick={onBack}>← Back</button>}
+        {onBack && <button className="back-btn" onClick={onBack}>Back</button>}
         <h2><BookOpen size={20} /> {classData.className}</h2>
       </div>
 
       <div className="info-card">
         <p><strong>Grade:</strong> {classData.grade} | <strong>Division:</strong> {classData.division}</p>
-        <p><strong>Class Teacher:</strong> {classData.classTeacherName || "—"}</p>
+        <p><strong>Class Teacher:</strong> {classData.classTeacherName || "-"}</p>
         <p><strong><ListOrdered size={14} /> Total Students:</strong> {studentCount ?? "..."}</p>
       </div>
 
@@ -181,17 +177,13 @@ export default function ClassDetailView({
           <h3>Class Form Links</h3>
         </div>
         <div className="form-link-row">
-          <span>School Plan:</span>
-          <strong>{selectedPlanName}</strong>
-        </div>
-        <div className="form-link-row">
           <span>Student Form:</span>
           <a href={studentFormLink} target="_blank" rel="noreferrer">{studentFormLink}</a>
         </div>
         <div className="form-link-row">
-          <span>Student Payment:</span>
+          <span>Student Flow:</span>
           <em>
-            Student registration opens the payment link from the form using the {selectedPlanName} plan{planAmount ? ` (₹${planAmount})` : ""}.
+            Share one universal form for the whole school. Parents choose class and division inside the form, then continue to plan selection and payment.
           </em>
         </div>
         <div className="form-link-row">
@@ -205,7 +197,7 @@ export default function ClassDetailView({
           {mode === "admin" && (
             <button onClick={() => {
               const sub = prompt("Enter subject:");
-              if(sub) setSubjects([...subjects, sub]);
+              if (sub) setSubjects([...subjects, sub]);
             }} className="add-btn"><Plus size={14} /> Add</button>
           )}
         </div>
@@ -216,7 +208,7 @@ export default function ClassDetailView({
         </div>
       </div>
 
-      <div 
+      <div
         className={`team-area ${draggedTeacher ? "drag-active" : ""}`}
         onDragOver={(e) => e.preventDefault()}
         onDrop={handleDropTeacherOnClass}
@@ -235,7 +227,7 @@ export default function ClassDetailView({
                 {mode === "admin" && <button className="remove-btn" onClick={() => handleRemoveTeacher(t.userId)}><X size={14} /></button>}
               </div>
               <div className="team-subjects">
-                {t.subjects?.map(sub => <span key={sub} className="subject-pill">{sub}</span>) || <i>No subjects</i>}
+                {t.subjects?.map((sub) => <span key={sub} className="subject-pill">{sub}</span>) || <i>No subjects</i>}
               </div>
             </div>
           ))}
@@ -246,5 +238,3 @@ export default function ClassDetailView({
     </div>
   );
 }
-
-

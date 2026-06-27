@@ -30,10 +30,11 @@ This document outlines the complete redesigned subscription system for the MINT 
 
 ## Subscription Plans
 
-### Three Available Plans
+### Available Plans
 
 | Plan | Duration | Default Price | Access |
 |------|----------|---------------|--------|
+| Test | 1 week | 1 Rs | All classes 6-10 |
 | Quarterly | 3 months | ₹499 | All classes 6-10 |
 | Half-Yearly | 6 months | ₹899 | All classes 6-10 |
 | Yearly | 12 months | ₹1,499 | All classes 6-10 |

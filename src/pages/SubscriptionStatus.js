@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { db, auth } from "../firebase/firebaseConfig";
 import {
   SUBSCRIPTION_PLANS,
@@ -73,13 +73,19 @@ const SubscriptionStatus = () => {
 
     try {
       const user = auth.currentUser;
+      if (!user) {
+        throw new Error("Please log in again to manage your subscription.");
+      }
+      const idToken = await user.getIdToken();
       const response = await fetch(
         "https://us-central1-dreamprojects-cda5b.cloudfunctions.net/cancelSubscription",
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${idToken}`,
+          },
           body: JSON.stringify({
-            userId: user.uid,
             subscriptionId: subscription.razorpaySubscriptionId,
           }),
         }
@@ -90,13 +96,28 @@ const SubscriptionStatus = () => {
         throw new Error(errorData.error || "Failed to cancel subscription");
       }
 
+      const data = await response.json();
+      const cancelSuccessMessage =
+        data.message ||
+        "Subscription cancellation scheduled for the end of your current billing period.";
+
       setSuccess("✅ Subscription cancelled. You'll maintain access until renewal date.");
       
+      setSuccess(cancelSuccessMessage);
+
       // Update local state
       setSubscription({
         ...subscription,
-        subscriptionActive: false,
-        status: "cancelled",
+        autoRenewal: false,
+        cancellationScheduled: !!data.cancellationScheduled,
+        cancellationEffectiveAt:
+          data.cancellationEffectiveAt || subscription.expiryDate,
+        subscriptionActive: data.cancellationScheduled
+          ? true
+          : subscription.subscriptionActive,
+        status: data.status || subscription.status,
+        razorpayStatus: data.razorpayStatus || subscription.razorpayStatus,
+        expiryDate: data.cancellationEffectiveAt || subscription.expiryDate,
       });
 
       setCancelling(false);
@@ -124,27 +145,46 @@ const SubscriptionStatus = () => {
 
     try {
       const user = auth.currentUser;
+      if (!user) {
+        throw new Error("Please log in again to manage your subscription.");
+      }
+      const idToken = await user.getIdToken();
 
-      // Update Firestore directly (simpler for resume)
-      const subRef = doc(db, "subscriptions", subscription.razorpaySubscriptionId);
-      await setDoc(
-        subRef,
+      const response = await fetch(
+        "https://us-central1-dreamprojects-cda5b.cloudfunctions.net/resumeSubscription",
         {
-          autoRenewal: true,
-          status: "active",
-          subscriptionActive: true,
-          updatedAt: new Date().toISOString(),
-        },
-        { merge: true }
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${idToken}`,
+          },
+          body: JSON.stringify({
+            subscriptionId: subscription.razorpaySubscriptionId,
+          }),
+        }
       );
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Failed to resume subscription");
+      }
+
+      const data = await response.json();
 
       setSuccess("✅ Subscription resumed successfully!");
       
       setSubscription({
         ...subscription,
         autoRenewal: true,
-        status: "active",
-        subscriptionActive: true,
+        status: data.subscription?.status || "active",
+        razorpayStatus: data.subscription?.status || "active",
+        subscriptionActive: data.subscription?.status === "active",
+        ...(data.subscription?.currentStart
+          ? { startDate: data.subscription.currentStart }
+          : {}),
+        ...(data.subscription?.currentEnd
+          ? { expiryDate: data.subscription.currentEnd }
+          : {}),
       });
 
       setResuming(false);

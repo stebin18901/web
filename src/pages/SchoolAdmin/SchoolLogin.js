@@ -1,33 +1,36 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   createUserWithEmailAndPassword,
   onAuthStateChanged,
   signInWithEmailAndPassword,
+  signOut,
 } from "firebase/auth";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  limit,
+  query,
+  setDoc,
+  where,
+} from "firebase/firestore";
 import { useNavigate } from "react-router-dom";
 import { auth, db } from "../../firebase/firebaseConfig";
-import { buildSchoolPlanOptions } from "../../config/defaultSchool";
 import "./SchoolLogin.css";
-
-const SCHOOL_PLANS = buildSchoolPlanOptions();
 
 const SchoolLogin = ({ onLoginSuccess }) => {
   const navigate = useNavigate();
   const [mode, setMode] = useState("register");
   const [schoolName, setSchoolName] = useState("");
+  const [schoolIdInput, setSchoolIdInput] = useState("");
+  const [loginId, setLoginId] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [selectedPlanId, setSelectedPlanId] = useState("yearly");
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-
-  const selectedPlan = useMemo(
-    () => SCHOOL_PLANS.find((plan) => plan.id === selectedPlanId) || SCHOOL_PLANS[0],
-    [selectedPlanId]
-  );
 
   const openSchoolAdmin = useCallback((schoolData) => {
     const payload = {
@@ -81,25 +84,33 @@ const SchoolLogin = ({ onLoginSuccess }) => {
 
     try {
       const cleanName = schoolName.trim();
+      const cleanSchoolId = schoolIdInput.trim().toLowerCase();
       const cleanEmail = email.trim().toLowerCase();
       const cleanPassword = password.trim();
 
-      if (!cleanName || !cleanEmail || !cleanPassword) {
-        throw new Error("Please fill school name, email, password, and plan.");
+      if (!cleanName || !cleanSchoolId || !cleanEmail || !cleanPassword) {
+        throw new Error("Please fill school name, school ID, email, and password.");
+      }
+
+      const schoolQuery = query(
+        collection(db, "schools"),
+        where("schoolId", "==", cleanSchoolId),
+        limit(1)
+      );
+      const existingSchool = await getDocs(schoolQuery);
+      if (!existingSchool.empty) {
+        throw new Error("This school ID is already in use.");
       }
 
       const userCredential = await createUserWithEmailAndPassword(auth, cleanEmail, cleanPassword);
       const user = userCredential.user;
 
       const schoolData = {
-        schoolId: user.uid,
+        schoolId: cleanSchoolId,
         schoolName: cleanName,
         email: cleanEmail,
+        loginEmail: cleanEmail,
         ownerUid: user.uid,
-        selectedPlanId: selectedPlan.id,
-        selectedPlanName: selectedPlan.name,
-        planAmount: selectedPlan.amount,
-        planDurationLabel: selectedPlan.durationLabel,
         registrationMode: "school-account",
         updatedAt: new Date().toISOString(),
         createdAt: new Date().toISOString(),
@@ -121,13 +132,41 @@ const SchoolLogin = ({ onLoginSuccess }) => {
     setSubmitting(true);
 
     try {
-      const cleanEmail = email.trim().toLowerCase();
+      const cleanIdentifier = loginId.trim().toLowerCase();
       const cleanPassword = password.trim();
-      const userCredential = await signInWithEmailAndPassword(auth, cleanEmail, cleanPassword);
+
+      if (!cleanIdentifier || !cleanPassword) {
+        throw new Error("Please enter school ID or email and password.");
+      }
+
+      let resolvedEmail = cleanIdentifier;
+      if (!cleanIdentifier.includes("@")) {
+        const schoolQuery = query(
+          collection(db, "schools"),
+          where("schoolId", "==", cleanIdentifier),
+          limit(1)
+        );
+        const schoolSnap = await getDocs(schoolQuery);
+        if (schoolSnap.empty) {
+          throw new Error("No school found for this school ID.");
+        }
+
+        const schoolData = schoolSnap.docs[0].data();
+        resolvedEmail = String(
+          schoolData.loginEmail || schoolData.email || ""
+        ).trim().toLowerCase();
+
+        if (!resolvedEmail) {
+          throw new Error("This school account is missing a login email.");
+        }
+      }
+
+      const userCredential = await signInWithEmailAndPassword(auth, resolvedEmail, cleanPassword);
       const user = userCredential.user;
 
       const schoolSnap = await getDoc(doc(db, "schools", user.uid));
       if (!schoolSnap.exists()) {
+        await signOut(auth).catch(() => {});
         throw new Error("No school profile found. Please register first.");
       }
 
@@ -156,7 +195,7 @@ const SchoolLogin = ({ onLoginSuccess }) => {
           <p className="school-auth-kicker">School onboarding</p>
           <h2>{mode === "register" ? "Register Your School" : "School Login"}</h2>
           <p className="school-auth-subtitle">
-            Create the school account first. The plan you choose is used later for student payment links.
+            Create a school account with a permanent school ID. Login supports both school ID and email.
           </p>
         </div>
 
@@ -198,7 +237,17 @@ const SchoolLogin = ({ onLoginSuccess }) => {
             </div>
 
             <div className="form-group">
-              <label>Email</label>
+              <label>School ID</label>
+              <input
+                type="text"
+                value={schoolIdInput}
+                onChange={(e) => setSchoolIdInput(e.target.value)}
+                placeholder="greenwood-public"
+              />
+            </div>
+
+            <div className="form-group">
+              <label>Login Email</label>
               <input
                 type="email"
                 value={email}
@@ -217,38 +266,6 @@ const SchoolLogin = ({ onLoginSuccess }) => {
               />
             </div>
 
-            <div className="form-group">
-              <label>Plan</label>
-              <div className="plan-grid">
-                {SCHOOL_PLANS.map((plan) => {
-                  const isSelected = selectedPlanId === plan.id;
-                  return (
-                    <button
-                      key={plan.id}
-                      type="button"
-                      className={`plan-card ${isSelected ? "selected" : ""}`}
-                      onClick={() => setSelectedPlanId(plan.id)}
-                    >
-                      <strong>{plan.name}</strong>
-                      <span>{plan.durationLabel}</span>
-                      <div className="plan-price">
-                        <span className="currency">₹</span>
-                        <span>{plan.amount}</span>
-                      </div>
-                      <small>Used for student payment forms</small>
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="plan-helper-card">
-                <strong>{selectedPlan.name}</strong>
-                <p>{selectedPlan.description}</p>
-                <small>
-                  After registration, class forms will use this plan to generate the student payment link.
-                </small>
-              </div>
-            </div>
-
             <button className="login-button" type="submit" disabled={submitting}>
               {submitting ? "Creating school..." : "Register School"}
             </button>
@@ -256,12 +273,12 @@ const SchoolLogin = ({ onLoginSuccess }) => {
         ) : (
           <form onSubmit={handleLogin}>
             <div className="form-group">
-              <label>Email</label>
+              <label>School ID or Email</label>
               <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="school@example.com"
+                type="text"
+                value={loginId}
+                onChange={(e) => setLoginId(e.target.value)}
+                placeholder="greenwood-public or school@example.com"
               />
             </div>
 

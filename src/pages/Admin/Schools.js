@@ -1,19 +1,19 @@
 import React, { useState, useEffect } from "react";
-import { db } from "../../firebase/firebaseConfig"; // Import Firestore
+import { db } from "../../firebase/firebaseConfig";
 import { collection, setDoc, doc, getDocs, deleteDoc, updateDoc, getDoc } from "firebase/firestore";
 import {
   DEFAULT_SCHOOL_SETTINGS_COLLECTION,
   DEFAULT_SCHOOL_SETTINGS_DOC,
   normalizeSchoolId,
 } from "../../config/defaultSchool";
-import "./Schools.css"; // Import the CSS file
+import "./Schools.css";
 
 const Schools = () => {
   const [schoolName, setSchoolName] = useState("");
   const [schoolId, setSchoolId] = useState("");
   const [schools, setSchools] = useState([]);
-  const [editSchoolId, setEditSchoolId] = useState(null); // Track the school being edited
-  const [searchQuery, setSearchQuery] = useState(""); // For search functionality
+  const [editSchoolId, setEditSchoolId] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [password, setPassword] = useState("");
   const [activeStudentSchoolId, setActiveStudentSchoolId] = useState("");
   const [generatedLink, setGeneratedLink] = useState("");
@@ -33,7 +33,6 @@ const Schools = () => {
     }
   }, []);
 
-  // Fetch schools from Firestore on component mount
   useEffect(() => {
     fetchSchools();
   }, []);
@@ -41,8 +40,8 @@ const Schools = () => {
   const fetchSchools = async () => {
     const querySnapshot = await getDocs(collection(db, "schools"));
     const schoolsList = [];
-    querySnapshot.forEach((doc) => {
-      schoolsList.push({ id: doc.id, ...doc.data() });
+    querySnapshot.forEach((entry) => {
+      schoolsList.push({ id: entry.id, ...entry.data() });
     });
     setSchools(schoolsList);
 
@@ -52,52 +51,48 @@ const Schools = () => {
     }
   };
 
-  // Handle form submission to add or update a school
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
       if (editSchoolId) {
-        // Update existing school
         await updateDoc(doc(db, "schools", editSchoolId), {
-          schoolName: schoolName,
-          schoolId: schoolId,
-          password: password,
+          schoolName,
+          schoolId,
+          password,
         });
         alert("School updated successfully!");
-        setEditSchoolId(null); // Reset edit mode
+        setEditSchoolId(null);
       } else {
-        // Add new school
         await setDoc(doc(db, "schools", schoolId), {
-          schoolName: schoolName,
-          schoolId: schoolId,
-          password: password,
+          schoolName,
+          schoolId,
+          password,
         });
         alert("School added successfully!");
       }
       setSchoolName("");
       setSchoolId("");
-      fetchSchools(); // Refresh the list
+      setPassword("");
+      fetchSchools();
     } catch (error) {
       alert("Error: " + error.message);
     }
   };
 
-  // Handle deleting a school
   const handleDelete = async (id) => {
     try {
       await deleteDoc(doc(db, "schools", id));
       alert("School deleted successfully!");
-      fetchSchools(); // Refresh the list
+      fetchSchools();
     } catch (error) {
       alert("Error deleting school: " + error.message);
     }
   };
 
-  // Handle editing a school
   const handleEdit = (school) => {
     setSchoolName(school.schoolName);
     setSchoolId(school.schoolId);
-    setEditSchoolId(school.id); // Set the school ID being edited
+    setEditSchoolId(school.id);
     setPassword(school.password || "");
   };
 
@@ -119,9 +114,7 @@ const Schools = () => {
     };
     localStorage.setItem("studentSchoolAccess", JSON.stringify(payload));
     setActiveStudentSchoolId(normalizedId);
-    alert(
-      `${school.schoolName} selected for student login.\nStudents can now login at /login using class, section, roll no, and pin.`
-    );
+    alert(`${school.schoolName} selected for student login. Students can now login at /login using class, section, roll no, and pin.`);
   };
 
   const handleSetDefaultSchool = async (school) => {
@@ -144,17 +137,24 @@ const Schools = () => {
   const generateToken = () => {
     const bytes = new Uint8Array(18);
     window.crypto.getRandomValues(bytes);
-    return Array.from(bytes, (b) => b.toString(16).padStart(2, "0")).join("");
+    return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
   };
 
   const handleGenerateAuthLink = async (school) => {
     try {
+      const normalizedSchoolId = normalizeSchoolId(school.schoolId || school.id);
+      if (!normalizedSchoolId) {
+        alert("Cannot generate auth link because this school does not have a valid School ID.");
+        return;
+      }
+
       const token = generateToken();
       const expiresAt = Date.now() + 2 * 60 * 60 * 1000;
       const linkPayload = {
         token,
-        schoolId: String(school.schoolId || "").trim().toLowerCase(),
-        schoolName: school.schoolName || school.schoolId,
+        schoolDocId: school.id || normalizedSchoolId,
+        schoolId: normalizedSchoolId,
+        schoolName: school.schoolName || normalizedSchoolId,
         expiresAt,
         createdAt: new Date().toISOString(),
         used: false,
@@ -164,6 +164,7 @@ const Schools = () => {
       const logoutToken = generateToken();
       const logoutPayload = {
         token: logoutToken,
+        schoolDocId: linkPayload.schoolDocId,
         schoolId: linkPayload.schoolId,
         schoolName: linkPayload.schoolName,
         expiresAt,
@@ -192,7 +193,6 @@ const Schools = () => {
     }
   };
 
-  // Handle search
   const filteredSchools = schools.filter(
     (school) =>
       school.schoolName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -201,7 +201,15 @@ const Schools = () => {
 
   return (
     <div className="schools-container">
-      <h1>Manage Schools</h1>
+      <div className="schools-header">
+        <div>
+          <p className="schools-kicker">Admin Directory</p>
+          <h1>Manage Schools</h1>
+          <p className="schools-subtitle">Create schools, switch the active student login school, and generate quick access links.</p>
+        </div>
+        <div className="schools-summary-chip">{filteredSchools.length} schools</div>
+      </div>
+
       <form onSubmit={handleSubmit} className="school-form">
         <input
           type="text"
@@ -218,16 +226,15 @@ const Schools = () => {
           required
         />
         <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-        required
+          type="password"
+          placeholder="Password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
         />
         <button type="submit">{editSchoolId ? "Update School" : "Add School"}</button>
       </form>
 
-      {/* Search Bar */}
       <div className="search-bar">
         <input
           type="text"
@@ -237,7 +244,6 @@ const Schools = () => {
         />
       </div>
 
-      {/* List of Schools */}
       <div className="schools-list">
         <h2>List of Schools</h2>
         {generatedLink && (
@@ -254,10 +260,15 @@ const Schools = () => {
           <ul>
             {filteredSchools.map((school) => (
               <li key={school.id}>
-                <strong>{school.schoolName}</strong> - ID: {school.schoolId}
-                {defaultSchoolId === normalizeSchoolId(school.schoolId) && (
-                  <span className="default-school-badge">Default</span>
-                )}
+                <div className="school-item-main">
+                  <div className="school-item-title-row">
+                    <strong>{school.schoolName}</strong>
+                    {defaultSchoolId === normalizeSchoolId(school.schoolId) && (
+                      <span className="default-school-badge">Default</span>
+                    )}
+                  </div>
+                  <span className="school-item-id">ID: {school.schoolId}</span>
+                </div>
                 <div className="actions">
                   <button className="btn-default" onClick={() => handleSetDefaultSchool(school)}>
                     {defaultSchoolId === normalizeSchoolId(school.schoolId) ? "Default School" : "Set Default"}

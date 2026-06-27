@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { collection, doc, getDocs, query, setDoc, where } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, query, setDoc, where } from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
 import { DEFAULT_SCHOOL_CLASS_OPTIONS, getDefaultSchoolPlan, getUniqueClasses, normalizeClassName } from "../config/defaultSchool";
 import "./Dashboard.css";
@@ -40,6 +40,60 @@ const safeJsonParse = (value) => {
   } catch {
     return null;
   }
+};
+const formatDateLabel = (value) => {
+  if (!value) return "Not available";
+  const parsed = new Date(value);
+  if (Number.isNaN(parsed.getTime())) return "Not available";
+  return parsed.toLocaleString();
+};
+const getDeviceLabel = () => {
+  if (typeof navigator === "undefined") return "Unknown device";
+  const ua = navigator.userAgent || "";
+  if (/android/i.test(ua)) return "Android device";
+  if (/iphone|ipad|ipod/i.test(ua)) return "iPhone / iPad";
+  if (/windows/i.test(ua)) return "Windows device";
+  if (/macintosh|mac os x/i.test(ua)) return "Mac device";
+  if (/linux/i.test(ua)) return "Linux device";
+  return "Browser device";
+};
+const buildSessionFromEnrollment = (studentId, enrollment, fallbackSession) => {
+  const selectedClasses = getUniqueClasses(
+    enrollment?.selectedClasses || [enrollment?.className]
+  );
+
+  return {
+    ...(fallbackSession || {}),
+    id: studentId,
+    name: enrollment?.name || enrollment?.fullName || fallbackSession?.name || "Student",
+    className: selectedClasses[0] || enrollment?.className || fallbackSession?.className || "Default",
+    defaultClassName: enrollment?.className || fallbackSession?.defaultClassName || "",
+    selectedClasses,
+    classProfiles: enrollment?.classProfiles || fallbackSession?.classProfiles || {},
+    section: enrollment?.section || fallbackSession?.section || "",
+    rollNumber:
+      enrollment?.rollNumber || fallbackSession?.rollNumber || "",
+    phone: enrollment?.phone || fallbackSession?.phone || "",
+    schoolName:
+      enrollment?.schoolName || fallbackSession?.schoolName || "Default School",
+    schoolId: enrollment?.schoolId || fallbackSession?.schoolId || "",
+    accessMode: enrollment?.accessMode || fallbackSession?.accessMode || "default-school",
+    planId: enrollment?.planId || fallbackSession?.planId || "",
+    planName: enrollment?.planName || fallbackSession?.planName || "",
+    planMaxClasses:
+      enrollment?.planMaxClasses ||
+      fallbackSession?.planMaxClasses ||
+      selectedClasses.length ||
+      1,
+    razorpaySubscriptionId:
+      enrollment?.razorpaySubscriptionId ||
+      fallbackSession?.razorpaySubscriptionId ||
+      "",
+    expiryDate: enrollment?.expiryDate || fallbackSession?.expiryDate || "",
+    startDate: enrollment?.startDate || fallbackSession?.startDate || "",
+    loggedInAt: new Date().toISOString(),
+    deviceLabel: getDeviceLabel(),
+  };
 };
 const makeSubjectLogo = (subjectName = "") => {
   const key = String(subjectName || "").trim().toLowerCase();
@@ -86,6 +140,9 @@ const Dashboard = () => {
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
   const [session, setSession] = useState(() => safeJsonParse(localStorage.getItem("schoolStudentSession")));
+  const [showAccountModal, setShowAccountModal] = useState(false);
+  const [linkedAccounts, setLinkedAccounts] = useState([]);
+  const [loadingLinkedAccounts, setLoadingLinkedAccounts] = useState(false);
   const [showClassModal, setShowClassModal] = useState(false);
   const [newClassName, setNewClassName] = useState("");
   const [newClassStudentName, setNewClassStudentName] = useState("");
@@ -107,6 +164,67 @@ const Dashboard = () => {
   const persistSession = (nextSession) => {
     localStorage.setItem("schoolStudentSession", JSON.stringify(nextSession));
     setSession(nextSession);
+  };
+
+  const loadLinkedAccounts = async () => {
+    if (!session?.phone || !session?.schoolId) {
+      setLinkedAccounts([]);
+      return;
+    }
+
+    setLoadingLinkedAccounts(true);
+    try {
+      const phoneQuery = query(
+        collection(db, "defaultSchoolEnrollments"),
+        where("phone", "==", session.phone)
+      );
+      const snap = await getDocs(phoneQuery);
+      const items = snap.docs
+        .map((entry) => ({
+          id: entry.id,
+          ...entry.data(),
+        }))
+        .filter(
+          (entry) =>
+            String(entry.schoolId || "").trim().toLowerCase() ===
+              String(session.schoolId || "").trim().toLowerCase() &&
+            ["default-school", "school-plan"].includes(
+              String(entry.accessMode || "default-school").toLowerCase()
+            )
+        )
+        .sort((a, b) => {
+          const classCompare = String(a.className || "").localeCompare(
+            String(b.className || ""),
+            undefined,
+            { numeric: true }
+          );
+          if (classCompare !== 0) return classCompare;
+          return String(a.name || "").localeCompare(String(b.name || ""));
+        });
+
+      setLinkedAccounts(items);
+    } finally {
+      setLoadingLinkedAccounts(false);
+    }
+  };
+
+  const switchAccount = async (accountId) => {
+    if (!accountId || accountId === session?.id) {
+      setShowAccountModal(false);
+      return;
+    }
+
+    const enrollmentSnap = await getDoc(doc(db, "defaultSchoolEnrollments", accountId));
+    if (!enrollmentSnap.exists()) return;
+
+    const nextSession = buildSessionFromEnrollment(
+      accountId,
+      enrollmentSnap.data(),
+      session
+    );
+    persistSession(nextSession);
+    setActiveSubject("");
+    setShowAccountModal(false);
   };
 
   const switchClass = (className) => {
@@ -263,6 +381,11 @@ const Dashboard = () => {
 
     run();
   }, [navigate, session]);
+
+  useEffect(() => {
+    if (!showAccountModal) return;
+    loadLinkedAccounts();
+  }, [showAccountModal, session?.phone, session?.schoolId]);
 
   const subjects = useMemo(() => {
     const map = {};
@@ -563,14 +686,18 @@ const Dashboard = () => {
   return (
     <div className="student-dashboard-v2">
       <header className="dash-topbar">
-        <div className="brand-wrap">
+        <button
+          type="button"
+          className="brand-wrap brand-button"
+          onClick={() => setShowAccountModal(true)}
+        >
           <div className="brand-badge">QM</div>
           <div>
             <p className="dash-kicker">MINT</p>
             <h1>MINT (Foundation Programme)</h1>
             <p className="dash-sub">Class {session.className || "N/A"} | {session.schoolName || session.schoolId}</p>
           </div>
-        </div>
+        </button>
         <div className="top-actions">
           {canManageDefaultClasses && (
             <div className="default-class-switcher" aria-label="Selected classes">
@@ -605,6 +732,77 @@ const Dashboard = () => {
           </button>
         </div>
       </header>
+
+      {showAccountModal && (
+        <div className="class-modal-backdrop" onClick={() => setShowAccountModal(false)}>
+          <div className="class-modal account-modal" onClick={(event) => event.stopPropagation()}>
+            <div className="class-modal-head">
+              <h2>Account Info</h2>
+              <button type="button" onClick={() => setShowAccountModal(false)}>x</button>
+            </div>
+            <div className="account-grid">
+              <div className="account-row">
+                <span>Student</span>
+                <strong>{session.name || "Student"}</strong>
+              </div>
+              <div className="account-row">
+                <span>Plan</span>
+                <strong>{session.planName || session.planId || "Not available"}</strong>
+              </div>
+              <div className="account-row">
+                <span>Subscription valid till</span>
+                <strong>{formatDateLabel(session.expiryDate)}</strong>
+              </div>
+              <div className="account-row">
+                <span>Device logged in</span>
+                <strong>{session.deviceLabel || getDeviceLabel()}</strong>
+              </div>
+              <div className="account-row">
+                <span>Logged in at</span>
+                <strong>{formatDateLabel(session.loggedInAt)}</strong>
+              </div>
+              <div className="account-row">
+                <span>School</span>
+                <strong>{session.schoolName || session.schoolId || "Not available"}</strong>
+              </div>
+            </div>
+            {session?.phone && (
+              <div className="account-switch-section">
+                <div className="account-switch-head">
+                  <h3>Switch Child Account</h3>
+                  <span>{linkedAccounts.length ? `${linkedAccounts.length} linked` : "No linked accounts"}</span>
+                </div>
+                {loadingLinkedAccounts ? (
+                  <p className="account-switch-empty">Loading linked accounts...</p>
+                ) : linkedAccounts.length <= 1 ? (
+                  <p className="account-switch-empty">
+                    No other linked child accounts found for this phone number.
+                  </p>
+                ) : (
+                  <div className="account-switch-list">
+                    {linkedAccounts.map((account) => (
+                      <button
+                        key={account.id}
+                        type="button"
+                        className={`account-switch-card ${
+                          account.id === session.id ? "active" : ""
+                        }`}
+                        onClick={() => switchAccount(account.id)}
+                      >
+                        <strong>{account.name || "Student"}</strong>
+                        <span>
+                          Class {account.className || "-"}
+                          {account.rollNumber ? ` • Roll ${account.rollNumber}` : ""}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
 
       {showClassModal && (
         <div className="class-modal-backdrop">

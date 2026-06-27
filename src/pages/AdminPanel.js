@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import "./AdminPanel.css"; // Optional: For styling
+import "./AdminPanel.css";
 import SchoolQuiz from "./Admin/SchoolQuiz";
 import Schools from "./Admin/Schools";
 import SchoolQuizSwitch from "./Admin/SchoolQuizSwitch";
@@ -11,30 +11,35 @@ import AdminTemplates from "./Admin/AdminTemplates";
 import CreateTutor from "./Admin/CreateTutor";
 import AdminCreateLeague from "./Admin/AdminCreateLeague";
 import AdminSubscriptionSettings from "./Admin/AdminSubscriptionSettings";
+import AdminQuizDemoPdf from "./Admin/AdminQuizDemoPdf";
+import AdminApkManagement from "./Admin/AdminApkManagement";
+
+const tabs = [
+  { id: "schoolQuiz", label: "School Quiz" },
+  { id: "schools", label: "Schools" },
+  { id: "subscriptions", label: "Subscriptions" },
+  { id: "createquiz", label: "Chapter Mgt" },
+  { id: "createchapter", label: "Create chapter" },
+  { id: "quizdemopdf", label: "Quiz Demo PDF" },
+  { id: "report", label: "Report card" },
+  { id: "feature", label: "Feature" },
+  { id: "calender", label: "Calender" },
+  { id: "news", label: "News template" },
+  { id: "premiumchapter", label: "Premium chapter" },
+  { id: "league", label: "League" },
+  { id: "apk", label: "APK Management" },
+];
 
 const AdminPanel = () => {
-  const [activeTab, setActiveTab] = useState("schoolQuiz"); // Default active tab
+  const [activeTab, setActiveTab] = useState("schoolQuiz");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
-  const tabs = [
-    { id: "schoolQuiz", label: "School Quiz" },
-    { id: "schools", label: "Schools" },
-    { id: "subscriptions", label: "Subscriptions" },
-    { id: "createquiz", label: "Chapter Mgt" },
-    { id: "createchapter", label: "Create chapter" },
-    { id: "report", label: "Report card" },
-    { id: "feature", label: "Feature" },
-    { id: "calender", label: "Calender" },
-    { id: "news", label: "news template" },
-    { id: "premiumchapter", label: "Premium chapter" },
-    { id: "league", label: "League" },
-  ];
-
-  // Function to handle tab clicks
   const handleTabClick = (tabName) => {
     setActiveTab(tabName);
     setIsSidebarOpen(false);
   };
+
+  const activeTabLabel = tabs.find((tab) => tab.id === activeTab)?.label || "Admin Workspace";
 
   return (
     <div className="admin-layout">
@@ -47,7 +52,7 @@ const AdminPanel = () => {
             <h1 className="admin-title">Admin</h1>
           </div>
           <button className="icon-btn close-btn" onClick={() => setIsSidebarOpen(false)} aria-label="Close menu">
-            ×
+            &times;
           </button>
         </div>
 
@@ -67,28 +72,30 @@ const AdminPanel = () => {
       <div className="admin-panel">
         <header className="admin-topbar">
           <button className="icon-btn menu-btn" onClick={() => setIsSidebarOpen(true)} aria-label="Open menu">
-            ☰
+            &#9776;
           </button>
-          <div>
-            <h2 className="topbar-title">{tabs.find((t) => t.id === activeTab)?.label || "Admin Workspace"}</h2>
-            <p className="admin-subtitle">Manage schools, quizzes, reports, templates, and league operations.</p>
+          <div className="admin-topbar-copy">
+            <p className="admin-topbar-eyebrow">Workspace</p>
+            <h2 className="topbar-title">{activeTabLabel}</h2>
+            <p className="admin-subtitle">Manage schools, quizzes, reports, templates, league operations, and APK releases.</p>
           </div>
+          <div className="admin-topbar-badge">{tabs.length} modules</div>
         </header>
 
-        {/* Tab Content */}
         <div className="tab-content">
           {activeTab === "schoolQuiz" && <SchoolQuiz />}
           {activeTab === "schools" && <Schools />}
           {activeTab === "subscriptions" && <AdminSubscriptionSettings />}
           {activeTab === "createquiz" && <SchoolQuizSwitch />}
           {activeTab === "createchapter" && <AdminQCreate />}
+          {activeTab === "quizdemopdf" && <AdminQuizDemoPdf />}
           {activeTab === "report" && <ReportAdmin />}
           {activeTab === "premiumchapter" && <CreateTutor />}
           {activeTab === "feature" && <AdminAddFeature />}
           {activeTab === "calender" && <AdminCalendar />}
           {activeTab === "news" && <AdminTemplates />}
           {activeTab === "league" && <AdminCreateLeague />}
-          {/* Add more tab content as needed AdminUploadJourney*/}
+          {activeTab === "apk" && <AdminApkManagement />}
         </div>
       </div>
     </div>

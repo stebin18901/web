@@ -3,18 +3,14 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db, auth } from "../firebase/firebaseConfig";
 import {
-  SUBSCRIPTION_PLANS,
   DEFAULT_PRICING,
   SUBSCRIPTION_FEATURES,
   getPlanById,
+  getPlanBillingText,
+  getSubscriptionPricingFromSettings,
+  getVisibleSubscriptionPlans,
 } from "../config/subscriptionConfig";
 import "./PlanSelection.css";
-
-const planRows = [
-  { id: "quarterly", key: "QUARTERLY" },
-  { id: "half_yearly", key: "HALF_YEARLY" },
-  { id: "yearly", key: "YEARLY" },
-];
 
 const PlanSelection = () => {
   const [searchParams] = useSearchParams();
@@ -27,20 +23,15 @@ const PlanSelection = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [pricingLoaded, setPricingLoaded] = useState(false);
-  
-  // Fix: Added state container so subscription details can be read anywhere in the JSX template
   const [activeSubscriptionId, setActiveSubscriptionId] = useState("");
+  const [planSettings, setPlanSettings] = useState({});
 
   useEffect(() => {
     const loadEnrollment = async () => {
       try {
         if (!enrollmentId) {
           const user = auth.currentUser;
-          if (user) {
-            navigate("/pricing", { replace: true });
-          } else {
-            navigate("/login", { replace: true });
-          }
+          navigate(user ? "/pricing" : "/login", { replace: true });
           setLoading(false);
           return;
         }
@@ -59,15 +50,18 @@ const PlanSelection = () => {
         }
 
         try {
-          const priceSettingsRef = doc(db, "subscriptionSettings", "default");
+          const priceSettingsRef = doc(
+            db,
+            "subscriptionSettings",
+            data.schoolId || "default"
+          );
           const priceSettingsSnap = await getDoc(priceSettingsRef);
           if (priceSettingsSnap.exists()) {
             const settings = priceSettingsSnap.data();
-            setPricing({
-              quarterly: settings.quarterlyPrice || DEFAULT_PRICING.quarterly,
-              half_yearly: settings.halfYearlyPrice || DEFAULT_PRICING.half_yearly,
-              yearly: settings.yearlyPrice || DEFAULT_PRICING.yearly,
-            });
+            setPlanSettings(settings);
+            setPricing(getSubscriptionPricingFromSettings(settings));
+            const visiblePlans = getVisibleSubscriptionPlans(settings);
+            setSelectedPlanId(visiblePlans[0]?.id || "yearly");
           }
         } catch (err) {
           console.log("Using default pricing:", err.message);
@@ -85,11 +79,7 @@ const PlanSelection = () => {
     loadEnrollment();
   }, [enrollmentId, navigate]);
 
-  useEffect(() => {
-    const sp = getPlanById(selectedPlanId);
-    const spPrice = pricing[selectedPlanId] || DEFAULT_PRICING[selectedPlanId];
-    console.debug("PlanSelection debug:", { selectedPlanId, selectedPlan: sp, selectedPrice: spPrice, submitting });
-  }, [selectedPlanId, pricing, submitting]);
+  const visiblePlans = getVisibleSubscriptionPlans(planSettings);
 
   const choosePlan = (planId) => {
     setSelectedPlanId(planId);
@@ -126,15 +116,23 @@ const PlanSelection = () => {
       const enrollmentRef = doc(db, "defaultSchoolEnrollments", enrollmentId);
       const amount = pricing[selectedPlanId];
 
-      const planPayload = {
-        planId: selectedPlanId,
-        planName: selectedPlan.name,
-        planAmount: amount,
-        updatedAt: new Date().toISOString(),
-      };
+      await setDoc(
+        enrollmentRef,
+        {
+          planId: selectedPlanId,
+          planName: selectedPlan.name,
+          planAmount: amount,
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      );
 
-      await setDoc(enrollmentRef, planPayload, { merge: true });
+      const currentUser = auth.currentUser;
+      if (!currentUser) {
+        throw new Error("Your session has expired. Please log in again.");
+      }
 
+      const idToken = await currentUser.getIdToken();
       const userPhone = enrollment.phone || auth.currentUser?.phoneNumber || "";
       const userName = enrollment.name || "Student";
 
@@ -142,9 +140,12 @@ const PlanSelection = () => {
         "https://us-central1-dreamprojects-cda5b.cloudfunctions.net/createRazorpaySubscription",
         {
           method: "POST",
-          headers: { "Content-Type": "application/json" },
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${idToken}`,
+          },
           body: JSON.stringify({
-            userId: enrollmentId,
+            studentId: enrollmentId,
             name: userName,
             email: auth.currentUser?.email || enrollment.email || "user@example.com",
             phone: userPhone,
@@ -181,35 +182,37 @@ const PlanSelection = () => {
         throw new Error("Razorpay script not loaded. Please refresh the page.");
       }
 
-      // --- UPDATE YOUR OPTIONS OBJECT TO THIS EXACT FORMAT ---
-      // --- CLEAN SUBSCRIPTION OPTIONS FORMAT ---
       const options = {
-        key: "rzp_test_T3LNGYAdtoRfzf", 
-        subscription_id: data.subscriptionId, // ONLY use subscription_id (NO amount, NO currency)
+        key: data.keyId,
+        subscription_id: data.subscriptionId,
         name: "MINT Entrance Foundation",
         description: `${selectedPlan.name} Subscription`,
-        handler: function (response) {
-          // This fires the instant you click 'Success' in the test environment!
-          window.location.href = `https://hepsy.in/payment-success?defaultStudentId=${encodeURIComponent(enrollmentId)}&razorpay_payment_id=${encodeURIComponent(response.razorpay_payment_id)}&razorpay_subscription_id=${encodeURIComponent(response.razorpay_subscription_id)}`;
+        handler: function handleSuccess(responseData) {
+          window.location.href = `https://hepsy.in/payment-success?defaultStudentId=${encodeURIComponent(
+            enrollmentId
+          )}&razorpay_payment_id=${encodeURIComponent(
+            responseData.razorpay_payment_id
+          )}&razorpay_subscription_id=${encodeURIComponent(
+            responseData.razorpay_subscription_id
+          )}`;
         },
         prefill: {
           name: userName,
           email: auth.currentUser?.email || enrollment.email || "user@example.com",
-          contact: userPhone ? `+91${userPhone}` : ""
+          contact: userPhone ? `+91${userPhone}` : "",
         },
         modal: {
-          ondismiss: function () {
+          ondismiss: function onDismiss() {
             setSubmitting(false);
-          }
+          },
         },
         theme: {
-          color: "#2563eb"
-        }
+          color: "#2563eb",
+        },
       };
 
       const rzp = new window.Razorpay(options);
       rzp.open();
-
     } catch (err) {
       console.error("Payment error:", err);
       setError(err.message || "Unable to proceed to payment.");
@@ -240,9 +243,13 @@ const PlanSelection = () => {
           <div>
             <p>MINT Entrance Foundation Platform</p>
             <h1>Choose Your Subscription Plan</h1>
-            <span>🎓 Unlock all classes (6-10) with one subscription</span>
+            <span>Unlock all classes (6-10) with one subscription</span>
           </div>
-          <button type="button" onClick={() => navigate("/login", { replace: true })} className="btn-back">
+          <button
+            type="button"
+            onClick={() => navigate("/login", { replace: true })}
+            className="btn-back"
+          >
             Back
           </button>
         </div>
@@ -250,32 +257,34 @@ const PlanSelection = () => {
         {error && <div className="login-error">{error}</div>}
 
         <section className="plan-grid">
-          {planRows.map((planConfig) => {
-            const plan = SUBSCRIPTION_PLANS[planConfig.key];
-            const price = pricing[planConfig.id];
-            const isSelected = selectedPlanId === planConfig.id;
-            const monthlyEquivalent = Math.round(price / plan.durationInMonths);
+          {visiblePlans.map((plan) => {
+            const price = pricing[plan.id];
+            const isSelected = selectedPlanId === plan.id;
 
             return (
               <button
                 type="button"
                 key={plan.id}
                 className={`plan-card ${isSelected ? "active" : ""}`}
-                onClick={() => choosePlan(planConfig.id)}
+                onClick={() => choosePlan(plan.id)}
               >
                 <div className="plan-card-badge">
-                  {planConfig.id === "yearly" && <span className="badge-popular">Best Value</span>}
+                  {plan.id === "yearly" && (
+                    <span className="badge-popular">Best Value</span>
+                  )}
                 </div>
 
                 <span className="plan-name">{plan.name}</span>
-                <strong className="plan-price">₹{price}</strong>
-                <small className="plan-duration">for {plan.durationInMonths} months</small>
-                <small className="plan-monthly">₹{monthlyEquivalent}/month</small>
+                <strong className="plan-price">Rs {price}</strong>
+                <small className="plan-duration">{plan.badge}</small>
+                <small className="plan-monthly">
+                  {getPlanBillingText(plan.id, price)}
+                </small>
 
                 <div className="plan-features">
-                  <p>✅ All Classes (6-10)</p>
-                  <p>✅ Unlimited Quizzes</p>
-                  <p>✅ Auto-Renewal</p>
+                  <p>All Classes (6-10)</p>
+                  <p>Unlimited Quizzes</p>
+                  <p>Auto-Renewal</p>
                 </div>
               </button>
             );
@@ -306,39 +315,40 @@ const PlanSelection = () => {
               </div>
               <div className="summary-row">
                 <span>Duration:</span>
-                <strong>{selectedPlan.durationInMonths} months</strong>
+                <strong>{selectedPlan.badge}</strong>
               </div>
               <div className="summary-row">
                 <span>Price:</span>
-                <strong>₹{selectedPrice}</strong>
+                <strong>Rs {selectedPrice}</strong>
               </div>
               <div className="summary-row total">
                 <span>Total:</span>
-                <strong>₹{selectedPrice}</strong>
+                <strong>Rs {selectedPrice}</strong>
               </div>
               <p className="summary-note">
-                ✓ Automatic renewal enabled • ✓ Cancel anytime • ✓ Secure payment with Razorpay
+                Automatic renewal enabled, cancel anytime, secure payment with Razorpay
               </p>
             </div>
           </div>
         )}
 
-        <button className="plan-pay-btn" type="button" onClick={handlePay} disabled={submitting || !selectedPlan}>
-          {submitting ? (
-            <>
-              <span className="btn-loader"></span>
-              Processing...
-            </>
-          ) : enrollment?.isPaid ? (
-            "Continue to Dashboard"
-          ) : (
-            `Subscribe Now - ₹${selectedPrice}`
-          )}
+        <button
+          className="plan-pay-btn"
+          type="button"
+          onClick={handlePay}
+          disabled={submitting || !selectedPlan}
+        >
+          {submitting
+            ? "Processing..."
+            : enrollment?.isPaid
+            ? "Continue to Dashboard"
+            : `Subscribe Now - Rs ${selectedPrice}`}
         </button>
 
         <div className="plan-footer-note">
           <p>
-            💳 Payments powered by <strong>Razorpay</strong> | 🔒 Secure & encrypted | 📱 Works on all devices
+            Payments powered by <strong>Razorpay</strong> | Secure and encrypted |
+            Works on all devices
           </p>
           {activeSubscriptionId && (
             <p style={{ fontSize: "11px", opacity: 0.6, marginTop: "5px" }}>

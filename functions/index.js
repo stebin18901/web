@@ -6,14 +6,18 @@ const cors = require("cors")({ origin: true });
 
 admin.initializeApp();
 
+const readEnv = (name, fallback = "") =>
+  String(process.env[name] || fallback).trim();
+
 // ---------------------------------------------------------------------------
 // Razorpay plan IDs (created in your Razorpay dashboard)
 // ---------------------------------------------------------------------------
 
 const RAZORPAY_PLAN_IDS = {
-  quarterly: "plan_T1FVocauu2nKwo",
-  half_yearly: "plan_T1FWOUvC89ozYc",
-  yearly: "plan_T1FWwGWagS8d66",
+  weekly_test: readEnv("RAZORPAY_PLAN_WEEKLY_TEST"),
+  quarterly: readEnv("RAZORPAY_PLAN_QUARTERLY", "plan_T1FVocauu2nKwo"),
+  half_yearly: readEnv("RAZORPAY_PLAN_HALF_YEARLY", "plan_T1FWOUvC89ozYc"),
+  yearly: readEnv("RAZORPAY_PLAN_YEARLY", "plan_T1FWwGWagS8d66"),
 };
 
 const VALID_PLAN_IDS = Object.keys(RAZORPAY_PLAN_IDS);
@@ -23,8 +27,8 @@ const VALID_PLAN_IDS = Object.keys(RAZORPAY_PLAN_IDS);
 // ---------------------------------------------------------------------------
 
 const getRazorpayConfig = () => ({
-  keyId: String(process.env.RAZORPAY_KEY_ID || "").trim(),
-  keySecret: String(process.env.RAZORPAY_KEY_SECRET || "").trim(),
+  keyId: readEnv("RAZORPAY_KEY_ID"),
+  keySecret: readEnv("RAZORPAY_KEY_SECRET"),
 });
 
 const getRazorpayClient = () => {
@@ -47,12 +51,58 @@ const getRazorpayClient = () => {
 const normalizePhone = (value) =>
   String(value || "").replace(/\D/g, "").slice(-10);
 
+const getSubscriptionCycleCount = (planId) => {
+  switch (planId) {
+    case "weekly_test":
+      return 1;
+    case "quarterly":
+      return 4;
+    case "half_yearly":
+      return 2;
+    case "yearly":
+      return 1;
+    default:
+      return 1;
+  }
+};
+
+const toPaise = (amount) => Math.round(Number(amount || 0) * 100);
+
+const getBearerToken = (req) => {
+  const header = req.headers.authorization || req.headers.Authorization || "";
+  if (!header.startsWith("Bearer ")) return "";
+  return header.slice("Bearer ".length).trim();
+};
+
+const authenticateRequest = async (req) => {
+  const token = getBearerToken(req);
+  if (!token) {
+    const err = new Error("Missing Authorization bearer token");
+    err.statusCode = 401;
+    err.code = "AUTH_TOKEN_MISSING";
+    throw err;
+  }
+
+  try {
+    return await admin.auth().verifyIdToken(token);
+  } catch (authError) {
+    const err = new Error("Invalid or expired authentication token");
+    err.statusCode = 401;
+    err.code = "AUTH_TOKEN_INVALID";
+    err.cause = authError;
+    throw err;
+  }
+};
+
 /**
  * Calculates the subscription expiry date from today based on planId.
  */
 const calculateExpiryDate = (planId) => {
   const d = new Date();
   switch (planId) {
+    case "weekly_test":
+      d.setDate(d.getDate() + 8);
+      break;
     case "quarterly":
       d.setMonth(d.getMonth() + 3);
       break;
@@ -71,7 +121,12 @@ const calculateExpiryDate = (planId) => {
  * Fetches custom pricing from Firestore; falls back to hardcoded defaults.
  */
 const getSubscriptionPricing = async (schoolId) => {
-  const defaults = { quarterly: 499, half_yearly: 899, yearly: 1499 };
+  const defaults = {
+    weekly_test: 1,
+    quarterly: 590,
+    half_yearly: 990,
+    yearly: 1599,
+  };
   try {
     const snap = await admin
       .firestore()
@@ -81,6 +136,7 @@ const getSubscriptionPricing = async (schoolId) => {
     if (!snap.exists) return defaults; // FIX: changed snap.exists() to snap.exists
     const d = snap.data();
     return {
+      weekly_test: d.weeklyTestPrice || defaults.weekly_test,
       quarterly: d.quarterlyPrice || defaults.quarterly,
       half_yearly: d.halfYearlyPrice || defaults.half_yearly,
       yearly: d.yearlyPrice || defaults.yearly,
@@ -242,23 +298,58 @@ exports.createRazorpaySubscription = functions.https.onRequest((req, res) => {
         return res.status(405).json({ error: "Method Not Allowed" });
       }
 
-      const { userId, studentId, name, email, phone, planId, schoolId } =
-        req.body;
+      const decodedToken = await authenticateRequest(req);
+      const {
+        studentId,
+        name,
+        email,
+        phone,
+        planId,
+        schoolId,
+      } = req.body || {};
+      const userId = decodedToken.uid;
 
-      if (!userId) return res.status(400).json({ error: "Missing userId" });
       if (!planId) return res.status(400).json({ error: "Missing planId" });
       if (!VALID_PLAN_IDS.includes(planId)) {
         return res.status(400).json({ error: `Invalid planId. Must be one of: ${VALID_PLAN_IDS.join(", ")}` });
       }
+      if (!RAZORPAY_PLAN_IDS[planId]) {
+        return res.status(400).json({
+          error: `Razorpay plan ID is not configured for ${planId}. Update functions/.env first.`,
+        });
+      }
 
       const pricing = await getSubscriptionPricing(schoolId);
       const amount = pricing[planId];
-      if (!Number.isFinite(amount) || amount < 100) {
+      if (!Number.isFinite(amount) || amount < 1) {
         return res.status(400).json({ error: "Invalid subscription amount" });
       }
 
-      const razorpay = getRazorpayClient();
       const targetStudentId = studentId || userId;
+      const razorpay = getRazorpayClient();
+
+      if (studentId && studentId !== userId) {
+        const enrollmentSnap = await admin
+          .firestore()
+          .collection("defaultSchoolEnrollments")
+          .doc(studentId)
+          .get();
+
+        if (!enrollmentSnap.exists) {
+          return res.status(404).json({ error: "Enrollment not found" });
+        }
+
+        const enrollmentData = enrollmentSnap.data() || {};
+        const tokenPhone = normalizePhone(decodedToken.phone_number);
+        const enrollmentPhone = normalizePhone(enrollmentData.phone);
+
+        if (enrollmentPhone && tokenPhone && enrollmentPhone !== tokenPhone) {
+          return res.status(403).json({
+            error: "Authenticated user is not allowed to create a subscription for this enrollment",
+            code: "SUBSCRIPTION_FORBIDDEN",
+          });
+        }
+      }
 
       // Check for an existing subscription for this enrollment and reuse it
       const existingEnrollSnap = await admin
@@ -312,7 +403,7 @@ exports.createRazorpaySubscription = functions.https.onRequest((req, res) => {
         plan_id: RAZORPAY_PLAN_IDS[planId],
         customer_notify: 1,
         quantity: 1,
-        total_count: 12,
+        total_count: getSubscriptionCycleCount(planId),
         notes: {
           userId,
           studentId: targetStudentId,
@@ -398,6 +489,7 @@ exports.createRazorpaySubscription = functions.https.onRequest((req, res) => {
         subscriptionId: subscription.id,
         status: subscription.status,
         shortUrl: subscription.short_url || "",
+        keyId: getRazorpayConfig().keyId,
         message: "Subscription created successfully",
       });
     } catch (err) {
@@ -658,10 +750,29 @@ exports.fetchSubscription = functions.https.onRequest((req, res) => {
         return res.status(405).json({ error: "Method Not Allowed" });
       }
 
+      const decodedToken = await authenticateRequest(req);
       const subscriptionId =
-        req.query.subscriptionId || req.body.subscriptionId;
+        req.query.subscriptionId || (req.body && req.body.subscriptionId);
       if (!subscriptionId) {
         return res.status(400).json({ error: "Missing subscriptionId" });
+      }
+
+      const localSubSnap = await admin
+        .firestore()
+        .collection("subscriptions")
+        .doc(subscriptionId)
+        .get();
+
+      if (!localSubSnap.exists) {
+        return res.status(404).json({ error: "Subscription not found" });
+      }
+
+      const localSub = localSubSnap.data() || {};
+      if (localSub.userId !== decodedToken.uid) {
+        return res.status(403).json({
+          error: "You are not allowed to access this subscription",
+          code: "SUBSCRIPTION_FORBIDDEN",
+        });
       }
 
       const razorpay = getRazorpayClient();
@@ -707,33 +818,214 @@ exports.cancelSubscription = functions.https.onRequest((req, res) => {
         return res.status(405).json({ error: "Method Not Allowed" });
       }
 
-      const { userId, subscriptionId } = req.body;
-      if (!userId || !subscriptionId) {
-        return res
-          .status(400)
-          .json({ error: "Missing userId or subscriptionId" });
+      const decodedToken = await authenticateRequest(req);
+      const { subscriptionId } = req.body || {};
+      if (!subscriptionId) {
+        return res.status(400).json({ error: "Missing subscriptionId" });
+      }
+
+      const subSnap = await admin
+        .firestore()
+        .collection("subscriptions")
+        .doc(subscriptionId)
+        .get();
+
+      if (!subSnap.exists) {
+        return res.status(404).json({ error: "Subscription not found" });
+      }
+
+      const subData = subSnap.data() || {};
+      if (subData.userId !== decodedToken.uid) {
+        return res.status(403).json({
+          error: "You are not allowed to cancel this subscription",
+          code: "SUBSCRIPTION_FORBIDDEN",
+        });
       }
 
       const razorpay = getRazorpayClient();
-      const cancelled = await razorpay.subscriptions.cancel(subscriptionId);
-
-      await deactivateSubscription({
-        subscriptionId,
-        userId,
-        razorpayStatus: cancelled.status,
-        cancelledAt: new Date().toISOString(),
+      const cancelled = await razorpay.subscriptions.cancel(subscriptionId, {
+        cancel_at_cycle_end: true,
       });
+
+      const nowIso = new Date().toISOString();
+      const currentEnd = cancelled.current_end
+        ? new Date(cancelled.current_end * 1000).toISOString()
+        : subData.expiryDate || nowIso;
+      const keepAccessUntilEnd = new Date(currentEnd) > new Date();
+      const effectiveStatus = keepAccessUntilEnd ? "active" : "cancelled";
+
+      const batch = admin.firestore().batch();
+      batch.set(
+        admin.firestore().collection("subscriptions").doc(subscriptionId),
+        {
+          autoRenewal: false,
+          cancellationScheduled: keepAccessUntilEnd,
+          cancellationEffectiveAt: currentEnd,
+          subscriptionActive: keepAccessUntilEnd,
+          status: effectiveStatus,
+          razorpayStatus: cancelled.status,
+          currentEnd,
+          expiryDate: currentEnd,
+          cancelledAt: nowIso,
+          updatedAt: nowIso,
+        },
+        { merge: true }
+      );
+
+      batch.set(
+        admin.firestore().collection("users").doc(decodedToken.uid),
+        {
+          subscriptionActive: keepAccessUntilEnd,
+          expiryDate: currentEnd,
+          updatedAt: nowIso,
+        },
+        { merge: true }
+      );
+
+      if (subData.studentId) {
+        batch.set(
+          admin
+            .firestore()
+            .collection("defaultSchoolEnrollments")
+            .doc(subData.studentId),
+          {
+            isPaid: keepAccessUntilEnd,
+            updatedAt: nowIso,
+          },
+          { merge: true }
+        );
+      }
+
+      await batch.commit();
 
       return res.status(200).json({
         success: true,
-        message: "Subscription cancelled successfully",
-        status: cancelled.status,
+        message: keepAccessUntilEnd
+          ? "Subscription will cancel at the end of the current billing period"
+          : "Subscription cancelled successfully",
+        status: effectiveStatus,
+        razorpayStatus: cancelled.status,
+        cancellationScheduled: keepAccessUntilEnd,
+        cancellationEffectiveAt: currentEnd,
       });
     } catch (err) {
       console.error("cancelSubscription error:", err);
       return res.status(err.statusCode || 500).json({
         error: err.message || "Failed to cancel subscription",
         code: err.code || "CANCEL_FAILED",
+      });
+    }
+  });
+});
+
+// ===========================================================================
+// ENDPOINT: resumeSubscription
+// ===========================================================================
+
+exports.resumeSubscription = functions.https.onRequest((req, res) => {
+  cors(req, res, async () => {
+    try {
+      if (req.method !== "POST") {
+        return res.status(405).json({ error: "Method Not Allowed" });
+      }
+
+      const decodedToken = await authenticateRequest(req);
+      const { subscriptionId } = req.body || {};
+      if (!subscriptionId) {
+        return res.status(400).json({ error: "Missing subscriptionId" });
+      }
+
+      const subRef = admin
+        .firestore()
+        .collection("subscriptions")
+        .doc(subscriptionId);
+      const subSnap = await subRef.get();
+
+      if (!subSnap.exists) {
+        return res.status(404).json({ error: "Subscription not found" });
+      }
+
+      const subData = subSnap.data() || {};
+      if (subData.userId !== decodedToken.uid) {
+        return res.status(403).json({
+          error: "You are not allowed to resume this subscription",
+          code: "SUBSCRIPTION_FORBIDDEN",
+        });
+      }
+
+      const razorpay = getRazorpayClient();
+      const resumed = await razorpay.subscriptions.resume(subscriptionId, {
+        resume_at: "now",
+      });
+
+      const batch = admin.firestore().batch();
+      const nowIso = new Date().toISOString();
+      const currentStart = resumed.current_start
+        ? new Date(resumed.current_start * 1000).toISOString()
+        : subData.startDate || nowIso;
+      const currentEnd = resumed.current_end
+        ? new Date(resumed.current_end * 1000).toISOString()
+        : subData.expiryDate || nowIso;
+      const isActive = resumed.status === "active";
+
+      batch.set(
+        subRef,
+        {
+          autoRenewal: true,
+          subscriptionActive: isActive,
+          status: resumed.status,
+          razorpayStatus: resumed.status,
+          startDate: currentStart,
+          expiryDate: currentEnd,
+          updatedAt: nowIso,
+        },
+        { merge: true }
+      );
+
+      const userRef = admin.firestore().collection("users").doc(decodedToken.uid);
+      batch.set(
+        userRef,
+        {
+          subscriptionActive: isActive,
+          startDate: currentStart,
+          expiryDate: currentEnd,
+          updatedAt: nowIso,
+        },
+        { merge: true }
+      );
+
+      if (subData.studentId) {
+        const enrollmentRef = admin
+          .firestore()
+          .collection("defaultSchoolEnrollments")
+          .doc(subData.studentId);
+        batch.set(
+          enrollmentRef,
+          {
+            isPaid: isActive,
+            updatedAt: nowIso,
+          },
+          { merge: true }
+        );
+      }
+
+      await batch.commit();
+
+      return res.status(200).json({
+        success: true,
+        message: "Subscription resumed successfully",
+        subscription: {
+          id: resumed.id,
+          status: resumed.status,
+          currentStart,
+          currentEnd,
+        },
+      });
+    } catch (err) {
+      console.error("resumeSubscription error:", err);
+      return res.status(err.statusCode || 500).json({
+        error: err.message || "Failed to resume subscription",
+        code: err.code || "RESUME_FAILED",
       });
     }
   });
@@ -771,10 +1063,11 @@ exports.createCustomPaymentLink = functions.https.onRequest((req, res) => {
       if (!userId) return res.status(400).json({ error: "Missing userId" });
 
       const isDefaultSchool = purpose === "defaultSchool";
-      const paymentAmount = Number(amount || 0);
-      if (!Number.isFinite(paymentAmount) || paymentAmount < 100) {
+      const paymentAmountRupees = Number(amount || 0);
+      if (!Number.isFinite(paymentAmountRupees) || paymentAmountRupees < 1) {
         return res.status(400).json({ error: "Invalid payment amount." });
       }
+      const paymentAmount = toPaise(paymentAmountRupees);
 
       const description = isDefaultSchool
         ? `Default School Access — ${schoolName || schoolId || "School"}`
@@ -844,6 +1137,24 @@ exports.createCustomPaymentLink = functions.https.onRequest((req, res) => {
 
 exports.verifyPayment = functions.https.onRequest(async (req, res) => {
   try {
+    const webhookSecret =
+      process.env.RAZORPAY_PAYMENT_LINK_WEBHOOK_SECRET ||
+      process.env.RAZORPAY_WEBHOOK_SECRET;
+    if (!webhookSecret) {
+      console.error(
+        "verifyPayment webhook secret is not configured. Set RAZORPAY_PAYMENT_LINK_WEBHOOK_SECRET or RAZORPAY_WEBHOOK_SECRET."
+      );
+      return res.status(503).send("Webhook secret not configured");
+    }
+
+    const signature = req.headers["x-razorpay-signature"];
+    const rawBody = req.rawBody;
+    const valid = verifyWebhookSignature(rawBody, signature, webhookSecret);
+    if (!valid) {
+      console.warn("Invalid payment webhook signature - request rejected");
+      return res.status(400).send("Invalid signature");
+    }
+
     const { event, payload } = req.body;
 
     if (event === "payment_link.paid") {

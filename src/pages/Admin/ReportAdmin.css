@@ -1,56 +1,113 @@
 .report-admin-container {
-  padding: 2rem;
+  padding: 1rem;
   font-family: "Segoe UI", sans-serif;
-  background: #f7f9fb;
-  min-height: 100vh;
+  background: linear-gradient(180deg, #f8fbff 0%, #f1f6fd 100%);
+  min-height: 100%;
+  border-radius: 18px;
 }
 
-.header-section {
+.report-admin-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-end;
+  gap: 1rem;
   flex-wrap: wrap;
+  margin-bottom: 1rem;
 }
 
-.selector {
-  margin-top: 10px;
+.report-admin-kicker {
+  margin: 0 0 0.3rem;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #64748b;
 }
 
-.selector select {
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: 1px solid #ccc;
-  margin-left: 10px;
+.report-admin-container h2 {
+  margin: 0;
+  font-size: clamp(1.5rem, 2.8vw, 2rem);
 }
 
-.loading-msg,
-.info-msg {
-  font-size: 1.1rem;
-  color: #444;
-  margin-top: 20px;
+.report-admin-subtitle {
+  margin: 0.4rem 0 0;
+  color: #52606d;
+  max-width: 720px;
 }
 
-.summary-box {
-  margin: 20px 0;
-  padding: 12px 18px;
-  background-color: #eaf6ff;
-  border-radius: 8px;
-  display: flex;
-  justify-content: space-around;
-  font-weight: 500;
+.report-admin-chip {
+  white-space: nowrap;
+  border-radius: 999px;
+  padding: 0.72rem 0.95rem;
+  background: #e8f0ff;
+  color: #1d4ed8;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.filter-bar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.85rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  background: #ffffff;
+  border: 1px solid #dbe5f0;
+  border-radius: 16px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
+}
+
+.filter-bar select,
+.filter-bar input,
+.filter-bar button {
+  width: 100%;
+  min-height: 44px;
+  border-radius: 10px;
+  font-size: 0.95rem;
+}
+
+.filter-bar select,
+.filter-bar input {
+  border: 1px solid #d1d9e6;
+  background: #fff;
+  padding: 0.75rem 0.9rem;
+}
+
+.filter-bar button {
+  border: none;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.filter-bar button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.report-status {
+  margin: 0;
+  padding: 1rem;
+  border-radius: 14px;
+  background: #fff;
+  border: 1px solid #dbe5f0;
+  color: #475569;
 }
 
 .table-container {
   overflow-x: auto;
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid #dbe5f0;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
 }
 
 .report-table {
   width: 100%;
+  min-width: 860px;
   border-collapse: collapse;
   background: #fff;
-  box-shadow: 0 0 6px rgba(0,0,0,0.05);
-  border-radius: 8px;
-  overflow: hidden;
 }
 
 .report-table th,
@@ -61,54 +118,53 @@
 }
 
 .report-table th {
-  background: #f0f0f0;
-  font-weight: bold;
+  background: #f0f4ff;
+  font-weight: 700;
+  color: #1e293b;
 }
 
 .report-table tr:hover {
-  background: #f9f9f9;
+  background: #f9fbff;
 }
 
-.tag {
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-weight: bold;
-  color: white;
+.progress-container {
+  min-width: 120px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
 }
 
-.tag.green {
-  background-color: #28a745;
+.progress-bar {
+  min-height: 28px;
+  padding: 0 0.5rem;
+  color: #fff;
+  font-weight: 700;
+  font-size: 0.82rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
 }
 
-.tag.red {
-  background-color: #dc3545;
+@media (max-width: 900px) {
+  .filter-bar {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
-.tag.yellow {
-  background-color: #ffc107;
-  color: black;
-}
+@media (max-width: 640px) {
+  .report-admin-container {
+    padding: 0.5rem;
+    border-radius: 12px;
+  }
 
-.badge {
-  display: inline-block;
-  margin: 2px;
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 0.85rem;
-  font-weight: 500;
-}
+  .filter-bar {
+    grid-template-columns: 1fr;
+    padding: 0.85rem;
+  }
 
-.badge.green {
-  background-color: #d4edda;
-  color: #155724;
-}
-
-.badge.red {
-  background-color: #f8d7da;
-  color: #721c24;
-}
-
-.badge.gray {
-  background-color: #e2e3e5;
-  color: #383d41;
+  .report-admin-chip {
+    width: 100%;
+    text-align: center;
+  }
 }
