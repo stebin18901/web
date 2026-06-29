@@ -22,6 +22,21 @@
   color: #0f172a;
 }
 
+.demo-link-button {
+  border: 0;
+  background: transparent;
+  color: #2563eb;
+  padding: 0;
+  margin: 4px 0 8px;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.demo-link-button:hover {
+  text-decoration: underline;
+}
+
 .intake-form {
   display: grid;
   gap: 10px;

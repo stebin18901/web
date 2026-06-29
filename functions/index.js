@@ -512,28 +512,35 @@ exports.createRazorpaySubscription = functions.https.onRequest((req, res) => {
 
 exports.verifySubscriptionWebhook = functions.https.onRequest(
   async (req, res) => {
-    // Verify webhook signature first
-    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
-    const signature = req.headers["x-razorpay-signature"];
-    const rawBody = req.rawBody; // FIX: Use rawBody to avoid signature verification hashing failures
-
-    if (webhookSecret) {
-      const valid = verifyWebhookSignature(rawBody, signature, webhookSecret);
-      if (!valid) {
-        console.warn("Invalid webhook signature — request rejected");
-        return res.status(400).json({ error: "Invalid signature" });
-      }
-    } else {
-      console.warn(
-        "RAZORPAY_WEBHOOK_SECRET not set — skipping signature verification"
-      );
+    if (req.method !== "POST") {
+      return res.status(405).json({ error: "Method Not Allowed" });
     }
 
-    const { event, payload } = req.body;
+    const webhookSecret = process.env.RAZORPAY_WEBHOOK_SECRET;
+    const signature = req.headers["x-razorpay-signature"];
+    const rawBody = req.rawBody;
+
+    if (!webhookSecret) {
+      console.error(
+        "RAZORPAY_WEBHOOK_SECRET not set. Rejecting webhook until the secret is configured."
+      );
+      return res.status(503).json({ error: "Webhook secret not configured" });
+    }
+
+    const valid = verifyWebhookSignature(rawBody, signature, webhookSecret);
+    if (!valid) {
+      console.warn("Invalid webhook signature - request rejected");
+      return res.status(400).json({ error: "Invalid signature" });
+    }
+
+    const { event, payload } = req.body || {};
+    if (!event || !payload) {
+      return res.status(400).json({ error: "Invalid webhook payload" });
+    }
+
     console.log("Webhook event received:", event);
 
     try {
-      // ── subscription.authenticated ────────────────────────────────────────
       if (
         event === "subscription.authenticated" ||
         event === "subscription.activated"
@@ -567,10 +574,7 @@ exports.verifySubscriptionWebhook = functions.https.onRequest(
           planId,
           timestamp: new Date().toISOString(),
         });
-      }
-
-      // ── invoice.paid ──────────────────────────────────────────────────────
-      else if (event === "invoice.paid") {
+      } else if (event === "invoice.paid") {
         const invoice = payload.invoice.entity;
         const subscriptionId = invoice.subscription_id;
         if (!subscriptionId) {
@@ -598,7 +602,6 @@ exports.verifySubscriptionWebhook = functions.https.onRequest(
           amount,
         });
 
-        // Update renewal-specific fields on subscription doc
         await admin
           .firestore()
           .collection("subscriptions")
@@ -618,10 +621,7 @@ exports.verifySubscriptionWebhook = functions.https.onRequest(
           planId,
           timestamp: new Date().toISOString(),
         });
-      }
-
-      // ── subscription.updated ──────────────────────────────────────────────
-      else if (event === "subscription.updated") {
+      } else if (event === "subscription.updated") {
         const sub = payload.subscription.entity;
         await admin
           .firestore()
@@ -630,15 +630,11 @@ exports.verifySubscriptionWebhook = functions.https.onRequest(
           .set(
             {
               razorpayStatus: sub.status,
-              status: sub.status,
               updatedAt: new Date().toISOString(),
             },
             { merge: true }
           );
-      }
-
-      // ── subscription.paused ───────────────────────────────────────────────
-      else if (event === "subscription.paused") {
+      } else if (event === "subscription.paused") {
         const sub = payload.subscription.entity;
         const notes = sub.notes || {};
         await deactivateSubscription({
@@ -646,45 +642,45 @@ exports.verifySubscriptionWebhook = functions.https.onRequest(
           userId: notes.userId,
           razorpayStatus: "paused",
         });
-      }
-
-      // ── subscription.resumed ──────────────────────────────────────────────
-      else if (event === "subscription.resumed") {
+      } else if (event === "subscription.resumed") {
         const sub = payload.subscription.entity;
         const notes = sub.notes || {};
         const planId = notes.planId || "";
-        const expiryDate = calculateExpiryDate(planId);
-        const studentId = notes.studentId || notes.userId;
+        const startDate = sub.current_start
+          ? new Date(sub.current_start * 1000)
+          : new Date();
+        const expiryDate = sub.current_end
+          ? new Date(sub.current_end * 1000)
+          : calculateExpiryDate(planId);
 
         await activateSubscription({
           subscriptionId: sub.id,
-          studentId,
+          studentId: notes.studentId || notes.userId,
           userId: notes.userId,
           planId,
-          startDate: new Date(),
+          startDate,
           expiryDate,
           razorpayStatus: sub.status,
         });
-      }
-
-      // ── subscription.cancelled ────────────────────────────────────────────
-      else if (event === "subscription.cancelled") {
+      } else if (event === "subscription.cancelled") {
         const sub = payload.subscription.entity;
         const notes = sub.notes || {};
-        const studentId = notes.studentId || notes.userId;
+        const endedAt = sub.ended_at
+          ? new Date(sub.ended_at * 1000).toISOString()
+          : new Date().toISOString();
 
         await deactivateSubscription({
           subscriptionId: sub.id,
           userId: notes.userId,
           razorpayStatus: "cancelled",
-          cancelledAt: new Date().toISOString(),
+          cancelledAt: endedAt,
         });
 
-        if (studentId) {
+        if (notes.studentId) {
           await admin
             .firestore()
             .collection("defaultSchoolEnrollments")
-            .doc(studentId)
+            .doc(notes.studentId)
             .set(
               {
                 isPaid: false,
@@ -693,10 +689,7 @@ exports.verifySubscriptionWebhook = functions.https.onRequest(
               { merge: true }
             );
         }
-      }
-
-      // ── subscription.completed ────────────────────────────────────────────
-      else if (event === "subscription.completed") {
+      } else if (event === "subscription.completed") {
         const sub = payload.subscription.entity;
         const notes = sub.notes || {};
         await deactivateSubscription({
@@ -704,10 +697,7 @@ exports.verifySubscriptionWebhook = functions.https.onRequest(
           userId: notes.userId,
           razorpayStatus: "completed",
         });
-      }
-
-      // ── payment.failed (subscription charge failure) ───────────────────────
-      else if (event === "payment.failed") {
+      } else if (event === "payment.failed") {
         const payment = payload.payment?.entity;
         if (payment?.subscription_id) {
           await admin

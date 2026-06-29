@@ -13,6 +13,7 @@ import AdminCreateLeague from "./Admin/AdminCreateLeague";
 import AdminSubscriptionSettings from "./Admin/AdminSubscriptionSettings";
 import AdminQuizDemoPdf from "./Admin/AdminQuizDemoPdf";
 import AdminApkManagement from "./Admin/AdminApkManagement";
+import AdminHtmlDemoManager from "./Admin/AdminHtmlDemoManager";
 
 const tabs = [
   { id: "schoolQuiz", label: "School Quiz" },
@@ -21,6 +22,7 @@ const tabs = [
   { id: "createquiz", label: "Chapter Mgt" },
   { id: "createchapter", label: "Create chapter" },
   { id: "quizdemopdf", label: "Quiz Demo PDF" },
+  { id: "demo", label: "Demo" },
   { id: "report", label: "Report card" },
   { id: "feature", label: "Feature" },
   { id: "calender", label: "Calender" },
@@ -89,6 +91,7 @@ const AdminPanel = () => {
           {activeTab === "createquiz" && <SchoolQuizSwitch />}
           {activeTab === "createchapter" && <AdminQCreate />}
           {activeTab === "quizdemopdf" && <AdminQuizDemoPdf />}
+          {activeTab === "demo" && <AdminHtmlDemoManager />}
           {activeTab === "report" && <ReportAdmin />}
           {activeTab === "premiumchapter" && <CreateTutor />}
           {activeTab === "feature" && <AdminAddFeature />}

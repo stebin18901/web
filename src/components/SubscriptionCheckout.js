@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
-import { doc, getDoc, setDoc } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import { db, auth } from "../firebase/firebaseConfig";
 import {
   SUBSCRIPTION_FEATURES,
@@ -138,19 +138,6 @@ const SubscriptionCheckout = () => {
       if (!data.success || !data.shortUrl) {
         throw new Error("No checkout URL received");
       }
-
-      await setDoc(
-        doc(db, "subscriptions", data.subscriptionId),
-        {
-          userId: user.uid,
-          planId: selectedPlan,
-          status: "created",
-          subscriptionActive: false,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        { merge: true }
-      );
 
       window.location.href = data.shortUrl;
     } catch (err) {

@@ -238,6 +238,23 @@
   margin-bottom: 12px;
 }
 
+.login-demo-link-wrap {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+
+.login-demo-link {
+  color: #2563eb;
+  font-size: 0.92rem;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.login-demo-link:hover {
+  text-decoration: underline;
+}
+
 .login-link-button {
   display: inline-flex;
   align-items: center;
@@ -558,5 +575,9 @@ select.login-input {
   .login-public-actions,
   .login-trust-links {
     flex-direction: column;
+  }
+
+  .login-demo-link-wrap {
+    justify-content: flex-start;
   }
 }

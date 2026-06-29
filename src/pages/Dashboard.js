@@ -78,6 +78,12 @@ const buildSessionFromEnrollment = (studentId, enrollment, fallbackSession) => {
       enrollment?.schoolName || fallbackSession?.schoolName || "Default School",
     schoolId: enrollment?.schoolId || fallbackSession?.schoolId || "",
     accessMode: enrollment?.accessMode || fallbackSession?.accessMode || "default-school",
+    isPaid:
+      enrollment?.isPaid === true || fallbackSession?.isPaid === true,
+    paymentStatus:
+      enrollment?.paymentStatus || fallbackSession?.paymentStatus || "",
+    registrationStatus:
+      enrollment?.registrationStatus || fallbackSession?.registrationStatus || "",
     planId: enrollment?.planId || fallbackSession?.planId || "",
     planName: enrollment?.planName || fallbackSession?.planName || "",
     planMaxClasses:

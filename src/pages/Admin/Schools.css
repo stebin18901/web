@@ -64,6 +64,30 @@
   font-size: 0.86rem;
 }
 
+.schools-inner-tabs {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.schools-inner-tabs button {
+  border: 1px solid #cddcff;
+  background: #ffffff;
+  color: #3152b1;
+  border-radius: 999px;
+  padding: 0.7rem 1rem;
+  font-size: 0.92rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.schools-inner-tabs button.active {
+  background: #3152b1;
+  color: #ffffff;
+  border-color: #3152b1;
+}
+
 .school-form {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
@@ -222,6 +246,15 @@
   gap: 0.25rem;
 }
 
+.school-item-link {
+  border: 0;
+  background: transparent;
+  padding: 0;
+  text-align: left;
+  cursor: pointer;
+  flex: 1;
+}
+
 .school-item-title-row {
   display: flex;
   align-items: center;
@@ -232,6 +265,31 @@
 .school-item-id {
   color: var(--text-light);
   font-size: 0.88rem;
+}
+
+.school-link-box {
+  flex: 1;
+  min-width: 220px;
+  display: grid;
+  gap: 6px;
+}
+
+.school-link-box label {
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.school-link-box input {
+  width: 100%;
+  border: 1px solid #cddcff;
+  border-radius: 8px;
+  background: #fff;
+  padding: 0.6rem 0.7rem;
+  font-size: 0.86rem;
+  color: #1e293b;
 }
 
 .schools-list p {
@@ -319,6 +377,98 @@
   transform: translateY(-1px);
 }
 
+.schools-details-view {
+  display: grid;
+  gap: 1rem;
+}
+
+.schools-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.schools-stat-card,
+.schools-details-card {
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: var(--shadow-md);
+  padding: 1rem;
+}
+
+.schools-stat-card span {
+  display: block;
+  color: #64748b;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.schools-stat-card strong {
+  display: block;
+  margin-top: 0.45rem;
+  color: #12316d;
+  font-size: 1.8rem;
+}
+
+.schools-details-head h2 {
+  margin: 0 0 0.3rem;
+  color: #1e293b;
+}
+
+.schools-details-head p {
+  margin: 0 0 1rem;
+  color: #64748b;
+}
+
+.schools-details-table-wrap {
+  overflow-x: auto;
+}
+
+.schools-details-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.schools-details-table th,
+.schools-details-table td {
+  padding: 0.85rem 0.75rem;
+  border-bottom: 1px solid #e2e8f0;
+  text-align: left;
+  vertical-align: top;
+}
+
+.schools-details-table th {
+  color: #475569;
+  font-size: 0.82rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.schools-details-table td {
+  color: #0f172a;
+  font-size: 0.94rem;
+}
+
+.schools-link-cell a {
+  color: #3152b1;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.schools-link-cell a:hover {
+  text-decoration: underline;
+}
+
+.schools-details-row {
+  cursor: pointer;
+}
+
+.schools-details-row:hover {
+  background: #f8fbff;
+}
+
 @media (max-width: 768px) {
   .schools-container {
     padding: 0.25rem;
@@ -337,6 +487,14 @@
   .school-form {
     grid-template-columns: 1fr;
     padding: 0.9rem;
+  }
+
+  .schools-inner-tabs {
+    flex-direction: column;
+  }
+
+  .schools-stats-grid {
+    grid-template-columns: 1fr 1fr;
   }
 
   .schools-list li {

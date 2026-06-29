@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { doc, getDoc } from "firebase/firestore";
 import { db, auth } from "../firebase/firebaseConfig";
 import {
+  API_ENDPOINTS,
   SUBSCRIPTION_PLANS,
   getSubscriptionStatusMessage,
   getDaysRemaining,
@@ -13,7 +14,6 @@ import "./SubscriptionStatus.css";
 const SubscriptionStatus = () => {
   const navigate = useNavigate();
   const [subscription, setSubscription] = useState(null);
-  const [userData, setUserData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [cancelling, setCancelling] = useState(false);
   const [resuming, setResuming] = useState(false);
@@ -34,7 +34,6 @@ const SubscriptionStatus = () => {
         const userRef = doc(db, "users", user.uid);
         const userSnap = await getDoc(userRef);
         const userData = userSnap.exists() ? userSnap.data() : {};
-        setUserData(userData);
 
         // Get subscription
         if (userData.razorpaySubscriptionId) {
@@ -77,19 +76,16 @@ const SubscriptionStatus = () => {
         throw new Error("Please log in again to manage your subscription.");
       }
       const idToken = await user.getIdToken();
-      const response = await fetch(
-        "https://us-central1-dreamprojects-cda5b.cloudfunctions.net/cancelSubscription",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${idToken}`,
-          },
-          body: JSON.stringify({
-            subscriptionId: subscription.razorpaySubscriptionId,
-          }),
-        }
-      );
+      const response = await fetch(API_ENDPOINTS.CANCEL_SUBSCRIPTION, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          subscriptionId: subscription.razorpaySubscriptionId,
+        }),
+      });
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -100,9 +96,6 @@ const SubscriptionStatus = () => {
       const cancelSuccessMessage =
         data.message ||
         "Subscription cancellation scheduled for the end of your current billing period.";
-
-      setSuccess("✅ Subscription cancelled. You'll maintain access until renewal date.");
-      
       setSuccess(cancelSuccessMessage);
 
       // Update local state
@@ -150,19 +143,16 @@ const SubscriptionStatus = () => {
       }
       const idToken = await user.getIdToken();
 
-      const response = await fetch(
-        "https://us-central1-dreamprojects-cda5b.cloudfunctions.net/resumeSubscription",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${idToken}`,
-          },
-          body: JSON.stringify({
-            subscriptionId: subscription.razorpaySubscriptionId,
-          }),
-        }
-      );
+      const response = await fetch(API_ENDPOINTS.RESUME_SUBSCRIPTION, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          subscriptionId: subscription.razorpaySubscriptionId,
+        }),
+      });
 
       if (!response.ok) {
         const errorData = await response.json();

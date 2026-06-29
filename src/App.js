@@ -38,6 +38,8 @@ import PlanSelection from "./pages/PlanSelection";
 import SchoolRegistrationSuccess from "./pages/SchoolRegistrationSuccess";
 import QuizDemoSharePage from "./pages/QuizDemoSharePage";
 import Downloads from "./pages/Downloads";
+import DemoViewer from "./pages/DemoViewer";
+import AdminSchoolDetails from "./pages/Admin/AdminSchoolDetails";
 
 // --- STEP 3 IMPORTS: Compliance Components ---
 import Footer from "./components/Footer";
@@ -53,7 +55,7 @@ const PrivateRoute = ({ element }) => {
   if (rawStudentSession) {
     try {
       const studentSession = JSON.parse(rawStudentSession);
-      if (studentSession?.accessMode === "school-auth") {
+      if (["school-auth", "school-plan"].includes(studentSession?.accessMode)) {
         const paymentStatus = String(studentSession.paymentStatus || "").toLowerCase();
         const registrationStatus = String(studentSession.registrationStatus || "").toLowerCase();
         const paid =
@@ -87,6 +89,7 @@ const AppContent = () => {
           <Route path="/" element={<MainHome />} />
           <Route path="/login" element={<Login />} />
           <Route path="/demo" element={<DemoApp />} />
+          <Route path="/demo-view" element={<DemoViewer />} />
           <Route path="/quiz/:quizId" element={<PrivateRoute element={<QuizPage />} />} />
           <Route path="/quiz-report" element={<PrivateRoute element={<QuizAttemptReport />} />} />
           <Route path="/dashboard" element={<PrivateRoute element={<Dashboard />} />} />
@@ -96,6 +99,9 @@ const AppContent = () => {
           <Route path="/league/create-quiz" element={<PrivateRoute element={<LeagueCreateQuizPage />} />} />
           <Route path="/league/create-quiz/:quizId" element={<PrivateRoute element={<LeagueCreateQuizPage />} />} />
           <Route path="/admin189201" element={<AdminProtect element={<AdminPanel />} />} />
+          <Route path="/admin1899201" element={<AdminProtect element={<AdminPanel />} />} />
+          <Route path="/admin189201/schools/:schoolId" element={<AdminProtect element={<AdminSchoolDetails />} />} />
+          <Route path="/admin1899201/schools/:schoolId" element={<AdminProtect element={<AdminSchoolDetails />} />} />
           <Route path="/manage-league-admin" element={<AdminProtect element={<ManageLeagueAdmin />} />} />
           <Route path="/students/:id" element={<StudentProfile />} />
           <Route path="/school-admin/login" element={<SchoolAdmin />} />

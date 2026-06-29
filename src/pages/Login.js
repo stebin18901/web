@@ -24,7 +24,10 @@ import {
   normalizeClassName,
   normalizeSchoolId,
 } from "../config/defaultSchool";
+import { fetchDemoContent } from "../utils/demoContent";
 import "./Login.css";
+
+const PHONE_PLACEHOLDER = "Phone Number (10 digits, e.g. 9876543210)";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -207,6 +210,8 @@ const Login = () => {
   const [defaultPhoneVerified, setDefaultPhoneVerified] = useState(false);
   const [linkedAccounts, setLinkedAccounts] = useState([]);
   const [selectedLinkedAccountId, setSelectedLinkedAccountId] = useState("");
+  const [demoTitle, setDemoTitle] = useState("Demo");
+  const [hasDemoContent, setHasDemoContent] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -420,7 +425,7 @@ const Login = () => {
       if (err.code === "auth/too-many-requests")
         msg = "Too many OTP requests. Please wait a few minutes before trying again.";
       else if (err.code === "auth/invalid-phone-number")
-        msg = "Invalid phone number format.";
+        msg = "Invalid phone number format. Use 10 digits, for example 9876543210.";
       else if (err.code === "auth/operation-not-allowed")
         msg = "Phone authentication is not enabled. Please contact support.";
       else if (err.message) msg = err.message;
@@ -516,6 +521,20 @@ const Login = () => {
       }
     };
     fetchFeatures();
+  }, []);
+
+  useEffect(() => {
+    const loadDemoContent = async () => {
+      try {
+        const data = await fetchDemoContent();
+        setDemoTitle(data.title || "Demo");
+        setHasDemoContent(Boolean(String(data.html || "").trim()));
+      } catch {
+        setHasDemoContent(false);
+      }
+    };
+
+    loadDemoContent();
   }, []);
 
   useEffect(() => {
@@ -652,12 +671,12 @@ const Login = () => {
       }
 
       // Default-school flow (OTP-based)
-      if (schoolContext.accessMode === "default-school") {
-        const cleanPhone = normalizePhone(phone);
-        if (cleanPhone.length !== 10) {
-          setError("Enter a valid 10-digit phone number.");
-          return;
-        }
+        if (schoolContext.accessMode === "default-school") {
+          const cleanPhone = normalizePhone(phone);
+          if (cleanPhone.length !== 10) {
+          setError("Invalid phone number format. Use 10 digits, for example 9876543210.");
+            return;
+          }
 
         if (defaultAuthMode === "login") {
           if (!otpSent) {
@@ -1089,6 +1108,13 @@ const Login = () => {
             Contact Support
           </Link>
         </div>
+        {hasDemoContent && (
+          <div className="login-demo-link-wrap">
+            <Link to="/demo-view" className="login-demo-link">
+              View {demoTitle}
+            </Link>
+          </div>
+        )}
         <div className="login-trust-links">
           <Link to="/terms-and-conditions">Terms</Link>
           <Link to="/privacy-policy">Privacy</Link>
@@ -1187,12 +1213,15 @@ const Login = () => {
             <input
               type="tel"
               className="login-input"
-              placeholder="Phone number"
+              placeholder={PHONE_PLACEHOLDER}
               value={phone}
               onChange={(e) => {
-                setPhone(e.target.value);
+                setPhone(normalizePhone(e.target.value));
                 resetOtp();
               }}
+              inputMode="numeric"
+              maxLength={10}
+              autoComplete="tel-national"
               required
             />
 

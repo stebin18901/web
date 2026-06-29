@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { addDoc, collection, doc, getDoc, getDocs, query, setDoc, where } from "firebase/firestore";
 import { RecaptchaVerifier, signInWithPhoneNumber, signOut } from "firebase/auth";
@@ -8,10 +8,12 @@ import {
   MAX_PARENT_ACCOUNTS_PER_PHONE,
   getUniqueClasses,
 } from "../../../config/defaultSchool";
+import { fetchDemoContent } from "../../../utils/demoContent";
 import "./ClassIntakeForm.css";
 
 const normalize = (v) => String(v || "").trim();
 const normalizePhone = (value) => String(value || "").replace(/\D/g, "").slice(-10);
+const PHONE_PLACEHOLDER = "Phone Number (10 digits, e.g. 9876543210)";
 
 export default function ClassIntakeForm() {
   const navigate = useNavigate();
@@ -27,8 +29,9 @@ export default function ClassIntakeForm() {
   const [confirmationResult, setConfirmationResult] = useState(null);
   const [otpNotice, setOtpNotice] = useState("");
   const [lastOtpRequestTime, setLastOtpRequestTime] = useState(0);
+  const [demoTitle, setDemoTitle] = useState("Demo");
+  const [hasDemoContent, setHasDemoContent] = useState(false);
   const OTP_COOLDOWN_MS = 60000;
-  const recaptchaWidgetIdRef = useRef(null);
 
   const schoolIdValue = useMemo(() => normalize(schoolId), [schoolId]);
   const normalizedSchoolId = useMemo(() => schoolIdValue.toLowerCase(), [schoolIdValue]);
@@ -115,6 +118,20 @@ export default function ClassIntakeForm() {
     };
   }, []);
 
+  useEffect(() => {
+    const loadDemoContent = async () => {
+      try {
+        const data = await fetchDemoContent();
+        setDemoTitle(data.title || "Demo");
+        setHasDemoContent(Boolean(String(data.html || "").trim()));
+      } catch {
+        setHasDemoContent(false);
+      }
+    };
+
+    loadDemoContent();
+  }, []);
+
   const clearRecaptchaVerifier = () => {
     if (window.classIntakeRecaptchaVerifier) {
       try {
@@ -123,42 +140,11 @@ export default function ClassIntakeForm() {
         // Ignore cleanup failures
       }
       window.classIntakeRecaptchaVerifier = null;
-      recaptchaWidgetIdRef.current = null;
     }
     const container = document.getElementById("class-intake-recaptcha");
     if (container) {
       container.innerHTML = '<div id="class-intake-recaptcha-inner"></div>';
     }
-  };
-
-  const ensureRecaptchaVerifier = async () => {
-    const verifierContainer = document.getElementById("class-intake-recaptcha-inner");
-    if (!verifierContainer) {
-      throw new Error("reCAPTCHA container not found. Please refresh the page.");
-    }
-
-    if (!window.classIntakeRecaptchaVerifier) {
-      window.classIntakeRecaptchaVerifier = new RecaptchaVerifier(
-        auth,
-        "class-intake-recaptcha-inner",
-        {
-          size: "invisible",
-          callback: () => {
-            setStatus("");
-          },
-          "expired-callback": () => {
-            setStatus("reCAPTCHA expired. Please try sending OTP again.");
-            clearRecaptchaVerifier();
-          },
-        }
-      );
-    }
-
-    if (recaptchaWidgetIdRef.current === null) {
-      recaptchaWidgetIdRef.current = await window.classIntakeRecaptchaVerifier.render();
-    }
-
-    return window.classIntakeRecaptchaVerifier;
   };
 
   const resetOtpState = () => {
@@ -181,13 +167,34 @@ export default function ClassIntakeForm() {
       }
 
       clearRecaptchaVerifier();
+      await signOut(auth).catch(() => {});
+
+      const verifierContainer = document.getElementById("class-intake-recaptcha-inner");
+      if (!verifierContainer) {
+        setStatus("reCAPTCHA container not found. Please refresh the page.");
+        return false;
+      }
+
       auth.languageCode = "en";
-      const verifier = await ensureRecaptchaVerifier();
+      window.classIntakeRecaptchaVerifier = new RecaptchaVerifier(
+        auth,
+        "class-intake-recaptcha-inner",
+        {
+          size: "invisible",
+          callback: () => {
+            setStatus("");
+          },
+          "expired-callback": () => {
+            setStatus("reCAPTCHA expired. Please try sending OTP again.");
+            clearRecaptchaVerifier();
+          },
+        }
+      );
 
       const confirmation = await signInWithPhoneNumber(
         auth,
         `+91${cleanPhone}`,
-        verifier
+        window.classIntakeRecaptchaVerifier
       );
 
       setLastOtpRequestTime(Date.now());
@@ -205,7 +212,7 @@ export default function ClassIntakeForm() {
       if (err.code === "auth/too-many-requests") {
         message = "Too many OTP requests. Please wait a few minutes before trying again.";
       } else if (err.code === "auth/invalid-phone-number") {
-        message = "Invalid phone number format.";
+        message = "Invalid phone number format. Use 10 digits, for example 9876543210.";
       } else if (err.code === "auth/operation-not-allowed") {
         message = "Phone authentication is not enabled. Please contact support.";
       } else if (err.message) {
@@ -231,7 +238,6 @@ export default function ClassIntakeForm() {
       await confirmationResult.confirm(otpCode.trim());
       setOtpVerified(true);
       setOtpNotice("Phone number verified.");
-      await signOut(auth).catch(() => {});
       return true;
     } catch {
       setStatus("Invalid OTP. Please try again.");
@@ -287,7 +293,7 @@ export default function ClassIntakeForm() {
     }
 
     if (cleanPhone.length !== 10) {
-      setStatus("Enter a valid 10-digit phone number.");
+      setStatus("Invalid phone number format. Use 10 digits, for example 9876543210.");
       return;
     }
 
@@ -473,6 +479,15 @@ export default function ClassIntakeForm() {
         <p>
           School: <strong>{schoolName}</strong>
         </p>
+        {hasDemoContent && (
+          <button
+            type="button"
+            className="demo-link-button"
+            onClick={() => window.open("/demo-view", "_blank", "noopener,noreferrer")}
+          >
+            View {demoTitle}
+          </button>
+        )}
 
         {formType === "student" && (
           <div className="plan-summary-card">
@@ -528,11 +543,14 @@ export default function ClassIntakeForm() {
             <input
               value={studentForm.phone}
               onChange={(e) => {
-                setStudentForm((p) => ({ ...p, phone: e.target.value }));
+                setStudentForm((p) => ({ ...p, phone: normalizePhone(e.target.value) }));
                 if (otpSent || otpVerified) resetOtpState();
               }}
-              placeholder="Phone Number"
+              placeholder={PHONE_PLACEHOLDER}
+              type="tel"
               inputMode="numeric"
+              maxLength={10}
+              autoComplete="tel-national"
             />
             {otpSent && (
               <input
@@ -582,8 +600,12 @@ export default function ClassIntakeForm() {
             </select>
             <input
               value={teacherForm.phone}
-              onChange={(e) => setTeacherForm((p) => ({ ...p, phone: e.target.value }))}
-              placeholder="Phone (optional)"
+              onChange={(e) => setTeacherForm((p) => ({ ...p, phone: normalizePhone(e.target.value) }))}
+              placeholder="Phone (optional, 10 digits)"
+              type="tel"
+              inputMode="numeric"
+              maxLength={10}
+              autoComplete="tel-national"
             />
             <input
               value={teacherForm.subject}

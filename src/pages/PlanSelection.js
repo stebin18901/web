@@ -3,6 +3,7 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { doc, getDoc, setDoc } from "firebase/firestore";
 import { db, auth } from "../firebase/firebaseConfig";
 import {
+  API_ENDPOINTS,
   DEFAULT_PRICING,
   SUBSCRIPTION_FEATURES,
   getPlanById,
@@ -11,6 +12,34 @@ import {
   getVisibleSubscriptionPlans,
 } from "../config/subscriptionConfig";
 import "./PlanSelection.css";
+
+const buildStudentSession = (enrollmentId, enrollment) => ({
+  id: enrollmentId,
+  name: enrollment.name || enrollment.fullName || enrollment.phone || "Student",
+  className: enrollment.className || "Default",
+  defaultClassName: enrollment.className || "",
+  selectedClasses:
+    Array.isArray(enrollment.selectedClasses) && enrollment.selectedClasses.length
+      ? enrollment.selectedClasses
+      : [enrollment.className].filter(Boolean),
+  classProfiles: enrollment.classProfiles || {},
+  section: enrollment.section || "",
+  rollNumber: enrollment.rollNumber || "",
+  phone: enrollment.phone || "",
+  schoolId: enrollment.schoolId || "",
+  schoolName: enrollment.schoolName || "School",
+  accessMode: enrollment.accessMode || "default-school",
+  isPaid: enrollment.isPaid === true,
+  paymentStatus: enrollment.paymentStatus || "",
+  registrationStatus: enrollment.registrationStatus || "",
+  planId: enrollment.planId || "",
+  planName: enrollment.planName || "",
+  planMaxClasses: enrollment.planMaxClasses || enrollment.selectedClasses?.length || 1,
+  razorpaySubscriptionId: enrollment.razorpaySubscriptionId || "",
+  expiryDate: enrollment.expiryDate || "",
+  startDate: enrollment.startDate || "",
+  loggedInAt: new Date().toISOString(),
+});
 
 const PlanSelection = () => {
   const [searchParams] = useSearchParams();
@@ -108,7 +137,10 @@ const PlanSelection = () => {
 
     try {
       if (enrollment.isPaid && enrollment.razorpaySubscriptionId) {
-        localStorage.setItem("schoolStudentSession", JSON.stringify(enrollment));
+        localStorage.setItem(
+          "schoolStudentSession",
+          JSON.stringify(buildStudentSession(enrollmentId, enrollment))
+        );
         navigate("/dashboard", { replace: true });
         return;
       }
@@ -136,24 +168,21 @@ const PlanSelection = () => {
       const userPhone = enrollment.phone || auth.currentUser?.phoneNumber || "";
       const userName = enrollment.name || "Student";
 
-      const response = await fetch(
-        "https://us-central1-dreamprojects-cda5b.cloudfunctions.net/createRazorpaySubscription",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${idToken}`,
-          },
-          body: JSON.stringify({
-            studentId: enrollmentId,
-            name: userName,
-            email: auth.currentUser?.email || enrollment.email || "user@example.com",
-            phone: userPhone,
-            planId: selectedPlanId,
-            schoolId: enrollment.schoolId || "default",
-          }),
-        }
-      );
+      const response = await fetch(API_ENDPOINTS.CREATE_SUBSCRIPTION, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${idToken}`,
+        },
+        body: JSON.stringify({
+          studentId: enrollmentId,
+          name: userName,
+          email: auth.currentUser?.email || enrollment.email || "user@example.com",
+          phone: userPhone,
+          planId: selectedPlanId,
+          schoolId: enrollment.schoolId || "default",
+        }),
+      });
 
       if (!response.ok) {
         const errorData = await response.json();
@@ -178,6 +207,11 @@ const PlanSelection = () => {
         { merge: true }
       );
 
+      if (data.shortUrl) {
+        window.location.assign(data.shortUrl);
+        return;
+      }
+
       if (!window.Razorpay) {
         throw new Error("Razorpay script not loaded. Please refresh the page.");
       }
@@ -188,7 +222,7 @@ const PlanSelection = () => {
         name: "MINT Entrance Foundation",
         description: `${selectedPlan.name} Subscription`,
         handler: function handleSuccess(responseData) {
-          window.location.href = `https://hepsy.in/payment-success?defaultStudentId=${encodeURIComponent(
+          window.location.href = `${window.location.origin}/payment-success?defaultStudentId=${encodeURIComponent(
             enrollmentId
           )}&razorpay_payment_id=${encodeURIComponent(
             responseData.razorpay_payment_id

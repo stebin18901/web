@@ -87,6 +87,7 @@ export const API_ENDPOINTS = {
   VERIFY_SUBSCRIPTION: "https://us-central1-dreamprojects-cda5b.cloudfunctions.net/verifySubscriptionWebhook",
   CANCEL_SUBSCRIPTION: "https://us-central1-dreamprojects-cda5b.cloudfunctions.net/cancelSubscription",
   FETCH_SUBSCRIPTION: "https://us-central1-dreamprojects-cda5b.cloudfunctions.net/fetchSubscription",
+  RESUME_SUBSCRIPTION: "https://us-central1-dreamprojects-cda5b.cloudfunctions.net/resumeSubscription",
 };
 
 // ==================== SUBSCRIPTION STATUSES ====================
