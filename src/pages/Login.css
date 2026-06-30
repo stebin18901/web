@@ -455,6 +455,8 @@
   padding: 1rem 1.15rem;
   margin-bottom: 16px;
   color: #111827;
+  -webkit-text-fill-color: #111827;
+  caret-color: #111827;
   background: rgba(255, 255, 255, 0.92);
   border: 1px solid #d5dfef;
   border-radius: 18px;
@@ -465,15 +467,27 @@
 }
 
 .login-input::placeholder {
-  color: #8b95a7;
+  color: rgba(139, 149, 167, 0.72);
   font-weight: 700;
 }
 
 .login-input:focus {
   border-color: #2563eb;
   background: #ffffff;
+  color: #111827;
+  -webkit-text-fill-color: #111827;
   box-shadow: 0 0 0 5px rgba(37, 99, 235, 0.12);
   transform: translateY(-1px);
+}
+
+.login-input:-webkit-autofill,
+.login-input:-webkit-autofill:hover,
+.login-input:-webkit-autofill:focus,
+.login-input:-webkit-autofill:active {
+  -webkit-text-fill-color: #111827;
+  caret-color: #111827;
+  box-shadow: 0 0 0 1000px #ffffff inset;
+  transition: background-color 9999s ease-in-out 0s;
 }
 
 select.login-input {

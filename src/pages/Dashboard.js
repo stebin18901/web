@@ -114,25 +114,23 @@ const makeSubjectLogo = (subjectName = "") => {
   if (key.includes("computer") || key.includes("coding")) return { icon: "code", className: "logo-coding" };
   return { icon: "sub", className: "logo-default" };
 };
-const SubjectIcon = ({ type }) => {
-  const map = {
-    fx: "π",
-    flask: "⚗️",
-    eng: "✍️",
-    phy: "⚛️",
-    chem: "🧪",
-    bio: "🧬",
-    his: "📜",
-    geo: "🌍",
-    code: "</>",
-    sub: "📚",
-  };
-  return (
-    <span className="subject-logo-glyph" aria-hidden="true">
-      {map[type] || "📚"}
-    </span>
-  );
-};
+
+
+const dashboardNavItems = [
+  { key: "home", label: "Home", hint: "Overview", description: "Current dashboard view" },
+  { key: "subjects", label: "Learn", hint: "Coming soon", description: "Guided learning journeys are being prepared" },
+  { key: "concepts", label: "Concepts", hint: "Coming soon", description: "Concept maps on the way" },
+  { key: "practice", label: "Practice", hint: "Browse chapters", description: "Browse subjects, chapters, notes, and tests" },
+  { key: "mock-tests", label: "Mock Tests", hint: "Coming soon", description: "Full test simulations soon" },
+  { key: "leaderboard", label: "Leaderboard", hint: "Class ranking", description: "Competitive ranking view" },
+  { key: "progress", label: "My Progress", hint: "Track growth", description: "Detailed learning analytics" },
+  { key: "notes", label: "Notes", hint: "Coming soon", description: "Saved revision notes soon" },
+  { key: "goals", label: "Weekly Goals", hint: "Coming soon", description: "Goal planner coming soon" },
+  { key: "profile", label: "Profile", hint: "Coming soon", description: "Profile tools coming soon" },
+];
+
+const dashboardBackdropUrl = `${process.env.PUBLIC_URL}/images/dashboard.png`;
+const practiceBackdropUrl = `${process.env.PUBLIC_URL}/images/week.png`;
 
 const Dashboard = () => {
   const [quizzes, setQuizzes] = useState([]);
@@ -145,6 +143,8 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [activeNav, setActiveNav] = useState("home");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [session, setSession] = useState(() => safeJsonParse(localStorage.getItem("schoolStudentSession")));
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [linkedAccounts, setLinkedAccounts] = useState([]);
@@ -413,6 +413,11 @@ const Dashboard = () => {
     return quizzes.filter((q) => String(q.subject || "General").trim().toLowerCase() === activeSubject);
   }, [quizzes, activeSubject]);
 
+  const selectedSubjectMeta = useMemo(
+    () => subjects.find((subject) => subject.key === activeSubject) || null,
+    [subjects, activeSubject]
+  );
+
   const getQuizOrderIndex = (quiz) => {
     const subjectToken = normalizeSubjectToken(quiz?.subject || "General");
     const sessionClassRaw = String(session?.className || "").trim();
@@ -667,6 +672,30 @@ const Dashboard = () => {
     return Math.min(100, Math.round((attempted / total) * 100));
   }, [chapters.length, reports.length, quizzes.length]);
 
+  const recentReports = useMemo(
+    () => [...reports].sort((a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0)),
+    [reports]
+  );
+
+  const progressCards = useMemo(
+    () => [
+      { label: "Overall Completion", value: `${overallProgress}%`, tone: "green" },
+      { label: "Average Accuracy", value: `${studentStats.avgAccuracy}%`, tone: "blue" },
+      { label: "Total Points", value: studentStats.totalPoints, tone: "gold" },
+      { label: "Class Rank", value: `#${studentStats.rank}`, tone: "violet" },
+    ],
+    [overallProgress, studentStats]
+  );
+
+  const placeholderView = useMemo(() => {
+    const activeItem = dashboardNavItems.find((item) => item.key === activeNav);
+    return {
+      title: activeItem?.label || "Coming Soon",
+      hint: activeItem?.hint || "Coming soon",
+      description: activeItem?.description || "This area is being prepared.",
+    };
+  }, [activeNav]);
+
   useEffect(() => {
     const container = subjectScrollRef.current;
     if (!container) return;
@@ -687,58 +716,157 @@ const Dashboard = () => {
     };
   }, [subjects.length]);
 
+  useEffect(() => {
+    if (!subjects.length) {
+      if (activeSubject) setActiveSubject("");
+      return;
+    }
+
+    if (!subjects.some((subject) => subject.key === activeSubject)) {
+      setActiveSubject(subjects[0].key);
+    }
+  }, [subjects, activeSubject]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return undefined;
+
+    const syncSidebarState = () => {
+      if (window.innerWidth > 1280) {
+        setIsSidebarOpen(false);
+      }
+    };
+
+    syncSidebarState();
+    window.addEventListener("resize", syncSidebarState);
+    return () => window.removeEventListener("resize", syncSidebarState);
+  }, []);
+
+  const scrollSubjects = (direction) => {
+    const container = subjectScrollRef.current;
+    if (!container) return;
+    const scrollAmount = Math.max(260, Math.round(container.clientWidth * 0.72));
+    container.scrollBy({
+      left: direction === "left" ? -scrollAmount : scrollAmount,
+      behavior: "smooth",
+    });
+  };
+
   if (!session) return null;
 
   return (
-    <div className="student-dashboard-v2">
-      <header className="dash-topbar">
+    <div
+      className="student-dashboard-v2"
+      style={{
+        "--dashboard-bg": `url(${dashboardBackdropUrl})`,
+        "--practice-hero-bg": `url(${practiceBackdropUrl})`,
+      }}
+    >
+      <div className="dashboard-scene-backdrop" />
+      <div className="dashboard-scene-glow dashboard-glow-a" />
+      <div className="dashboard-scene-glow dashboard-glow-b" />
+      <div className={`dashboard-shell ${isSidebarOpen ? "sidebar-open" : ""}`}>
         <button
           type="button"
-          className="brand-wrap brand-button"
-          onClick={() => setShowAccountModal(true)}
+          className="dashboard-sidebar-toggle"
+          onClick={() => setIsSidebarOpen((prev) => !prev)}
+          aria-expanded={isSidebarOpen}
+          aria-controls="dashboard-sidebar-nav"
         >
-          <div className="brand-badge">QM</div>
-          <div>
-            <p className="dash-kicker">MINT</p>
-            <h1>MINT (Foundation Programme)</h1>
-            <p className="dash-sub">Class {session.className || "N/A"} | {session.schoolName || session.schoolId}</p>
-          </div>
+          <span />
+          <span />
+          <span />
         </button>
-        <div className="top-actions">
-          {canManageDefaultClasses && (
-            <div className="default-class-switcher" aria-label="Selected classes">
-              {selectedClasses.map((className) => (
-                <button
-                  type="button"
-                  key={className}
-                  className={String(session.className) === String(className) ? "active" : ""}
-                  onClick={() => switchClass(className)}
-                  title={`Class ${className}`}
-                >
-                  {className}
-                </button>
-              ))}
-            </div>
-          )}
-          {canAddDefaultClass && (
+        {isSidebarOpen && <button type="button" className="dashboard-sidebar-scrim" onClick={() => setIsSidebarOpen(false)} aria-label="Close navigation" />}
+        <aside className="dashboard-sidebar" id="dashboard-sidebar-nav">
+          <div className="dashboard-sidebar-inner">
             <button
               type="button"
-              className="dash-add-class"
-              onClick={() => {
-                setShowClassModal(true);
-                setNewClassStudentName(session.name || "");
-              }}
-              aria-label="Add class"
+              className="brand-wrap brand-button dashboard-brand"
+              onClick={() => setShowAccountModal(true)}
             >
-              +
+              <div className="brand-badge">M</div>
+              <div>
+                <p className="dash-kicker">MINT</p>
+                <h1>MINT</h1>
+                <p className="dash-sub">DO &amp; LEARN</p>
+              </div>
             </button>
-          )}
-          <button className="dash-logout" onClick={() => { localStorage.removeItem("schoolStudentSession"); navigate("/"); }}>
-            Logout
-          </button>
-        </div>
-      </header>
 
+            <nav className="dashboard-nav" aria-label="Dashboard navigation">
+              {dashboardNavItems.map((item) => (
+                <button
+                  key={item.key}
+                  type="button"
+                  className={`dashboard-nav-item ${activeNav === item.key ? "active" : "inactive"}`}
+                  title={item.description}
+                  onClick={() => {
+                    setActiveNav(item.key);
+                    setIsSidebarOpen(false);
+                  }}
+                >
+                  <span className="dashboard-nav-label">{item.label}</span>
+                  {activeNav !== item.key && <small>{item.hint}</small>}
+                </button>
+              ))}
+            </nav>
+
+            <div className="dashboard-side-footer">
+              <button
+                type="button"
+                className="dashboard-side-account brand-wrap brand-button"
+                onClick={() => setShowAccountModal(true)}
+              >
+               
+                
+              </button>
+
+              <div className="dashboard-side-actions">
+                {canManageDefaultClasses && (
+                  <div className="default-class-switcher dashboard-side-class-switcher" aria-label="Selected classes">
+                    {selectedClasses.map((className) => (
+                      <button
+                        type="button"
+                        key={className}
+                        className={String(session.className) === String(className) ? "active" : ""}
+                        onClick={() => switchClass(className)}
+                        title={`Class ${className}`}
+                      >
+                        {className}
+                      </button>
+                    ))}
+                  </div>
+                )}
+                <div className="dashboard-side-action-row">
+                  {canAddDefaultClass && (
+                    <button
+                      type="button"
+                      className="dash-add-class"
+                      onClick={() => {
+                        setShowClassModal(true);
+                        setNewClassStudentName(session.name || "");
+                      }}
+                      aria-label="Add class"
+                    >
+                      +
+                    </button>
+                  )}
+                  <button
+                    className="dash-logout dashboard-side-logout"
+                    onClick={() => {
+                      localStorage.removeItem("schoolStudentSession");
+                      navigate("/");
+                    }}
+                  >
+                    <span className="dashboard-side-logout-label">Logout</span>
+                    <small>Exit dashboard</small>
+                  </button>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </aside>
+        <section className="dashboard-stage">
       {showAccountModal && (
         <div className="class-modal-backdrop" onClick={() => setShowAccountModal(false)}>
           <div className="class-modal account-modal" onClick={(event) => event.stopPropagation()}>
@@ -846,262 +974,512 @@ const Dashboard = () => {
       )}
 
       {loading ? (
-        <div className="dash-loading">Loading your learning dashboard...</div>
+        <div className="dash-loading dashboard-glass-card">Loading your learning dashboard...</div>
       ) : (
-        <div className="dash-grid">
-          <main className="hero-panel">
-            <div className="hero-illustration">
-              <div className="bubble bubble-a" />
-              <div className="bubble bubble-b" />
-              <div className="hero-content">
-                <p className="continue-label">Continue where you left</p>
-                <h2>{nextQuiz ? nextQuiz.chapter || nextQuiz.title || "Ready to Practice" : "No Quiz Yet"}</h2>
-                <p>
-                  {nextQuiz
-                    ? `${nextQuiz.subject || "General"} | ${filteredQuizzes.length} Quiz Sets`
-                    : "Ask your teacher/admin to publish quizzes for your class."}
-                </p>
-                <div className="hero-progress-row">
-                  <span>Your Progress</span>
-                  <strong>{overallProgress}%</strong>
+        <>
+          {activeNav === "home" && (
+            <>
+              <div className="dashboard-hero-banner dashboard-glass-card">
+                <div className="dashboard-hero-overlay" />
+                <div className="dashboard-hero-copy">
+                  <p className="dashboard-screen-brand">MINT DO &amp; LEARN</p>
+                  <h2 className="dashboard-screen-word">LEARN</h2>
+                  <h3 className="dashboard-screen-title">Learn by doing. Master for life.</h3>
+                  <p className="dashboard-screen-copy">
+                    Concept to confidence, one problem at a time. Use the nav to jump into subjects,
+                    progress, and leaderboard views without crowding the home screen.
+                  </p>
+                  <div className="dashboard-hero-tags">
+                    <span>Concept First</span>
+                    <span>Practice Smart</span>
+                    <span>Track Progress</span>
+                  </div>
+                  {nextQuiz && (
+                    <button
+                      className="start-quiz-btn dashboard-hero-cta"
+                      onClick={() =>
+                        navigate(`/quiz/${nextQuiz.id}`, {
+                          state: {
+                            mode: "chapter",
+                            chapterName: nextChapter?.chapterName || nextQuiz.chapter || nextQuiz.title || "Chapter Quiz",
+                            quizIds: nextChapter?.quizIds || [nextQuiz.id],
+                          },
+                        })
+                      }
+                    >
+                      Start Learning
+                    </button>
+                  )}
                 </div>
-                <div className="hero-progress-track"><div style={{ width: `${overallProgress}%` }} /></div>
-                {nextQuiz && (
-                  <button
-                    className="start-quiz-btn"
-                    onClick={() =>
-                      navigate(`/quiz/${nextQuiz.id}`, {
-                        state: {
-                          mode: "chapter",
-                          chapterName: nextChapter?.chapterName || nextQuiz.chapter || nextQuiz.title || "Chapter Quiz",
-                          quizIds: nextChapter?.quizIds || [nextQuiz.id],
-                        },
-                      })
-                    }
-                  >
-                    Resume Quiz
-                  </button>
-                )}
+                <div className="dashboard-level-pill">
+                  <span>Level {Math.max(1, Math.ceil((studentStats.totalQuizzes || 1) / 2))}</span>
+                  <strong>{studentStats.totalPoints} XP</strong>
+                </div>
               </div>
-              <div className="hero-stack">{"\u{1F4DA}"}</div>
-            </div>
+              <div className="dashboard-home-section-label">
+                <span>Quick Access</span>
+                <p>Jump into the sections that matter most from the left navigation.</p>
+              </div>
+              <div className="dashboard-home-links">
+                <button type="button" className="dashboard-link-card" onClick={() => setActiveNav("practice")}>
+                  <span className="dashboard-link-eyebrow">Practice</span>
+                  <strong>{subjects.length || 0} learning tracks</strong>
+                  <p>Explore chapters, notes, and test access in one focused workspace.</p>
+                </button>
+                <button type="button" className="dashboard-link-card" onClick={() => setActiveNav("progress")}>
+                  <span className="dashboard-link-eyebrow">My Progress</span>
+                  <strong>{overallProgress}% overall completion</strong>
+                  <p>Review performance, streak quality, and recent attempts in one place.</p>
+                </button>
+                <button type="button" className="dashboard-link-card" onClick={() => setActiveNav("leaderboard")}>
+                  <span className="dashboard-link-eyebrow">Leaderboard</span>
+                  <strong>Current rank #{studentStats.rank}</strong>
+                  <p>See where you stand in class and what score you need to climb.</p>
+                </button>
+              </div>
+            </>
+          )}
 
-            <section className="subjects-panel">
-              <div className="row-head">
-                <div className="panel-title">Subjects</div>
-              </div>
-              <div className="subjects-actions">
-                <button
-                  className="subject-move-btn"
-                  onClick={() => subjectScrollRef.current?.scrollBy({ left: -320, behavior: "smooth" })}
-                  aria-label="Move subjects left"
-                >
-                  ← Scroll Left
-                </button>
-                <button
-                  className="subject-move-btn"
-                  onClick={() => subjectScrollRef.current?.scrollBy({ left: 320, behavior: "smooth" })}
-                  aria-label="Move subjects right"
-                >
-                  Scroll Right →
-                </button>
-              </div>
-              <div className="subjects-scroll-wrapper">
-                <button
-                  className={`subjects-nav-btn left-btn ${!canScrollLeft ? "hidden" : ""}`}
-                  onClick={() => subjectScrollRef.current?.scrollBy({ left: -320, behavior: "smooth" })}
-                  aria-label="Scroll subjects left"
-                >
-                  <svg viewBox="0 0 24 24">
-                    <path d="M15 5L8 12L15 19" />
-                  </svg>
-                </button>
-                <div className="subjects-row" ref={subjectScrollRef}>
-                  {subjects.map((subject, idx) => {
-                    const logo = makeSubjectLogo(subject.name);
-                    return (
-                      <button
-                        key={subject.key}
-                        className={`subject-card tone-${subjectPalette[idx % subjectPalette.length]} ${activeSubject === subject.key ? "active" : ""}`}
-                        onClick={() => setActiveSubject((prev) => (prev === subject.key ? "" : subject.key))}
-                        aria-pressed={activeSubject === subject.key}
-                        title={`Filter by ${subject.name}`}
-                      >
-                        <div className={`subject-logo ${logo.className}`}>
-                          <SubjectIcon type={logo.icon} />
+          <div className={`dash-grid dashboard-view-grid ${activeNav === "practice" ? "practice-layout" : ""}`}>
+            <main className="hero-panel">
+              {activeNav === "practice" && (
+                <>
+                  <section className="dashboard-view-hero dashboard-glass-card practice-hero-card">
+                    <span className="dashboard-view-kicker">Practice Workspace</span>
+                    <h2>Practice. Improve. Master. <span>One Chapter At A Time.</span></h2>
+                    <p>Move through subjects, inspect chapter progress, open notes, and launch tests from one focused practice workspace.</p>
+                  </section>
+                  <section className="subjects-panel subjects-browser-panel">
+                    <div className="row-head row-head-stack">
+                      <div>
+                        <div className="panel-title">Choose Subject</div>
+                        <p className="panel-support-copy">Pick one subject and the chapter list will update instantly.</p>
+                      </div>
+                      <div className="subject-browser-count">{subjects.length} total</div>
+                    </div>
+                    <div className="subjects-slider-shell">
+                      {canScrollLeft && (
+                        <button
+                          type="button"
+                          className="subjects-slider-arrow subjects-slider-arrow-left"
+                          onClick={() => scrollSubjects("left")}
+                          aria-label="Scroll subjects left"
+                        >
+                          ‹
+                        </button>
+                      )}
+                      <div ref={subjectScrollRef} className="subjects-grid-layout subjects-slider-track">
+                      {subjects.map((subject, idx) => {
+                        const isActive = activeSubject === subject.key;
+                        return (
+                          <button
+                            key={subject.key}
+                            className={`subject-card subject-card-grid tone-${subjectPalette[idx % subjectPalette.length]} ${isActive ? "active" : ""}`}
+                            onClick={() => setActiveSubject(subject.key)}
+                            aria-pressed={isActive}
+                            title={`Filter by ${subject.name}`}
+                          >
+                            
+                            <div className="subject-text">
+                              <div className="subject-card-topline">
+                                <div className="subject-name">{subject.name}</div>
+                                <span className={`subject-select-pill ${isActive ? "active" : ""}`}>
+                                  {isActive ? "Selected" : "Open"}
+                                </span>
+                              </div>
+                              <div className="subject-meta-row">
+                                <div className="subject-meta">{subject.total} Quiz Sets</div>
+                                <div className="subject-last-topic">{subject.lastTopic || "Practice"}</div>
+                              </div>
+                            </div>
+                          </button>
+                        );
+                      })}
+                      </div>
+                      {canScrollRight && (
+                        <button
+                          type="button"
+                          className="subjects-slider-arrow subjects-slider-arrow-right"
+                          onClick={() => scrollSubjects("right")}
+                          aria-label="Scroll subjects right"
+                        >
+                          ›
+                        </button>
+                      )}
+                    </div>
+                  </section>
+
+                  <section className="quiz-list-panel chapter-workspace-panel">
+                    <div className="row-head row-head-stack">
+                      <div>
+                        <div className="panel-title">
+                          {selectedSubjectMeta ? `${selectedSubjectMeta.name} Chapters` : "Chapters"}
                         </div>
-                        <div className="subject-text">
-                          <div className="subject-name">{subject.name}</div>
-                          <div className="subject-meta">{subject.total} Quizzes</div>
-                        </div>
+                        <p className="panel-support-copy">
+                          {selectedSubjectMeta
+                            ? `${selectedSubjectMeta.total} quiz sets available for this subject.`
+                            : "Choose a subject to explore chapters."}
+                        </p>
+                      </div>
+                      <button className="chapter-filter">
+                        {activeSubject ? "Active Subject" : "Select Subject"}
                       </button>
-                    );
-                  })}
-                </div>
-                <button
-                  className={`subjects-nav-btn right-btn ${!canScrollRight ? "hidden" : ""}`}
-                  onClick={() => subjectScrollRef.current?.scrollBy({ left: 320, behavior: "smooth" })}
-                  aria-label="Scroll subjects right"
-                >
-                  <svg viewBox="0 0 24 24">
-                    <path d="M9 5L16 12L9 19" />
-                  </svg>
-                </button>
-                <div className="fade-left" />
-                <div className="fade-right" />
-              </div>
-            </section>
+                    </div>
+                    {!activeSubject ? (
+                      <div className="empty-note">Select a subject to view chapters.</div>
+                    ) : chapters.length === 0 ? (
+                      <div className="empty-note">No chapters found for selected subject.</div>
+                    ) : (
+                      <div className="chapter-list-v2">
+                        {chapters.map((chapter, chapterIndex) => {
+                          const attempted = reports.filter((r) =>
+                            chapter.quizIds.some((qid) => reportMatchesQuiz(r, qid))
+                          ).length;
+                          const chapterProgress = Math.min(100, Math.round((attempted / Math.max(1, chapter.quizIds.length)) * 100));
+                          const firstTopicWithNote = chapter.subtopics.find((t) => String(t.noteHtml || "").trim()) || null;
+                          const chapterTopics = chapter.subtopics.map((t) => {
+                            const k = makeConceptKey(t.subject, t.chapterName, t.name);
+                            const p = learningProgress[k] || {};
+                            const done = !!p.noteCompleted;
+                            return { key: k, name: t.name, done, noteHtml: t.noteHtml || "", chapter: t.chapterName, subject: t.subject };
+                          });
+                          const chapterNoteDone = chapterTopics.length > 0 && chapterTopics.every((t) => t.done);
+                          const hasChapterNote = !!firstTopicWithNote;
 
-            <section className="quiz-list-panel">
-              <div className="row-head">
-                <div className="panel-title">Chapters</div>
-                <button className="chapter-filter">{activeSubject ? "Filtered" : "Select Subject"}</button>
-              </div>
-              {!activeSubject ? (
-                <div className="empty-note">Select a subject to view chapters.</div>
-              ) : chapters.length === 0 ? (
-                <div className="empty-note">No chapters found for selected subject.</div>
-              ) : (
-                <div className="chapter-list-v2">
-                  {chapters.map((chapter, chapterIndex) => {
-                    const attempted = reports.filter((r) =>
-                      chapter.quizIds.some((qid) => reportMatchesQuiz(r, qid))
-                    ).length;
-                    const chapterProgress = Math.min(100, Math.round((attempted / Math.max(1, chapter.quizIds.length)) * 100));
-                    const firstTopicWithNote = chapter.subtopics.find((t) => String(t.noteHtml || "").trim()) || null;
-                    const chapterTopics = chapter.subtopics.map((t) => {
-                      const k = makeConceptKey(t.subject, t.chapterName, t.name);
-                      const p = learningProgress[k] || {};
-                      const done = !!p.noteCompleted;
-                      return { key: k, name: t.name, done, noteHtml: t.noteHtml || "", chapter: t.chapterName, subject: t.subject };
-                    });
-                    const chapterNoteDone = chapterTopics.length > 0 && chapterTopics.every((t) => t.done);
-                    const hasChapterNote = !!firstTopicWithNote;
+                          return (
+                            <article key={chapter.chapterKey || `${chapter.subject}__${chapter.chapterName}`} className="chapter-card chapter-card-elevated">
+                              <div className="chapter-head chapter-head-flat">
+                                <div className="chapter-title-wrap">
+                                  <h3>{chapterIndex + 1}. {chapter.chapterName}</h3>
+                                  <div className="chapter-meta-badges">
+                                    <span>{chapter.subject}</span>
+                                    <span>{chapter.quizIds.length} Quiz Sets</span>
+                                  </div>
+                                </div>
+                                <div className="progress-col">
+                                  <span>Progress</span>
+                                  <div className="mini-track"><div style={{ width: `${chapterProgress}%` }} /></div>
+                                </div>
+                                <div className="attempt-col">
+                                  <span>Attempted</span>
+                                  <strong>{attempted} / {chapter.quizIds.length}</strong>
+                                </div>
+                                <div className="subtopic-actions">
+                                  {hasChapterNote && (
+                                    <button
+                                      className={chapterNoteDone ? "tick-btn" : ""}
+                                      onClick={async () => {
+                                        navigate("/notes-view", {
+                                          state: {
+                                            noteHtml: firstTopicWithNote?.noteHtml || "",
+                                            title: firstTopicWithNote?.name || chapter.chapterName,
+                                            chapter: chapter.chapterName,
+                                            subject: chapter.subject,
+                                            topics: chapterTopics,
+                                            activeTopicKey: chapterTopics.find((t) => String(t.noteHtml || "").trim())?.key || chapterTopics[0]?.key || "",
+                                            quizIds: chapter.quizIds,
+                                          },
+                                        });
+                                      }}
+                                    >
+                                      {chapterNoteDone ? "Done Note" : "Open Note"}
+                                    </button>
+                                  )}
+                                  <button
+                                    className={attempted > 0 ? "tick-btn attempt-main-btn" : "attempt-main-btn"}
+                                    onClick={() =>
+                                      navigate(`/quiz/${chapter.quizIds[0]}`, {
+                                        state: {
+                                          mode: "chapter",
+                                          chapterName: chapter.chapterName,
+                                          quizIds: chapter.quizIds,
+                                        },
+                                      })
+                                    }
+                                  >
+                                    {attempted > 0 ? "Retake Test" : "Start Test"}
+                                  </button>
+                                </div>
+                              </div>
+                            </article>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </section>
+                </>
+              )}
 
-                    return (
-                      <article key={chapter.chapterKey || `${chapter.subject}__${chapter.chapterName}`} className="chapter-card">
-                        <div className="chapter-head chapter-head-flat">
-                          <div className="chapter-title-wrap">
-                            <h3>{chapterIndex + 1}. {chapter.chapterName}</h3>
-                            <p>{chapter.subject} | {chapter.quizIds.length} Quiz Sets</p>
-                          </div>
-                          <div className="progress-col">
-                            <span>Progress</span>
-                            <div className="mini-track"><div style={{ width: `${chapterProgress}%` }} /></div>
-                          </div>
-                          <div className="attempt-col">
-                            <span>Attempted</span>
-                            <strong>{attempted} / {chapter.quizIds.length}</strong>
-                          </div>
-                          <div className="subtopic-actions">
-                            {hasChapterNote && (
-                              <button
-                                className={chapterNoteDone ? "tick-btn" : ""}
-                                onClick={async () => {
-                                  navigate("/notes-view", {
-                                    state: {
-                                      noteHtml: firstTopicWithNote?.noteHtml || "",
-                                      title: firstTopicWithNote?.name || chapter.chapterName,
-                                      chapter: chapter.chapterName,
-                                      subject: chapter.subject,
-                                      topics: chapterTopics,
-                                      activeTopicKey: chapterTopics.find((t) => String(t.noteHtml || "").trim())?.key || chapterTopics[0]?.key || "",
-                                      quizIds: chapter.quizIds,
-                                    },
-                                  });
-                                }}
-                              >
-                                {chapterNoteDone ? "✓ Note" : "Note"}
-                              </button>
-                            )}
-                            <button
-                              className={attempted > 0 ? "tick-btn attempt-main-btn" : "attempt-main-btn"}
-                              onClick={() =>
-                                navigate(`/quiz/${chapter.quizIds[0]}`, {
-                                  state: {
-                                    mode: "chapter",
-                                    chapterName: chapter.chapterName,
-                                    quizIds: chapter.quizIds,
-                                  },
-                                })
-                              }
-                            >
-                              {attempted > 0 ? "✓ Test" : "Test"}
-                            </button>
+              {activeNav === "progress" && (
+                <>
+                  <section className="dashboard-view-hero dashboard-glass-card">
+                    <span className="dashboard-view-kicker">My Progress</span>
+                    <h2>Readable progress tracking with the numbers that actually matter.</h2>
+                    <p>Review completion, class rank, recent attempts, and score quality in one cleaner view.</p>
+                  </section>
+                  <div className="progress-metric-grid">
+                    {progressCards.map((card) => (
+                      <section key={card.label} className={`progress-metric-card tone-${card.tone}`}>
+                        <span>{card.label}</span>
+                        <strong>{card.value}</strong>
+                      </section>
+                    ))}
+                  </div>
+                  <section className="leader-card recent-score-panel">
+                    <div className="row-head row-head-stack">
+                      <div>
+                        <div className="panel-title">Recent Scores</div>
+                        <p className="panel-support-copy">Latest submitted quizzes, sorted from newest to oldest.</p>
+                      </div>
+                    </div>
+                    {recentReports.length === 0 ? (
+                      <div className="empty-note">No attempts yet.</div>
+                    ) : (
+                      <ol className="score-timeline">
+                        {recentReports.slice(0, 8).map((report, index) => (
+                          <li key={report.id} className="score-timeline-item">
+                            <span className="score-order">{String(index + 1).padStart(2, "0")}</span>
+                            <div className="score-body">
+                              <strong>{report.quizTitle || report.quizId}</strong>
+                              <small>{formatDateLabel(report.submittedAt)}</small>
+                            </div>
+                            <strong className="score-value">{report.percentage}%</strong>
+                          </li>
+                        ))}
+                      </ol>
+                    )}
+                  </section>
+                </>
+              )}
+
+              {activeNav === "leaderboard" && (
+                <>
+                  <section className="dashboard-view-hero dashboard-glass-card">
+                    <span className="dashboard-view-kicker">Leaderboard</span>
+                    <h2>See your class standing clearly, with stronger visual hierarchy.</h2>
+                    <p>The ranking board is separated from home so students can focus on competition and movement.</p>
+                  </section>
+                  {leaderboard.length === 0 ? (
+                    <section className="leaderboard-card leaderboard-empty-card">
+                      <div className="empty-note">Leaderboard will appear after submissions.</div>
+                    </section>
+                  ) : (
+                    <>
+                      <div className="leaderboard-podium">
+                        {leaderboard.slice(0, 3).map((entry, idx) => (
+                          <article key={entry.id} className={`leader-podium-card podium-${idx + 1}`}>
+                            <span className="leader-podium-rank">#{idx + 1}</span>
+                            <strong>{entry.name}</strong>
+                            <p>{entry.points} pts</p>
+                            <small>{entry.avg}% avg accuracy</small>
+                          </article>
+                        ))}
+                      </div>
+                      <section className="leaderboard-card leaderboard-full-card">
+                        <div className="row-head row-head-stack">
+                          <div>
+                            <div className="panel-title">Full Class Ranking</div>
+                            <p className="panel-support-copy">Sorted by total points, then average score.</p>
                           </div>
                         </div>
+                        <div className="leaderboard-table">
+                          {leaderboard.map((entry, idx) => (
+                            <div
+                              key={entry.id}
+                              className={`leaderboard-table-row ${entry.id === session?.id ? "current-student" : ""}`}
+                            >
+                              <span className="leaderboard-table-rank">#{idx + 1}</span>
+                              <strong>{entry.name}</strong>
+                              <span>{entry.avg}% Avg</span>
+                              <span>{entry.points} pts</span>
+                            </div>
+                          ))}
+                        </div>
+                      </section>
+                    </>
+                  )}
+                </>
+              )}
+
+              {activeNav === "profile" && (
+                <>
+                  <section className="dashboard-view-hero dashboard-glass-card">
+                    <span className="dashboard-view-kicker">Profile</span>
+                    <h2>Your student details, plan access, and account status in one place.</h2>
+                    <p>Review your active plan, expiry date, linked school details, and current registration status without leaving the dashboard.</p>
+                  </section>
+                  <section className="leader-card profile-details-panel">
+                    <div className="row-head row-head-stack">
+                      <div>
+                        <div className="panel-title">Student Details</div>
+                        <p className="panel-support-copy">Basic account and subscription details pulled from your active session.</p>
+                      </div>
+                    </div>
+                    <div className="profile-details-grid">
+                      <article className="profile-detail-card">
+                        <span>Student Name</span>
+                        <strong>{session.name || "Student"}</strong>
                       </article>
-                    );
-                  })}
-                </div>
+                      <article className="profile-detail-card">
+                        <span>School</span>
+                        <strong>{session.schoolName || session.schoolId || "Not available"}</strong>
+                      </article>
+                      <article className="profile-detail-card">
+                        <span>Current Class</span>
+                        <strong>{session.className || "Not available"}</strong>
+                      </article>
+                      <article className="profile-detail-card">
+                        <span>Selected Classes</span>
+                        <strong>{selectedClasses.length ? selectedClasses.join(", ") : "Not available"}</strong>
+                      </article>
+                      <article className="profile-detail-card">
+                        <span>Current Plan</span>
+                        <strong>{session.planName || activePlan.name || session.planId || "Default"}</strong>
+                      </article>
+                      <article className="profile-detail-card">
+                        <span>Plan Access</span>
+                        <strong>{session.accessMode || "default-school"}</strong>
+                      </article>
+                      <article className="profile-detail-card">
+                        <span>Payment Status</span>
+                        <strong>{session.paymentStatus || "Not available"}</strong>
+                      </article>
+                      <article className="profile-detail-card">
+                        <span>Registration Status</span>
+                        <strong>{session.registrationStatus || "Not available"}</strong>
+                      </article>
+                      <article className="profile-detail-card">
+                        <span>Expiry Date</span>
+                        <strong>{formatDateLabel(session.expiryDate)}</strong>
+                      </article>
+                      <article className="profile-detail-card">
+                        <span>Logged In Device</span>
+                        <strong>{session.deviceLabel || getDeviceLabel()}</strong>
+                      </article>
+                    </div>
+                  </section>
+                </>
               )}
-            </section>
-          </main>
 
-          <aside className="right-panel">
-            <section className="stats-card">
-              <div className="panel-title">Your Progress</div>
-              <div className="stats-grid">
-                <div>
-                  <p className="stat-num">{studentStats.totalPoints}</p>
-                  <p className="stat-label">Total Points</p>
-                </div>
-                <div>
-                  <p className="stat-num">{studentStats.avgAccuracy}%</p>
-                  <p className="stat-label">Accuracy</p>
-                </div>
-                <div>
-                  <p className="stat-num">{studentStats.totalQuizzes}</p>
-                  <p className="stat-label">Quizzes Attempted</p>
-                </div>
-              </div>
-            </section>
-
-            <section className="leaderboard-card">
-              <div className="row-head">
-                <div className="panel-title">Class Leaderboard</div>
-                <button className="link-btn" onClick={() => navigate("/leaderboard")}>View All</button>
-              </div>
-              {leaderboard.length === 0 ? (
-                <div className="empty-note">Leaderboard will appear after submissions.</div>
-              ) : (
-                <ol>
-                  {leaderboard.slice(0, 5).map((entry, idx) => (
-                    <li key={entry.id}>
-                      <span>#{idx + 1} {entry.name}</span>
-                      <strong>{entry.points} pts</strong>
-                    </li>
-                  ))}
-                </ol>
+              {!["home", "practice", "progress", "leaderboard", "profile"].includes(activeNav) && (
+                <section className="dashboard-view-hero dashboard-glass-card dashboard-placeholder-card">
+                  <span className="dashboard-view-kicker">{placeholderView.hint}</span>
+                  <h2>{placeholderView.title}</h2>
+                  <p>{placeholderView.description}</p>
+                </section>
               )}
-            </section>
+            </main>
 
-            <section className="leader-card">
-              <div className="row-head">
-                <div className="panel-title">Recent Scores</div>
-                <button className="link-btn">View All</button>
-              </div>
-              {reports.length === 0 ? (
-                <div className="empty-note">No attempts yet.</div>
-              ) : (
-                <ol>
-                  {reports
-                    .sort((a, b) => new Date(b.submittedAt || 0) - new Date(a.submittedAt || 0))
-                    .slice(0, 5)
-                    .map((report) => (
-                    <li key={report.id}>
-                      <span>{report.quizTitle || report.quizId}</span>
-                      <strong>{report.percentage}%</strong>
-                    </li>
-                  ))}
-                </ol>
+            {activeNav !== "practice" && (
+            <aside className="right-panel">
+              {activeNav === "home" && (
+                <section className="stats-card">
+                  <div className="panel-title">Snapshot</div>
+                  <div className="stats-grid">
+                    <div>
+                      <p className="stat-num">{studentStats.totalPoints}</p>
+                      <p className="stat-label">Total Points</p>
+                    </div>
+                    <div>
+                      <p className="stat-num">{studentStats.avgAccuracy}%</p>
+                      <p className="stat-label">Accuracy</p>
+                    </div>
+                    <div>
+                      <p className="stat-num">{studentStats.totalQuizzes}</p>
+                      <p className="stat-label">Quizzes Attempted</p>
+                    </div>
+                  </div>
+                </section>
               )}
-            </section>
-          </aside>
-        </div>
+
+              {activeNav === "progress" && (
+                <section className="stats-card progress-summary-panel">
+                  <div className="panel-title">Performance Summary</div>
+                  <div className="progress-summary-list">
+                    <div className="progress-summary-item">
+                      <span>Current Rank</span>
+                      <strong>#{studentStats.rank}</strong>
+                    </div>
+                    <div className="progress-summary-item">
+                      <span>Total Attempts</span>
+                      <strong>{studentStats.totalQuizzes}</strong>
+                    </div>
+                    <div className="progress-summary-item">
+                      <span>Average Accuracy</span>
+                      <strong>{studentStats.avgAccuracy}%</strong>
+                    </div>
+                    <div className="progress-summary-item">
+                      <span>Overall Completion</span>
+                      <strong>{overallProgress}%</strong>
+                    </div>
+                  </div>
+                </section>
+              )}
+
+              {activeNav === "leaderboard" && (
+                <section className="stats-card">
+                  <div className="panel-title">Your Standing</div>
+                  <div className="progress-summary-list">
+                    <div className="progress-summary-item">
+                      <span>Current Rank</span>
+                      <strong>#{studentStats.rank}</strong>
+                    </div>
+                    <div className="progress-summary-item">
+                      <span>Total Points</span>
+                      <strong>{studentStats.totalPoints}</strong>
+                    </div>
+                    <div className="progress-summary-item">
+                      <span>Average Accuracy</span>
+                      <strong>{studentStats.avgAccuracy}%</strong>
+                    </div>
+                    <div className="progress-summary-item">
+                      <span>Class Entries</span>
+                      <strong>{leaderboard.length}</strong>
+                    </div>
+                  </div>
+                </section>
+              )}
+
+              {activeNav === "profile" && (
+                <section className="stats-card profile-summary-panel">
+                  <div className="panel-title">Profile Summary</div>
+                  <div className="progress-summary-list">
+                    <div className="progress-summary-item">
+                      <span>Plan</span>
+                      <strong>{session.planName || activePlan.name || "Default"}</strong>
+                    </div>
+                    <div className="progress-summary-item">
+                      <span>Expiry</span>
+                      <strong>{formatDateLabel(session.expiryDate)}</strong>
+                    </div>
+                    <div className="progress-summary-item">
+                      <span>Payment</span>
+                      <strong>{session.paymentStatus || "Not available"}</strong>
+                    </div>
+                    <div className="progress-summary-item">
+                      <span>Registration</span>
+                      <strong>{session.registrationStatus || "Not available"}</strong>
+                    </div>
+                  </div>
+                </section>
+              )}
+
+              {!["home", "practice", "progress", "leaderboard", "profile"].includes(activeNav) && (
+                <section className="stats-card">
+                  <div className="panel-title">Status</div>
+                  <div className="empty-note">This section is being prepared.</div>
+                </section>
+              )}
+            </aside>
+            )}
+          </div>
+        </>
       )}
+        </section>
+      </div>
     </div>
   );
 };
 
 export default Dashboard;
+

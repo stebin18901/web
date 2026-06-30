@@ -5,7 +5,7 @@ import {
   signOut 
 } from "firebase/auth";
 import { app, db } from "./firebaseConfig";
-import { doc, setDoc, updateDoc, getDoc } from "firebase/firestore";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 
 const auth = getAuth(app);
 

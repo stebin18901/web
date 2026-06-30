@@ -28,8 +28,6 @@ import Reports from "./Reports/Reports";
 import Calendar from "./Calendar/Calendar";
 import Settings from "./Settings/Settings";
 
-
-
 export default function DemoApp() {
   const [active, setActive] = useState("dashboard");
   const [isOpen, setIsOpen] = useState(false);
@@ -159,20 +157,6 @@ export default function DemoApp() {
 
         <section className="demo-content">{render()}</section>
       </main>
-    </div>
-  );
-}
-
-function Placeholder({ title = "Page" }) {
-  return (
-    <div className="placeholder">
-      <h2>{title}</h2>
-      <p>This is a lightweight placeholder for the <strong>{title}</strong> view. Replace with real components.</p>
-      <div className="placeholder-grid">
-        <div className="card">Card 1</div>
-        <div className="card">Card 2</div>
-        <div className="card">Card 3</div>
-      </div>
     </div>
   );
 }

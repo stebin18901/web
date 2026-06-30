@@ -316,6 +316,24 @@ const Schools = () => {
         <div className="schools-summary-chip">{filteredSchools.length} schools</div>
       </div>
 
+      <section className="schools-overview-grid">
+        <article className="schools-overview-card focus">
+          <span>Directory</span>
+          <strong>{overviewStats.totalSchools}</strong>
+          <p>Total schools currently available in the admin workspace.</p>
+        </article>
+        <article className="schools-overview-card">
+          <span>Registrations</span>
+          <strong>{overviewStats.totalRegistrations}</strong>
+          <p>Student registration records connected to school workflows.</p>
+        </article>
+        <article className="schools-overview-card">
+          <span>Paid Students</span>
+          <strong>{overviewStats.totalPaidStudents}</strong>
+          <p>Students with active or paid access across all schools.</p>
+        </article>
+      </section>
+
       <div className="schools-inner-tabs">
         <button
           type="button"
@@ -335,69 +353,103 @@ const Schools = () => {
 
       {activeTab === "manage" ? (
         <>
-          <form onSubmit={handleSubmit} className="school-form">
-            <input
-              type="text"
-              placeholder="School Name"
-              value={schoolName}
-              onChange={(e) => setSchoolName(e.target.value)}
-              required
-            />
-            <input
-              type="text"
-              placeholder="School ID"
-              value={schoolId}
-              onChange={(e) => setSchoolId(e.target.value)}
-              required
-            />
-            <input
-              type="password"
-              placeholder="Password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
-            <button type="submit">{editSchoolId ? "Update School" : "Add School"}</button>
-          </form>
+          <section className="schools-manage-grid">
+            <div className="schools-form-card">
+              <div className="schools-section-head">
+                <div>
+                  <h2>{editSchoolId ? "Update School" : "Create New School"}</h2>
+                  <p>Keep school records clean and ready for student access, forms, and subscriptions.</p>
+                </div>
+              </div>
 
-          <div className="search-bar">
-            <input
-              type="text"
-              placeholder="Search by name or ID"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-          </div>
+              <form onSubmit={handleSubmit} className="school-form">
+                <input
+                  type="text"
+                  placeholder="School Name"
+                  value={schoolName}
+                  onChange={(e) => setSchoolName(e.target.value)}
+                  required
+                />
+                <input
+                  type="text"
+                  placeholder="School ID"
+                  value={schoolId}
+                  onChange={(e) => setSchoolId(e.target.value)}
+                  required
+                />
+                <input
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                />
+                <button type="submit">{editSchoolId ? "Update School" : "Add School"}</button>
+              </form>
+            </div>
+
+            <div className="schools-utility-card">
+              <div className="schools-section-head">
+                <div>
+                  <h2>Quick Filters</h2>
+                  <p>Search by school name or ID and jump faster through the directory.</p>
+                </div>
+              </div>
+
+              <div className="search-bar">
+                <input
+                  type="text"
+                  placeholder="Search by name or ID"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+
+              {generatedLink && (
+                <div className="auth-link-card">
+                  <p><strong>Latest Short Links:</strong> {generatedLinkFor}</p>
+                  <p><small>Valid till: {generatedLinkExpiry}</small></p>
+                  <label>Auth</label>
+                  <input value={generatedLink} readOnly />
+                  <label>Logout</label>
+                  <input value={generatedLogoutLink} readOnly />
+                </div>
+              )}
+            </div>
+          </section>
 
           <div className="schools-list">
-            <h2>List of Schools</h2>
-            {generatedLink && (
-              <div className="auth-link-card">
-                <p><strong>Latest Short Links:</strong> {generatedLinkFor}</p>
-                <p><small>Valid till: {generatedLinkExpiry}</small></p>
-                <label>Auth</label>
-                <input value={generatedLink} readOnly />
-                <label>Logout</label>
-                <input value={generatedLogoutLink} readOnly />
+            <div className="schools-list-head">
+              <div>
+                <h2>List of Schools</h2>
+                <p>Open a school to see detailed registrations, teachers, classes, links, and subscription data.</p>
               </div>
-            )}
+              <div className="schools-list-count">{filteredSchools.length} visible</div>
+            </div>
             {filteredSchools.length > 0 ? (
               <ul>
                 {filteredSchools.map((school) => (
                   <li key={school.id}>
-                    <button
-                      type="button"
-                      className="school-item-main school-item-link"
-                      onClick={() => openSchoolDetails(school)}
-                    >
-                      <div className="school-item-title-row">
-                        <strong>{school.schoolName}</strong>
-                        {defaultSchoolId === normalizeSchoolId(school.schoolId) && (
-                          <span className="default-school-badge">Default</span>
-                        )}
+                    <div className="school-item-main">
+                      <button
+                        type="button"
+                        className="school-item-link"
+                        onClick={() => openSchoolDetails(school)}
+                      >
+                        <div className="school-item-title-row">
+                          <strong>{school.schoolName}</strong>
+                          {defaultSchoolId === normalizeSchoolId(school.schoolId) && (
+                            <span className="default-school-badge">Default</span>
+                          )}
+                        </div>
+                        <span className="school-item-id">ID: {school.schoolId}</span>
+                      </button>
+                      <div className="school-item-mini-stats">
+                        <span>Registrations: {schoolStats[normalizeSchoolId(school.schoolId)]?.totalRegistrations || 0}</span>
+                        <span>Plans: {schoolStats[normalizeSchoolId(school.schoolId)]?.totalPlanEnrollments || 0}</span>
+                        <span>Paid: {schoolStats[normalizeSchoolId(school.schoolId)]?.activePaidStudents || 0}</span>
                       </div>
-                      <span className="school-item-id">ID: {school.schoolId}</span>
-                    </button>
+                    </div>
                     <div className="school-link-box">
                       <label>General Form Link</label>
                       <input value={getGeneralFormLink(school)} readOnly onClick={(e) => e.currentTarget.select()} />

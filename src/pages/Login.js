@@ -8,7 +8,7 @@ import {
   setDoc,
   where,
 } from "firebase/firestore";
-import { RecaptchaVerifier, signInWithPhoneNumber } from "firebase/auth";
+import { RecaptchaVerifier, signInWithPhoneNumber, signOut } from "firebase/auth";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { auth } from "../firebase/firebaseConfig";
 import { db } from "../firebase/firebaseConfig";
@@ -316,6 +316,31 @@ const Login = () => {
     setDefaultPhoneVerified(false);
     setLinkedAccounts([]);
     setSelectedLinkedAccountId("");
+    setLastOtpRequestTime(0);
+  };
+
+  const resendOtp = async () => {
+    const cleanPhone = normalizePhone(phone);
+    if (cleanPhone.length !== 10) {
+      setError("Invalid phone number format. Use 10 digits, for example 9876543210.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    setError("");
+
+    try {
+      setOtpCode("");
+      setConfirmationResult(null);
+      setOtpNotice("");
+      setDefaultPhoneVerified(false);
+      setLinkedAccounts([]);
+      setSelectedLinkedAccountId("");
+      setLastOtpRequestTime(0);
+      await sendOtp(cleanPhone);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const getLinkedAccountsForPhone = async (cleanPhone) => {
@@ -390,6 +415,7 @@ const Login = () => {
       }
 
       clearRecaptchaVerifier();
+      await signOut(auth).catch(() => {});
 
       const verifierContainer = document.getElementById(
         "default-school-recaptcha-inner"
@@ -399,10 +425,20 @@ const Login = () => {
         return false;
       }
 
+      auth.languageCode = "en";
       window.defaultSchoolRecaptchaVerifier = new RecaptchaVerifier(
         auth,
         "default-school-recaptcha-inner",
-        { size: "invisible" }
+        {
+          size: "invisible",
+          callback: () => {
+            setError("");
+          },
+          "expired-callback": () => {
+            setError("reCAPTCHA expired. Please try sending OTP again.");
+            clearRecaptchaVerifier();
+          },
+        }
       );
 
       const confirmation = await signInWithPhoneNumber(
@@ -1226,14 +1262,24 @@ const Login = () => {
             />
 
             {otpSent && (
-              <input
-                type="text"
-                className="login-input"
-                placeholder="Enter OTP"
-                value={otpCode}
-                onChange={(e) => setOtpCode(e.target.value)}
-                required
-              />
+              <>
+                <input
+                  type="text"
+                  className="login-input"
+                  placeholder="Enter OTP"
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value)}
+                  required
+                />
+                <button
+                  type="button"
+                  className="forgot-password-button"
+                  onClick={resendOtp}
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? "Sending..." : "Resend OTP"}
+                </button>
+              </>
             )}
 
             {defaultAuthMode === "login" &&

@@ -20,7 +20,6 @@ import {
   CalendarDays,
   Bell,
   Trophy,
-  TrendingUp,
   BarChart3,
 } from "lucide-react";
 
@@ -388,4 +387,3 @@ footer {
   margin-top: 40px;
 }
 `;
-

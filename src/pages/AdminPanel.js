@@ -16,20 +16,20 @@ import AdminApkManagement from "./Admin/AdminApkManagement";
 import AdminHtmlDemoManager from "./Admin/AdminHtmlDemoManager";
 
 const tabs = [
-  { id: "schoolQuiz", label: "School Quiz" },
-  { id: "schools", label: "Schools" },
-  { id: "subscriptions", label: "Subscriptions" },
-  { id: "createquiz", label: "Chapter Mgt" },
-  { id: "createchapter", label: "Create chapter" },
-  { id: "quizdemopdf", label: "Quiz Demo PDF" },
-  { id: "demo", label: "Demo" },
-  { id: "report", label: "Report card" },
-  { id: "feature", label: "Feature" },
-  { id: "calender", label: "Calender" },
-  { id: "news", label: "News template" },
-  { id: "premiumchapter", label: "Premium chapter" },
-  { id: "league", label: "League" },
-  { id: "apk", label: "APK Management" },
+  { id: "schoolQuiz", label: "School Quiz", group: "Schools", note: "Manage school quiz flows" },
+  { id: "schools", label: "Schools", group: "Schools", note: "Manage schools and access links" },
+  { id: "subscriptions", label: "Subscriptions", group: "Schools", note: "Control plan pricing and visibility" },
+  { id: "createquiz", label: "Chapter Mgt", group: "Content", note: "Switch and manage chapter quiz content" },
+  { id: "createchapter", label: "Create chapter", group: "Content", note: "Create and review chapters" },
+  { id: "quizdemopdf", label: "Quiz Demo PDF", group: "Content", note: "Maintain demo kit PDF" },
+  { id: "demo", label: "Demo", group: "Content", note: "Upload and preview HTML demo content" },
+  { id: "report", label: "Report card", group: "Analytics", note: "Review student report summaries" },
+  { id: "feature", label: "Feature", group: "Operations", note: "Manage feature announcements" },
+  { id: "calender", label: "Calender", group: "Operations", note: "Plan school calendar items" },
+  { id: "news", label: "News template", group: "Operations", note: "Edit reusable news templates" },
+  { id: "premiumchapter", label: "Premium chapter", group: "Operations", note: "Manage premium chapter access" },
+  { id: "league", label: "League", group: "Operations", note: "Run league events and schedules" },
+  { id: "apk", label: "APK Management", group: "Operations", note: "Publish Android app releases" },
 ];
 
 const AdminPanel = () => {
@@ -42,6 +42,13 @@ const AdminPanel = () => {
   };
 
   const activeTabLabel = tabs.find((tab) => tab.id === activeTab)?.label || "Admin Workspace";
+  const activeTabMeta = tabs.find((tab) => tab.id === activeTab);
+  const groupedTabs = tabs.reduce((acc, tab) => {
+    const key = tab.group || "Workspace";
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(tab);
+    return acc;
+  }, {});
 
   return (
     <div className="admin-layout">
@@ -51,7 +58,8 @@ const AdminPanel = () => {
         <div className="sidebar-head">
           <div>
             <p className="admin-kicker">Control Center</p>
-            <h1 className="admin-title">Admin</h1>
+            <h1 className="admin-title">Admin 189201</h1>
+            <p className="admin-sidebar-copy">Responsive workspace for schools, content, reports, and releases.</p>
           </div>
           <button className="icon-btn close-btn" onClick={() => setIsSidebarOpen(false)} aria-label="Close menu">
             &times;
@@ -59,14 +67,22 @@ const AdminPanel = () => {
         </div>
 
         <nav className="sidebar-tabs">
-          {tabs.map((tab) => (
-            <button
-              key={tab.id}
-              className={`tab-button ${activeTab === tab.id ? "active" : ""}`}
-              onClick={() => handleTabClick(tab.id)}
-            >
-              {tab.label}
-            </button>
+          {Object.entries(groupedTabs).map(([groupName, groupTabs]) => (
+            <div key={groupName} className="sidebar-group">
+              <p className="sidebar-group-title">{groupName}</p>
+              <div className="sidebar-group-list">
+                {groupTabs.map((tab) => (
+                  <button
+                    key={tab.id}
+                    className={`tab-button ${activeTab === tab.id ? "active" : ""}`}
+                    onClick={() => handleTabClick(tab.id)}
+                  >
+                    <span className="tab-button-label">{tab.label}</span>
+                    <small className="tab-button-note">{tab.note}</small>
+                  </button>
+                ))}
+              </div>
+            </div>
           ))}
         </nav>
       </aside>
@@ -79,10 +95,30 @@ const AdminPanel = () => {
           <div className="admin-topbar-copy">
             <p className="admin-topbar-eyebrow">Workspace</p>
             <h2 className="topbar-title">{activeTabLabel}</h2>
-            <p className="admin-subtitle">Manage schools, quizzes, reports, templates, league operations, and APK releases.</p>
+            <p className="admin-subtitle">
+              {activeTabMeta?.note || "Manage schools, quizzes, reports, templates, league operations, and APK releases."}
+            </p>
           </div>
           <div className="admin-topbar-badge">{tabs.length} modules</div>
         </header>
+
+        <section className="admin-overview-strip">
+          <article className="admin-overview-card focus">
+            <span>Active module</span>
+            <strong>{activeTabLabel}</strong>
+            <p>{activeTabMeta?.group || "Workspace"} operations ready to manage.</p>
+          </article>
+          <article className="admin-overview-card">
+            <span>Navigation</span>
+            <strong>{Object.keys(groupedTabs).length} groups</strong>
+            <p>Organized for faster access on desktop and mobile.</p>
+          </article>
+          <article className="admin-overview-card">
+            <span>Workspace</span>
+            <strong>Responsive</strong>
+            <p>Sidebar, topbar, and content panels adapt across screen sizes.</p>
+          </article>
+        </section>
 
         <div className="tab-content">
           {activeTab === "schoolQuiz" && <SchoolQuiz />}

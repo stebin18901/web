@@ -9,8 +9,8 @@ export const useTeacherData = () => useContext(TeacherDataContext);
 export const TeacherDataProvider = ({ children }) => {
   const { teacher } = useTeacherAuth();
   const [classes, setClasses] = useState([]);
-  const [students, setStudents] = useState([]);
-  const [assignments, setAssignments] = useState([]);
+  const [students] = useState([]);
+  const [assignments] = useState([]);
 
   useEffect(() => {
     if (!teacher?.schoolId) return;

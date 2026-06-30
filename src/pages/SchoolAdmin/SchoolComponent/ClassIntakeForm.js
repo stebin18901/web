@@ -154,6 +154,29 @@ export default function ClassIntakeForm() {
     setOtpVerified(false);
     setConfirmationResult(null);
     setOtpNotice("");
+    setLastOtpRequestTime(0);
+  };
+
+  const resendOtp = async () => {
+    const cleanPhone = normalizePhone(studentForm.phone);
+    if (cleanPhone.length !== 10) {
+      setStatus("Invalid phone number format. Use 10 digits, for example 9876543210.");
+      return;
+    }
+
+    setLoading(true);
+    setStatus("");
+
+    try {
+      setOtpCode("");
+      setOtpVerified(false);
+      setConfirmationResult(null);
+      setOtpNotice("");
+      setLastOtpRequestTime(0);
+      await sendOtp(cleanPhone);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const sendOtp = async (cleanPhone) => {
@@ -553,12 +576,22 @@ export default function ClassIntakeForm() {
               autoComplete="tel-national"
             />
             {otpSent && (
-              <input
-                value={otpCode}
-                onChange={(e) => setOtpCode(e.target.value)}
-                placeholder="Enter OTP"
-                inputMode="numeric"
-              />
+              <>
+                <input
+                  value={otpCode}
+                  onChange={(e) => setOtpCode(e.target.value)}
+                  placeholder="Enter OTP"
+                  inputMode="numeric"
+                />
+                <button
+                  type="button"
+                  className="secondary-action-button"
+                  onClick={resendOtp}
+                  disabled={loading}
+                >
+                  {loading ? "Sending..." : "Resend OTP"}
+                </button>
+              </>
             )}
             {otpNotice && <p className="otp-notice">{otpNotice}</p>}
             <button type="submit" disabled={loading}>

@@ -318,6 +318,10 @@
   width: 100%;
 }
 
+.qm-option:disabled {
+  cursor: default;
+}
+
 .qm-option:hover {
   border-color: #cbd5e1;
   background: #f8fafc;
@@ -336,6 +340,23 @@
 .qm-option.incorrect {
   border-color: #dc2626;
   background: #fef2f2;
+}
+
+.qm-check-btn {
+  margin-top: 16px;
+  min-height: 48px;
+  padding: 0 18px;
+  border: none;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 0 12px 24px rgba(37, 99, 235, 0.22);
+}
+
+.qm-check-btn:hover {
+  transform: translateY(-1px);
 }
 
 .opt-badge {
@@ -401,6 +422,36 @@
   background: #f8fafc;
   border-left: 4px solid #64748b;
   border-radius: 0 12px 12px 0;
+  display: grid;
+  gap: 12px;
+}
+
+.qm-result-note.correct {
+  background: #ecfdf3;
+  border-left-color: #16a34a;
+}
+
+.qm-result-note.incorrect {
+  background: #fef2f2;
+  border-left-color: #dc2626;
+}
+
+.qm-result-note strong {
+  color: #0f172a;
+  font-size: 1rem;
+}
+
+.qm-result-answer {
+  display: grid;
+  gap: 6px;
+}
+
+.qm-result-answer span {
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .qm-latex-explanation {

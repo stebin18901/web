@@ -1,24 +1,12 @@
 import React, { useState } from "react";
 import "./Classes.css";
-import { students, teachers, classes } from "../data/dummyData";
+import { classes } from "../data/dummyData";
 
 export default function Classes() {
   const classList = classes || [];
 
   const [selectedClass, setSelectedClass] = useState(classList[0]);
 
-  // get teacher name from dummyData
-  function getTeacherFor(className) {
-    return teachers.find((t) => t.name === selectedClass.teacher);
-  }
-
-  // count students
-  function getStrength(className) {
-    return students.filter((s) => s.class === className).length;
-  }
-
-  const teacher = getTeacherFor(selectedClass?.className);
-  const strength = getStrength(selectedClass?.className);
 
   // periods (your schedule has only 3 periods per day → expand to 6 realistically)
   const PERIODS = [

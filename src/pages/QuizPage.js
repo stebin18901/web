@@ -8,7 +8,7 @@ import "./QuizPage.css";
 
 const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 const CORRECT_MARKS = 4;
-const WRONG_MARKS = -1;
+const WRONG_MARKS = 0;
 
 const safeJsonParse = (value) => {
   try {
@@ -25,6 +25,14 @@ const getQuizTitle = (quiz) =>
   quiz?.title || quiz?.metadata?.chapter || quiz?.quizData?.quizTitle || quiz?.chapter || "Quiz";
 
 const cleanLabel = (value, fallback) => String(value || fallback || "General").trim();
+
+const getQuestionExplanation = (question) =>
+  question?.explanation ||
+  question?.concept_explanation ||
+  question?.solution?.text ||
+  question?.solution?.method ||
+  question?.solution ||
+  "";
 
 const normalizeOptions = (question) => {
   const raw = question?.options;
@@ -265,6 +273,23 @@ const renderMathText = (value, className = "") => {
   );
 };
 
+const getCorrectAnswerText = (question) => {
+  if (!question) return "Not available";
+  if (question.isNumerical) {
+    return String(question.answer ?? question.correctAnswer ?? "").trim() || "Not available";
+  }
+
+  const keys = Array.isArray(question.correctKeys) ? question.correctKeys : [];
+  if (!keys.length) return "Not available";
+
+  return keys
+    .map((key) => {
+      const option = question.options.find((item) => item.key === key);
+      return option ? `${option.key}. ${option.label}` : key;
+    })
+    .join(" | ");
+};
+
 const QuizPage = () => {
   const { quizId } = useParams();
   const location = useLocation();
@@ -277,6 +302,7 @@ const QuizPage = () => {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [revealedQuestions, setRevealedQuestions] = useState({});
 
   const session = useMemo(() => safeJsonParse(localStorage.getItem("schoolStudentSession")), []);
   const requestedQuizIds = useMemo(() => {
@@ -357,7 +383,14 @@ const QuizPage = () => {
     setDoc(doc(db, "quizLiveScores", draftId), payload, { merge: true }).catch(() => {});
   }, [answers, statuses, analytics, attemptQuestions.length, currentTitle, quizId, requestedQuizIds, session?.id]);
 
+  const revealQuestion = (question) => {
+    if (!question) return;
+    setRevealedQuestions((prev) => ({ ...prev, [question.attemptId]: true }));
+  };
+
   const selectOption = (question, optionKey) => {
+    if (revealedQuestions[question.attemptId]) return;
+
     setAnswers((prev) => {
       if (!question.isMulti) return { ...prev, [question.attemptId]: optionKey };
       const current = Array.isArray(prev[question.attemptId]) ? prev[question.attemptId] : [];
@@ -365,11 +398,28 @@ const QuizPage = () => {
       return { ...prev, [question.attemptId]: exists ? current.filter((key) => key !== optionKey) : [...current, optionKey] };
     });
     setStatuses((prev) => ({ ...prev, [question.attemptId]: "answered" }));
+
+    if (!question.isMulti) {
+      setRevealedQuestions((prev) => ({ ...prev, [question.attemptId]: true }));
+    }
   };
 
   const setNumericalAnswer = (question, value) => {
+    if (revealedQuestions[question.attemptId]) return;
     setAnswers((prev) => ({ ...prev, [question.attemptId]: value }));
     setStatuses((prev) => ({ ...prev, [question.attemptId]: hasAnswer(value) ? "answered" : "visited" }));
+  };
+
+  const checkCurrentAnswer = () => {
+    if (!currentQuestion) return;
+    const selected = answers[currentQuestion.attemptId];
+    if (!hasAnswer(selected)) {
+      setError("Please answer the question first.");
+      return;
+    }
+    setError("");
+    revealQuestion(currentQuestion);
+    setStatuses((prev) => ({ ...prev, [currentQuestion.attemptId]: "answered" }));
   };
 
   const getQuestionStatus = (question) => {
@@ -564,6 +614,10 @@ const QuizPage = () => {
   if (!attemptQuestions.length) return <div className="quiz-master-page">No questions found for this quiz.</div>;
 
   const currentSelected = answers[currentQuestion.attemptId];
+  const currentQuestionRevealed = !!revealedQuestions[currentQuestion.attemptId];
+  const currentQuestionCorrect = isAnsweredCorrectly(currentQuestion, currentSelected);
+  const currentQuestionExplanation = getQuestionExplanation(currentQuestion);
+  const currentCorrectAnswerText = getCorrectAnswerText(currentQuestion);
 
   return (
     <div className="quiz-master-page">
@@ -629,24 +683,35 @@ const QuizPage = () => {
             {currentQuestion.imageUrl && <img className="qm-question-image" src={currentQuestion.imageUrl} alt="Question" />}
 
             {currentQuestion.isNumerical ? (
-              <input
-                className="login-input"
-                value={currentSelected || ""}
-                onChange={(event) => setNumericalAnswer(currentQuestion, event.target.value)}
-                placeholder="Enter answer"
-              />
+              <>
+                <input
+                  className="login-input"
+                  value={currentSelected || ""}
+                  onChange={(event) => setNumericalAnswer(currentQuestion, event.target.value)}
+                  placeholder="Enter answer"
+                  disabled={currentQuestionRevealed}
+                />
+                {!currentQuestionRevealed && (
+                  <button className="qm-check-btn" type="button" onClick={checkCurrentAnswer}>
+                    Check Answer
+                  </button>
+                )}
+              </>
             ) : (
               <div className="qm-options">
                 {currentQuestion.options.map((option) => {
                   const isSelected = Array.isArray(currentSelected)
                     ? currentSelected.includes(option.key)
                     : currentSelected === option.key;
+                  const isCorrectOption = currentQuestion.correctKeys.includes(option.key);
+                  const isWrongSelected = currentQuestionRevealed && isSelected && !isCorrectOption;
                   return (
                     <button
                       key={option.key}
                       type="button"
-                      className={`qm-option ${isSelected ? "selected" : ""}`}
+                      className={`qm-option ${isSelected ? "selected" : ""} ${currentQuestionRevealed && isCorrectOption ? "correct" : ""} ${isWrongSelected ? "incorrect" : ""}`}
                       onClick={() => selectOption(currentQuestion, option.key)}
+                      disabled={currentQuestionRevealed}
                     >
                       <span className="opt-badge">{option.key}</span>
                       {renderMathText(option.label, "opt-text")}
@@ -654,6 +719,35 @@ const QuizPage = () => {
                     </button>
                   );
                 })}
+              </div>
+            )}
+
+            {currentQuestion.isMulti && !currentQuestionRevealed && (
+              <button className="qm-check-btn" type="button" onClick={checkCurrentAnswer}>
+                Check Answer
+              </button>
+            )}
+
+            {currentQuestionRevealed && (
+              <div className={`qm-result-note ${currentQuestionCorrect ? "correct" : "incorrect"}`}>
+                <strong>
+                  {currentQuestionCorrect ? `Correct! +${CORRECT_MARKS} points` : `Incorrect. +${WRONG_MARKS} points`}
+                </strong>
+                <div className="qm-result-answer">
+                  <span>Correct Answer</span>
+                  <div>{renderMathText(currentCorrectAnswerText, "qm-latex-explanation")}</div>
+                </div>
+                {currentQuestionExplanation ? (
+                  <div className="qm-result-answer">
+                    <span>Explanation</span>
+                    <div>{renderMathText(currentQuestionExplanation, "qm-latex-explanation")}</div>
+                  </div>
+                ) : (
+                  <div className="qm-result-answer">
+                    <span>Explanation</span>
+                    <div>No explanation provided.</div>
+                  </div>
+                )}
               </div>
             )}
           </section>
