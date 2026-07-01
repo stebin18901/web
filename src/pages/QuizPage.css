@@ -418,12 +418,13 @@
 /* Post-submission Result & Explanations UI */
 .qm-result-note {
   margin-top: 20px;
-  padding: 16px;
+  padding: 18px 20px;
   background: #f8fafc;
   border-left: 4px solid #64748b;
-  border-radius: 0 12px 12px 0;
+  border-radius: 0 16px 16px 0;
   display: grid;
-  gap: 12px;
+  gap: 14px;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.06);
 }
 
 .qm-result-note.correct {
@@ -438,26 +439,39 @@
 
 .qm-result-note strong {
   color: #0f172a;
-  font-size: 1rem;
+  font-size: 1.02rem;
+  line-height: 1.45;
 }
 
 .qm-result-answer {
   display: grid;
-  gap: 6px;
+  gap: 8px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.68);
+  border: 1px solid rgba(148, 163, 184, 0.18);
 }
 
 .qm-result-answer span {
   color: #475569;
-  font-size: 0.78rem;
-  font-weight: 800;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  font-size: 0.88rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-transform: none;
+}
+
+.qm-result-answer div {
+  color: #0f172a;
+  font-size: 1rem;
+  line-height: 1.75;
+  font-weight: 500;
 }
 
 .qm-latex-explanation {
-  font-weight: 400;
-  line-height: 1.6;
-  color: #475569;
+  font-weight: 500;
+  line-height: 1.75;
+  color: #1e293b;
+  font-size: 1rem;
 }
 
 /* Functional Footers */

@@ -57,6 +57,7 @@ const getDeviceLabel = () => {
   if (/linux/i.test(ua)) return "Linux device";
   return "Browser device";
 };
+const PROFILE_CARD_IMAGE = `${process.env.PUBLIC_URL || ""}/images/propic.png`;
 const buildSessionFromEnrollment = (studentId, enrollment, fallbackSession) => {
   const selectedClasses = getUniqueClasses(
     enrollment?.selectedClasses || [enrollment?.className]
@@ -128,6 +129,7 @@ const dashboardNavItems = [
   { key: "goals", label: "Weekly Goals", hint: "Coming soon", description: "Goal planner coming soon" },
   { key: "profile", label: "Profile", hint: "Coming soon", description: "Profile tools coming soon" },
 ];
+const lockedNavKeys = new Set(["subjects", "concepts", "mock-tests", "notes", "goals"]);
 
 const dashboardBackdropUrl = `${process.env.PUBLIC_URL}/images/dashboard.png`;
 const practiceBackdropUrl = `${process.env.PUBLIC_URL}/images/week.png`;
@@ -153,6 +155,7 @@ const Dashboard = () => {
   const [newClassName, setNewClassName] = useState("");
   const [newClassStudentName, setNewClassStudentName] = useState("");
   const [classError, setClassError] = useState("");
+  const [navNotice, setNavNotice] = useState("");
   const subjectScrollRef = useRef(null);
   const navigate = useNavigate();
 
@@ -686,6 +689,23 @@ const Dashboard = () => {
     ],
     [overallProgress, studentStats]
   );
+  const progressHolderTier = useMemo(() => {
+    const score = Number(studentStats.avgAccuracy || 0);
+
+    if (score >= 95) {
+      return { key: "black", label: "Black Card Holder", accent: "Elite performance band" };
+    }
+    if (score >= 85) {
+      return { key: "platinum", label: "Platinum Card Holder", accent: "Exceptional consistency" };
+    }
+    if (score >= 70) {
+      return { key: "gold", label: "Gold Card Holder", accent: "Strong scoring momentum" };
+    }
+    if (score >= 55) {
+      return { key: "silver", label: "Silver Card Holder", accent: "Steady progress track" };
+    }
+    return { key: "blue", label: "Blue Card Holder", accent: "Learning curve active" };
+  }, [studentStats.avgAccuracy]);
 
   const placeholderView = useMemo(() => {
     const activeItem = dashboardNavItems.find((item) => item.key === activeNav);
@@ -751,6 +771,18 @@ const Dashboard = () => {
     });
   };
 
+  const handleNavSelect = (itemKey) => {
+    if (lockedNavKeys.has(itemKey)) {
+      setNavNotice("Stay tuned, coming soon.");
+      setIsSidebarOpen(false);
+      return;
+    }
+
+    setNavNotice("");
+    setActiveNav(itemKey);
+    setIsSidebarOpen(false);
+  };
+
   if (!session) return null;
 
   return (
@@ -797,14 +829,15 @@ const Dashboard = () => {
                 <button
                   key={item.key}
                   type="button"
-                  className={`dashboard-nav-item ${activeNav === item.key ? "active" : "inactive"}`}
+                  className={`dashboard-nav-item ${activeNav === item.key ? "active" : "inactive"} ${lockedNavKeys.has(item.key) ? "locked" : ""}`}
                   title={item.description}
-                  onClick={() => {
-                    setActiveNav(item.key);
-                    setIsSidebarOpen(false);
-                  }}
+                  aria-disabled={lockedNavKeys.has(item.key)}
+                  onClick={() => handleNavSelect(item.key)}
                 >
-                  <span className="dashboard-nav-label">{item.label}</span>
+                  <span className="dashboard-nav-label">
+                    {item.label}
+                    {lockedNavKeys.has(item.key) && <span className="dashboard-nav-lock" aria-hidden="true">🔒</span>}
+                  </span>
                   {activeNav !== item.key && <small>{item.hint}</small>}
                 </button>
               ))}
@@ -857,8 +890,7 @@ const Dashboard = () => {
                       navigate("/");
                     }}
                   >
-                    <span className="dashboard-side-logout-label">Logout</span>
-                    <small>Exit dashboard</small>
+                    Logout
                   </button>
                 </div>
               </div>
@@ -977,6 +1009,7 @@ const Dashboard = () => {
         <div className="dash-loading dashboard-glass-card">Loading your learning dashboard...</div>
       ) : (
         <>
+          {navNotice && <div className="dashboard-nav-notice">{navNotice}</div>}
           {activeNav === "home" && (
             <>
               <div className="dashboard-hero-banner dashboard-glass-card">
@@ -1393,24 +1426,54 @@ const Dashboard = () => {
               )}
 
               {activeNav === "progress" && (
-                <section className="stats-card progress-summary-panel">
-                  <div className="panel-title">Performance Summary</div>
-                  <div className="progress-summary-list">
-                    <div className="progress-summary-item">
-                      <span>Current Rank</span>
-                      <strong>#{studentStats.rank}</strong>
+                <section className={`stats-card progress-summary-panel holder-card holder-card-${progressHolderTier.key}`}>
+                  <div className="holder-card-shell">
+                    <div className="holder-card-score-block">
+                      <span className="holder-card-overall">{studentStats.avgAccuracy}</span>
+                      <span className="holder-card-overall-label">OVR</span>
+                      <span className="holder-card-tier">{progressHolderTier.label}</span>
                     </div>
-                    <div className="progress-summary-item">
-                      <span>Total Attempts</span>
-                      <strong>{studentStats.totalQuizzes}</strong>
+
+                    <div className="holder-card-art">
+                      <div className="holder-card-glow"></div>
+                      <img
+                        className="holder-card-avatar"
+                        src={PROFILE_CARD_IMAGE}
+                        alt={session?.name ? `${session.name} profile` : "Student profile"}
+                      />
                     </div>
-                    <div className="progress-summary-item">
-                      <span>Average Accuracy</span>
-                      <strong>{studentStats.avgAccuracy}%</strong>
+
+                    <div className="holder-card-nameplate">
+                      <span className="holder-card-kicker">Profile Summary</span>
+                      <strong>{session?.name || "Student"}</strong>
+                      <p>{progressHolderTier.accent}</p>
                     </div>
-                    <div className="progress-summary-item">
-                      <span>Overall Completion</span>
-                      <strong>{overallProgress}%</strong>
+
+                    <div className="holder-card-stats-grid">
+                      <div>
+                        <span>COM</span>
+                        <strong>{overallProgress}</strong>
+                      </div>
+                      <div>
+                        <span>PTS</span>
+                        <strong>{studentStats.totalPoints}</strong>
+                      </div>
+                      <div>
+                        <span>RNK</span>
+                        <strong>{studentStats.rank}</strong>
+                      </div>
+                      <div>
+                        <span>ATM</span>
+                        <strong>{studentStats.totalQuizzes}</strong>
+                      </div>
+                      <div>
+                        <span>PLN</span>
+                        <strong>{session.planName || activePlan.name || "Base"}</strong>
+                      </div>
+                      <div>
+                        <span>EXP</span>
+                        <strong>{session.expiryDate ? formatDateLabel(session.expiryDate).split(",")[0] : "NA"}</strong>
+                      </div>
                     </div>
                   </div>
                 </section>
