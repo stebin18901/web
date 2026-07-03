@@ -1,6 +1,8 @@
 import React from "react";
 import { Link } from "react-router-dom";
 
+const HEPSY_LOGO = `${process.env.PUBLIC_URL || ""}/images/logo.png`;
+
 const Footer = () => {
   return (
     <footer style={{
@@ -12,6 +14,13 @@ const Footer = () => {
       fontSize: "14px",
       marginTop: "auto"
     }}>
+      <div style={{ marginBottom: "12px" }}>
+        <img
+          src={HEPSY_LOGO}
+          alt="Hepsy logo"
+          style={{ width: "72px", height: "72px", objectFit: "contain", marginBottom: "10px" }}
+        />
+      </div>
       <div style={{ marginBottom: "10px" }}>
         &copy; {new Date().getFullYear()} Hepsy. All rights reserved.
       </div>

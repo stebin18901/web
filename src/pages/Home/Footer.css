@@ -23,11 +23,15 @@
   gap: 15px;
 }
 
-.footer-section.about h1 {
-  font-size: 2rem;
-  color: #fff;
-  font-weight: bold;
+.footer-logo {
+  width: 120px;
+  max-width: 100%;
+  height: auto;
+  object-fit: contain;
   margin-bottom: 10px;
+  background: #ffffff;
+  border-radius: 14px;
+  padding: 8px;
 }
 
 .footer-section.about p {

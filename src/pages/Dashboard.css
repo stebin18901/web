@@ -180,6 +180,17 @@
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
+.brand-badge-logo {
+  padding: 6px;
+  background: #ffffff;
+}
+
+.brand-badge-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
 .brand-button:hover .brand-badge {
   transform: translateY(-2px);
   box-shadow: 0 16px 34px rgba(67, 240, 125, 0.24);
@@ -1402,6 +1413,11 @@
   border-radius: 26px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   background: linear-gradient(145deg, rgba(12, 18, 28, 0.96), rgba(20, 29, 44, 0.84));
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 14px;
+  overflow: hidden;
   transition: transform 0.32s var(--ease-premium), border-color 0.32s var(--ease-premium), box-shadow 0.32s var(--ease-premium);
 }
 
@@ -1423,6 +1439,12 @@
   font-weight: 800;
 }
 
+.leader-podium-copy {
+  position: relative;
+  z-index: 1;
+  min-width: 0;
+}
+
 .leader-podium-card strong {
   display: block;
   margin-top: 18px;
@@ -1442,6 +1464,27 @@
 
 .leader-podium-card small {
   color: var(--text-dim);
+}
+
+.leader-podium-art {
+  position: relative;
+  z-index: 1;
+  flex: 0 0 auto;
+  align-self: flex-end;
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  width: 92px;
+  min-width: 92px;
+}
+
+.leader-podium-avatar {
+  width: 82px;
+  height: 112px;
+  object-fit: cover;
+  object-position: center top;
+  filter: drop-shadow(0 12px 18px rgba(15, 23, 42, 0.16));
+  opacity: 0.92;
 }
 
 .leaderboard-full-card,
@@ -2647,6 +2690,204 @@
 .chapter-card-elevated {
   background: linear-gradient(145deg, rgba(255, 255, 255, 0.99), rgba(246, 251, 247, 0.96)) !important;
   border: 1px solid rgba(24, 43, 74, 0.08) !important;
+}
+
+.progress-metric-card {
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.99), rgba(244, 249, 246, 0.96)) !important;
+  border: 1px solid rgba(24, 43, 74, 0.08) !important;
+  box-shadow: 0 18px 42px rgba(121, 145, 171, 0.12) !important;
+}
+
+.progress-metric-card::before {
+  background: linear-gradient(100deg, rgba(67, 240, 125, 0.1), transparent 62%) !important;
+}
+
+.progress-metric-card:hover {
+  border-color: rgba(67, 240, 125, 0.22) !important;
+  box-shadow: 0 22px 48px rgba(121, 145, 171, 0.18) !important;
+}
+
+.progress-metric-card span {
+  color: #6b7c93 !important;
+}
+
+.progress-metric-card strong {
+  color: #11254a !important;
+}
+
+.progress-metric-card.tone-green strong {
+  color: #1fa35a !important;
+}
+
+.progress-metric-card.tone-blue strong {
+  color: #2b6edc !important;
+}
+
+.progress-metric-card.tone-gold strong {
+  color: #c98610 !important;
+}
+
+.progress-metric-card.tone-violet strong {
+  color: #7a4dce !important;
+}
+
+.class-modal.account-modal {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.995) 0%, rgba(247, 251, 248, 0.985) 100%) !important;
+  border: 1px solid rgba(24, 43, 74, 0.08) !important;
+  box-shadow: 0 28px 64px rgba(121, 145, 171, 0.24) !important;
+}
+
+.class-modal.account-modal::before {
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.55), transparent 38%, transparent 74%, rgba(67, 240, 125, 0.04)) !important;
+  opacity: 0.65 !important;
+}
+
+.class-modal-head h2 {
+  color: #11254a !important;
+}
+
+.class-modal-head button {
+  border: 1px solid rgba(24, 43, 74, 0.08) !important;
+  background: rgba(244, 248, 251, 0.95) !important;
+  color: #11254a !important;
+}
+
+.account-row,
+.account-switch-card,
+.account-switch-empty {
+  border: 1px solid rgba(24, 43, 74, 0.08) !important;
+  background: rgba(246, 249, 252, 0.96) !important;
+}
+
+.account-row span,
+.account-switch-empty,
+.account-switch-card span,
+.account-switch-head span {
+  color: #6b7c93 !important;
+}
+
+.account-row strong,
+.account-switch-card strong,
+.account-switch-head h3 {
+  color: #11254a !important;
+}
+
+.account-switch-section {
+  border-top: 1px solid rgba(24, 43, 74, 0.08) !important;
+}
+
+.account-switch-card.active {
+  border-color: rgba(67, 240, 125, 0.34) !important;
+  background: linear-gradient(145deg, #f4ffef, #eefbec) !important;
+  box-shadow: 0 0 0 1px rgba(67, 240, 125, 0.16) !important;
+}
+
+.leader-podium-card {
+  border: 1px solid rgba(24, 43, 74, 0.08) !important;
+  background: linear-gradient(145deg, rgba(255, 255, 255, 0.99), rgba(244, 249, 246, 0.96)) !important;
+  box-shadow: 0 18px 42px rgba(121, 145, 171, 0.12) !important;
+}
+
+.leader-podium-card:hover {
+  border-color: rgba(67, 240, 125, 0.22) !important;
+  box-shadow: 0 22px 48px rgba(121, 145, 171, 0.18) !important;
+}
+
+.leader-podium-rank {
+  background: rgba(24, 43, 74, 0.08) !important;
+  color: #11254a !important;
+}
+
+.leader-podium-card strong {
+  color: #11254a !important;
+}
+
+.leader-podium-card p,
+.leader-podium-card small {
+  color: #4c5d75 !important;
+}
+
+.leader-podium-card p {
+  font-weight: 800;
+}
+
+.leader-podium-card.podium-1 {
+  background:
+    linear-gradient(145deg, rgba(255, 250, 235, 0.98), rgba(255, 255, 255, 0.96)),
+    linear-gradient(120deg, rgba(245, 196, 66, 0.18), transparent 62%) !important;
+}
+
+.leader-podium-card.podium-1 .leader-podium-rank {
+  background: rgba(245, 196, 66, 0.18) !important;
+  color: #8a5a00 !important;
+}
+
+.leader-podium-card.podium-1 p {
+  color: #9a6700 !important;
+}
+
+.leader-podium-card.podium-2 {
+  background:
+    linear-gradient(145deg, rgba(245, 248, 252, 0.99), rgba(255, 255, 255, 0.96)),
+    linear-gradient(120deg, rgba(148, 163, 184, 0.18), transparent 62%) !important;
+}
+
+.leader-podium-card.podium-2 .leader-podium-rank {
+  background: rgba(148, 163, 184, 0.2) !important;
+  color: #475569 !important;
+}
+
+.leader-podium-card.podium-2 p {
+  color: #475569 !important;
+}
+
+.leader-podium-card.podium-3 {
+  background:
+    linear-gradient(145deg, rgba(255, 247, 241, 0.98), rgba(255, 255, 255, 0.96)),
+    linear-gradient(120deg, rgba(194, 120, 59, 0.16), transparent 62%) !important;
+}
+
+.leader-podium-card.podium-3 .leader-podium-rank {
+  background: rgba(194, 120, 59, 0.16) !important;
+  color: #8a4b15 !important;
+}
+
+.leader-podium-card.podium-3 p {
+  color: #9a4f18 !important;
+}
+
+.leader-podium-avatar {
+  opacity: 0.86;
+}
+
+.leader-podium-card.holder-tone-black {
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.92) 56%, rgba(17, 37, 63, 0.24) 100%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.99), rgba(244, 249, 246, 0.96)) !important;
+}
+
+.leader-podium-card.holder-tone-platinum {
+  background:
+    linear-gradient(90deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 255, 255, 0.92) 56%, rgba(111, 137, 169, 0.24) 100%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.99), rgba(244, 249, 246, 0.96)) !important;
+}
+
+.leader-podium-card.holder-tone-gold {
+  background:
+    linear-gradient(90deg, rgba(255, 251, 239, 0.98) 0%, rgba(255, 255, 255, 0.92) 56%, rgba(216, 163, 38, 0.24) 100%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.99), rgba(244, 249, 246, 0.96)) !important;
+}
+
+.leader-podium-card.holder-tone-silver {
+  background:
+    linear-gradient(90deg, rgba(248, 250, 252, 0.98) 0%, rgba(255, 255, 255, 0.92) 56%, rgba(127, 146, 164, 0.24) 100%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.99), rgba(244, 249, 246, 0.96)) !important;
+}
+
+.leader-podium-card.holder-tone-blue {
+  background:
+    linear-gradient(90deg, rgba(244, 249, 255, 0.98) 0%, rgba(255, 255, 255, 0.92) 56%, rgba(92, 193, 255, 0.24) 100%),
+    linear-gradient(145deg, rgba(255, 255, 255, 0.99), rgba(244, 249, 246, 0.96)) !important;
 }
 
 .right-panel section.holder-card {

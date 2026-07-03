@@ -40,6 +40,8 @@ import QuizDemoSharePage from "./pages/QuizDemoSharePage";
 import Downloads from "./pages/Downloads";
 import DemoViewer from "./pages/DemoViewer";
 import AdminSchoolDetails from "./pages/Admin/AdminSchoolDetails";
+import BlogListPage from "./pages/BlogListPage";
+import BlogDetailPage from "./pages/BlogDetailPage";
 
 // --- STEP 3 IMPORTS: Compliance Components ---
 import Footer from "./components/Footer";
@@ -112,6 +114,8 @@ const AppContent = () => {
           <Route path="/school-form/:schoolId/:type" element={<ClassIntakeForm />} />
           <Route path="/class-form/:schoolId/:className/:type" element={<ClassIntakeForm />} />
           <Route path="/about" element={<AboutPage />} />
+          <Route path="/blogs" element={<BlogListPage />} />
+          <Route path="/blogs/:slug" element={<BlogDetailPage />} />
           <Route path="/pricing" element={<PricingNew />} />
           <Route path="/subscribe" element={<PrivateRoute element={<SubscriptionCheckout />} />} />
           <Route path="/subscription-status" element={<PrivateRoute element={<SubscriptionStatus />} />} />

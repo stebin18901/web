@@ -58,6 +58,24 @@ const getDeviceLabel = () => {
   return "Browser device";
 };
 const PROFILE_CARD_IMAGE = `${process.env.PUBLIC_URL || ""}/images/propic.png`;
+const HEPSY_LOGO = `${process.env.PUBLIC_URL || ""}/images/logo.png`;
+const getHolderTierByScore = (scoreValue) => {
+  const score = Number(scoreValue || 0);
+
+  if (score >= 95) {
+    return { key: "black", label: "Black Card Holder", accent: "Elite performance band" };
+  }
+  if (score >= 85) {
+    return { key: "platinum", label: "Platinum Card Holder", accent: "Exceptional consistency" };
+  }
+  if (score >= 70) {
+    return { key: "gold", label: "Gold Card Holder", accent: "Strong scoring momentum" };
+  }
+  if (score >= 55) {
+    return { key: "silver", label: "Silver Card Holder", accent: "Steady progress track" };
+  }
+  return { key: "blue", label: "Blue Card Holder", accent: "Learning curve active" };
+};
 const buildSessionFromEnrollment = (studentId, enrollment, fallbackSession) => {
   const selectedClasses = getUniqueClasses(
     enrollment?.selectedClasses || [enrollment?.className]
@@ -689,23 +707,10 @@ const Dashboard = () => {
     ],
     [overallProgress, studentStats]
   );
-  const progressHolderTier = useMemo(() => {
-    const score = Number(studentStats.avgAccuracy || 0);
-
-    if (score >= 95) {
-      return { key: "black", label: "Black Card Holder", accent: "Elite performance band" };
-    }
-    if (score >= 85) {
-      return { key: "platinum", label: "Platinum Card Holder", accent: "Exceptional consistency" };
-    }
-    if (score >= 70) {
-      return { key: "gold", label: "Gold Card Holder", accent: "Strong scoring momentum" };
-    }
-    if (score >= 55) {
-      return { key: "silver", label: "Silver Card Holder", accent: "Steady progress track" };
-    }
-    return { key: "blue", label: "Blue Card Holder", accent: "Learning curve active" };
-  }, [studentStats.avgAccuracy]);
+  const progressHolderTier = useMemo(
+    () => getHolderTierByScore(studentStats.avgAccuracy),
+    [studentStats.avgAccuracy]
+  );
 
   const placeholderView = useMemo(() => {
     const activeItem = dashboardNavItems.find((item) => item.key === activeNav);
@@ -816,11 +821,13 @@ const Dashboard = () => {
               className="brand-wrap brand-button dashboard-brand"
               onClick={() => setShowAccountModal(true)}
             >
-              <div className="brand-badge">M</div>
+              <div className="brand-badge brand-badge-logo">
+                <img src={HEPSY_LOGO} alt="Hepsy logo" />
+              </div>
               <div>
-                <p className="dash-kicker">MINT</p>
-                <h1>MINT</h1>
-                <p className="dash-sub">DO &amp; LEARN</p>
+                <p className="dash-kicker">HEPSY</p>
+                <h1>HEPSY</h1>
+                <p className="dash-sub">LEARN SMARTER</p>
               </div>
             </button>
 
@@ -849,8 +856,16 @@ const Dashboard = () => {
                 className="dashboard-side-account brand-wrap brand-button"
                 onClick={() => setShowAccountModal(true)}
               >
-               
-                
+                <div className="brand-badge brand-badge-logo">
+                  <img src={HEPSY_LOGO} alt="Hepsy logo" />
+                </div>
+                <div>
+                  <p className="dash-kicker">{session?.name || "Student"}</p>
+                  <strong>{session?.schoolName || "Hepsy Student"}</strong>
+                  <span className="dashboard-side-programme">
+                    {session?.className ? `Class ${session.className}` : "Student account"}
+                  </span>
+                </div>
               </button>
 
               <div className="dashboard-side-actions">
@@ -1299,14 +1314,28 @@ const Dashboard = () => {
                   ) : (
                     <>
                       <div className="leaderboard-podium">
-                        {leaderboard.slice(0, 3).map((entry, idx) => (
-                          <article key={entry.id} className={`leader-podium-card podium-${idx + 1}`}>
-                            <span className="leader-podium-rank">#{idx + 1}</span>
-                            <strong>{entry.name}</strong>
-                            <p>{entry.points} pts</p>
-                            <small>{entry.avg}% avg accuracy</small>
+                        {leaderboard.slice(0, 3).map((entry, idx) => {
+                          const holderTier = getHolderTierByScore(entry.avg);
+                          return (
+                          <article
+                            key={entry.id}
+                            className={`leader-podium-card podium-${idx + 1} holder-tone-${holderTier.key}`}
+                          >
+                            <div className="leader-podium-copy">
+                              <span className="leader-podium-rank">#{idx + 1}</span>
+                              <strong>{entry.name}</strong>
+                              <p>{entry.points} pts</p>
+                              <small>{entry.avg}% avg accuracy</small>
+                            </div>
+                            <div className="leader-podium-art" aria-hidden="true">
+                              <img
+                                className="leader-podium-avatar"
+                                src={PROFILE_CARD_IMAGE}
+                                alt=""
+                              />
+                            </div>
                           </article>
-                        ))}
+                        )})}
                       </div>
                       <section className="leaderboard-card leaderboard-full-card">
                         <div className="row-head row-head-stack">

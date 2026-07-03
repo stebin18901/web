@@ -201,7 +201,7 @@ const Schools = () => {
       { merge: true }
     );
     setDefaultSchoolId(normalizedId);
-    alert(`${school.schoolName} is now the default school for unauthenticated student access.`);
+    alert(`${school.schoolName} is now the default school for individual student access. It remains manageable under this school while school-linked student login stays separate.`);
   };
 
   const generateToken = () => {

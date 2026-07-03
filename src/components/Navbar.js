@@ -13,6 +13,7 @@ import {
 import "./Navbar.css";
 
 const SIDEBAR_STORAGE_KEY = "hepsy_sidebar_collapsed";
+const HEPSY_LOGO = `${process.env.PUBLIC_URL || ""}/images/logo.png`;
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -52,10 +53,10 @@ const Navbar = () => {
     <>
       <nav className={`navbar ${isCollapsed ? "collapsed" : ""}`}>
         <div className="navbar-header">
-          <h1 className="navbar-title">
+          <div className="navbar-title" aria-label="Hepsy">
+            <img className="navbar-logo" src={HEPSY_LOGO} alt="Hepsy logo" />
             <span className="navbar-title-full">HEPSY</span>
-            <span className="navbar-title-short">H</span>
-          </h1>
+          </div>
 
           <button
             className="sidebar-collapse-btn"

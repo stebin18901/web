@@ -1,9 +1,13 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { Link } from "react-router-dom";
+import { collection, getDocs } from "firebase/firestore";
+import { db } from "../firebase/firebaseConfig";
 import "./MainHome.css";
 import Footer from "../components/Footer";
+import { BLOG_COLLECTION, formatBlogDate, normalizeBlog } from "../utils/blogs";
 
 const heroTitleWords = ["Modern", "school", "routine."];
+const HEPSY_LOGO = `${process.env.PUBLIC_URL || ""}/images/logo.png`;
 
 const stats = [
   { value: "Classes 6-10", label: "Structured coverage for core school years" },
@@ -15,33 +19,6 @@ const snapshotPoints = [
   "Live quiz performance tracking",
   "Topic-wise revision targets",
   "Student and parent friendly reports",
-];
-
-const features = [
-  {
-    title: "Guided Practice",
-    text: "Hints, explanations, and stepwise reinforcement help students learn instead of just guessing answers.",
-  },
-  {
-    title: "Exam-Focused Coverage",
-    text: "Concept practice stays aligned with school expectations, revision cycles, and strong exam habits.",
-  },
-  {
-    title: "Parent Visibility",
-    text: "Performance summaries make it easy for families to understand consistency, strengths, and improvement areas.",
-  },
-  {
-    title: "Challenge-Driven Learning",
-    text: "Leaderboards, streaks, and weekly targets turn routine homework into something students want to return to.",
-  },
-  {
-    title: "Study Material Hub",
-    text: "Notes, revision support, and practice resources live in one clean mobile-first experience.",
-  },
-  {
-    title: "School Growth Support",
-    text: "Institutions can connect better learning outcomes with a stronger digital academic experience.",
-  },
 ];
 
 const steps = [
@@ -97,6 +74,7 @@ const plans = [
 
 export default function MainHome() {
   const canvasRef = useRef(null);
+  const [blogs, setBlogs] = useState([]);
 
   const scrollToId = (id) => {
     const el = document.getElementById(id);
@@ -169,6 +147,28 @@ export default function MainHome() {
     return () => observer.disconnect();
   }, []);
 
+  useEffect(() => {
+    let active = true;
+
+    const loadBlogs = async () => {
+      const snap = await getDocs(collection(db, BLOG_COLLECTION));
+      if (!active) return;
+      const items = snap.docs
+        .map((entry) => normalizeBlog({ id: entry.id, ...entry.data() }))
+        .filter((entry) => entry.status === "published")
+        .sort((a, b) => b.publishedAtMs - a.publishedAtMs || b.createdAtMs - a.createdAtMs)
+        .slice(0, 6);
+      setBlogs(items);
+    };
+
+    loadBlogs();
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const homeBlogs = useMemo(() => blogs.slice(0, 6), [blogs]);
+
   return (
     <>
       <div className="home-shell">
@@ -181,7 +181,7 @@ export default function MainHome() {
         <header className="nav">
           <div className="container1 nav-bar">
             <a className="brand" href="#top" aria-label="Hepsy Home">
-              <span className="logo">H</span>
+              <img className="logo logo-image" src={HEPSY_LOGO} alt="Hepsy logo" />
               <span className="brand-copy">
                 <strong>HEPSY</strong>
                 <small>LEARNING</small>
@@ -316,27 +316,45 @@ export default function MainHome() {
           </section>
 
           <section className="container1 platform-section" id="platform">
-            <div className="section-heading reveal motion-ready">
-              <span className="section-tag motion-text" style={{ "--motion-delay": 0 }}>BENTO MATRIX EXPERIENCE</span>
-              <h2 className="section-title motion-text" style={{ "--motion-delay": 1 }}>Everything students need to stay consistent, not just busy.</h2>
+            <div className="section-heading reveal motion-ready blog-section-head">
+              <span className="section-tag motion-text" style={{ "--motion-delay": 0 }}>HEPSY BLOG DESK</span>
+              <h2 className="section-title motion-text" style={{ "--motion-delay": 1 }}>Stories, study ideas, and product updates in a six-card editorial wall.</h2>
               <p className="section-subtitle motion-text" style={{ "--motion-delay": 2 }}>
-                Practice, revision, reports, and motivation come together in one focused experience that students actually want to return to.
+                Fresh reads from the Hepsy team, built to feel visual first on the homepage and deeper on the full blog pages.
               </p>
-              <p className="section-coverage motion-text" style={{ "--motion-delay": 3 }}>Classes included: 6 to 12</p>
+              <div className="blog-section-actions motion-text" style={{ "--motion-delay": 3 }}>
+                <p className="section-coverage">Latest 6 published articles</p>
+                <Link to="/blogs" className="blog-view-more">View More</Link>
+              </div>
             </div>
 
-            <div className="feature-grid">
-              {features.map((feature) => (
-                <article className="feature reveal" key={feature.title}>
-                  <div className="feature-topline">
-                    <div className="feature-icon">{feature.title.substring(0,2).toUpperCase()}</div>
-                    <span className="card-cue" aria-hidden="true">+</span>
-                  </div>
-                  <h3 className="card-title-shift">{feature.title}</h3>
-                  <p>{feature.text}</p>
-                </article>
-              ))}
-            </div>
+            {homeBlogs.length === 0 ? (
+              <div className="blog-home-empty reveal">
+                No blogs published yet. Add your first article from <strong>/admin189201</strong> in the new Blogs section.
+              </div>
+            ) : (
+              <div className="feature-grid blog-feature-grid">
+                {homeBlogs.map((blog) => (
+                  <Link
+                    to={`/blogs/${blog.slug}`}
+                    className="feature reveal home-blog-card"
+                    key={blog.id}
+                    style={{
+                      backgroundImage: blog.featureImage
+                        ? `linear-gradient(180deg, rgba(5, 9, 20, 0.18) 0%, rgba(5, 9, 20, 0.88) 100%), url(${blog.featureImage})`
+                        : "linear-gradient(145deg, rgba(109, 121, 255, 0.18), rgba(20, 200, 161, 0.18))",
+                    }}
+                  >
+                    <h3 className="card-title-shift">{blog.title}</h3>
+                    <p>{blog.excerpt}</p>
+                    <div className="home-blog-meta">
+                      <span>{formatBlogDate(blog.publishedAt)}</span>
+                      <span>{blog.readTime} min read</span>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
           </section>
 
           <section className="container1 journey-section">

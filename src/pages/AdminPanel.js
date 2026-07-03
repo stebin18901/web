@@ -14,6 +14,7 @@ import AdminSubscriptionSettings from "./Admin/AdminSubscriptionSettings";
 import AdminQuizDemoPdf from "./Admin/AdminQuizDemoPdf";
 import AdminApkManagement from "./Admin/AdminApkManagement";
 import AdminHtmlDemoManager from "./Admin/AdminHtmlDemoManager";
+import AdminBlogs from "./Admin/AdminBlogs";
 
 const tabs = [
   { id: "schoolQuiz", label: "School Quiz", group: "Schools", note: "Manage school quiz flows" },
@@ -23,6 +24,7 @@ const tabs = [
   { id: "createchapter", label: "Create chapter", group: "Content", note: "Create and review chapters" },
   { id: "quizdemopdf", label: "Quiz Demo PDF", group: "Content", note: "Maintain demo kit PDF" },
   { id: "demo", label: "Demo", group: "Content", note: "Upload and preview HTML demo content" },
+  { id: "blogs", label: "Blogs", group: "Content", note: "Create, publish, and manage blog stories" },
   { id: "report", label: "Report card", group: "Analytics", note: "Review student report summaries" },
   { id: "feature", label: "Feature", group: "Operations", note: "Manage feature announcements" },
   { id: "calender", label: "Calender", group: "Operations", note: "Plan school calendar items" },
@@ -128,6 +130,7 @@ const AdminPanel = () => {
           {activeTab === "createchapter" && <AdminQCreate />}
           {activeTab === "quizdemopdf" && <AdminQuizDemoPdf />}
           {activeTab === "demo" && <AdminHtmlDemoManager />}
+          {activeTab === "blogs" && <AdminBlogs />}
           {activeTab === "report" && <ReportAdmin />}
           {activeTab === "premiumchapter" && <CreateTutor />}
           {activeTab === "feature" && <AdminAddFeature />}

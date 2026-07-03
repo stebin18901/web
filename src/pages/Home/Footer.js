@@ -3,6 +3,8 @@ import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin } from 'react-icons/fa';
 import emailjs from 'emailjs-com';
 import './Footer.css';
 
+const HEPSY_LOGO = `${process.env.PUBLIC_URL || ""}/images/logo.png`;
+
 const Footer = () => {
     // State to hold form data and submission status
     const [formData, setFormData] = useState({
@@ -44,7 +46,7 @@ const Footer = () => {
         <footer className="footer">
             <div className="footer-content">
                 <div className="footer-section about">
-                    <h1 className="logo">Hepsy</h1>
+                    <img className="footer-logo" src={HEPSY_LOGO} alt="Hepsy logo" />
                     <p>
                         Your ultimate destination for the latest news, events, and
                         community interaction. Join the fun!
@@ -105,5 +107,4 @@ const Footer = () => {
 };
 
 export default Footer;
-
 

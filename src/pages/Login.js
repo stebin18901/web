@@ -360,9 +360,12 @@ const Login = () => {
         .filter((entry) => {
           const schoolId = normalizeSchoolId(entry.schoolId);
           const accessMode = String(entry.accessMode || "default-school").toLowerCase();
+          if (schoolContext?.accessMode === "default-school") {
+            return schoolId === schoolContext?.schoolId && accessMode === "default-school";
+          }
           return (
             schoolId === schoolContext?.schoolId &&
-            (accessMode === "default-school" || accessMode === "school-plan")
+            accessMode === "school-plan"
           );
         })
         .filter((entry) => {
@@ -374,13 +377,31 @@ const Login = () => {
   };
 
   const continueWithLinkedAccount = async (enrollmentId, enrollmentData, context) => {
-    const status = await checkSubscriptionStatus(enrollmentData, enrollmentId);
+    const normalizedEnrollment = {
+      ...enrollmentData,
+      schoolId: enrollmentData.schoolId || context.schoolId,
+      schoolName: enrollmentData.schoolName || context.schoolName,
+      accessMode: "default-school",
+    };
+
+    await setDoc(
+      doc(db, "defaultSchoolEnrollments", enrollmentId),
+      {
+        schoolId: normalizedEnrollment.schoolId,
+        schoolName: normalizedEnrollment.schoolName,
+        accessMode: "default-school",
+        updatedAt: new Date().toISOString(),
+      },
+      { merge: true }
+    );
+
+    const status = await checkSubscriptionStatus(normalizedEnrollment, enrollmentId);
 
     if (status === "active") {
       localStorage.setItem(
         "schoolStudentSession",
         JSON.stringify(
-          buildDefaultSchoolSession(enrollmentId, enrollmentData, context)
+          buildDefaultSchoolSession(enrollmentId, normalizedEnrollment, context)
         )
       );
       navigate("/dashboard");
@@ -523,14 +544,12 @@ const Login = () => {
 
         const defaultData = defaultSnap.data();
         const defaultSchoolId = normalizeSchoolId(defaultData.schoolId);
-        if (!defaultSchoolId || defaultData.enabled === false) return;
+        if (!defaultSchoolId) return;
+        if (defaultData.enabled === false) return;
 
-        const schoolSnap = await getDoc(doc(db, "schools", defaultSchoolId));
-        const schoolData = schoolSnap.exists() ? schoolSnap.data() : {};
         setSchoolContext({
           schoolId: defaultSchoolId,
-          schoolName:
-            schoolData.schoolName || defaultData.schoolName || defaultSchoolId,
+          schoolName: String(defaultData.schoolName || defaultSchoolId).trim(),
           accessMode: "default-school",
         });
       } catch {
@@ -1174,12 +1193,13 @@ const Login = () => {
           <>
             <div className="school-context-row">
               <p className="school-context-text">
-                Default School: <strong>{schoolContext.schoolName}</strong>
+                Default School Access: <strong>{schoolContext.schoolName}</strong>
               </p>
             </div>
             <p className="default-school-note">
               One parent phone number can manage up to{" "}
               <strong>{MAX_PARENT_ACCOUNTS_PER_PHONE}</strong> child accounts.
+              This area is for individual students and parents under this school.
               Register each child once, then choose a plan for that child.
             </p>
 
