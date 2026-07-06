@@ -108,7 +108,7 @@ export default function BlogListPage() {
                   className="blog-list-card"
                   style={{
                     backgroundImage: blog.featureImage
-                      ? `linear-gradient(180deg, rgba(11, 18, 38, 0.16) 0%, rgba(11, 18, 38, 0.84) 100%), url(${blog.featureImage})`
+                      ? `linear-gradient(180deg, rgba(11, 18, 38, 0.56) 0%, rgba(11, 18, 38, 0.84) 100%), url(${blog.featureImage})`
                       : "linear-gradient(145deg, rgba(109, 121, 255, 0.12), rgba(20, 200, 161, 0.16))",
                   }}
                 >

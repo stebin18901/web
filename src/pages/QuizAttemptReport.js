@@ -1,6 +1,14 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import "./QuizAttemptReport.css";
+
+const safeJsonParse = (value) => {
+  try {
+    return value ? JSON.parse(value) : null;
+  } catch {
+    return null;
+  }
+};
 
 const formatTime = (seconds = 0) => {
   const mins = Math.floor(Number(seconds || 0) / 60);
@@ -68,7 +76,12 @@ const MiniTable = ({ title, rows }) => (
 const QuizAttemptReport = () => {
   const navigate = useNavigate();
   const location = useLocation();
-  const report = location.state?.report || null;
+  const report =
+    location.state?.report ||
+    safeJsonParse(
+      typeof window !== "undefined" ? window.sessionStorage.getItem("lastQuizReport") : null
+    ) ||
+    null;
 
   const normalized = useMemo(() => {
     if (!report) return null;
@@ -87,6 +100,11 @@ const QuizAttemptReport = () => {
       accuracy: report.accuracy ?? (attempted ? Math.round((correct / attempted) * 100) : 0),
       percentage: report.percentage ?? (total ? Math.round((correct / total) * 100) : 0),
     };
+  }, [report]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !report) return;
+    window.sessionStorage.setItem("lastQuizReport", JSON.stringify(report));
   }, [report]);
 
   if (!normalized) {

@@ -740,8 +740,8 @@ body {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(4, 8, 18, 0.02) 0%, rgba(4, 8, 18, 0.14) 38%, rgba(4, 8, 18, 0.82) 100%);
-  opacity: 0.86;
+  background: linear-gradient(180deg, rgba(4, 8, 18, 0.32) 0%, rgba(4, 8, 18, 0.28) 28%, rgba(4, 8, 18, 0.48) 56%, rgba(4, 8, 18, 0.88) 100%);
+  opacity: 0.94;
   transition: opacity 0.4s ease, background 0.4s ease;
   pointer-events: none;
 }
@@ -779,6 +779,10 @@ body {
   transform: translateY(10px);
   line-height: 1.08;
   text-wrap: balance;
+  color: #ffffff;
+  text-shadow: 0 8px 28px rgba(4, 8, 18, 0.72);
+  font-size: clamp(1.05rem, 1.45vw, 1.45rem);
+  letter-spacing: -0.02em;
 }
 
 .home-blog-card p {

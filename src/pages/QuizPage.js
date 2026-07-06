@@ -9,6 +9,7 @@ import "./QuizPage.css";
 const LETTERS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
 const CORRECT_MARKS = 4;
 const WRONG_MARKS = 0;
+const HELP_LIMIT_PER_QUIZ = 5;
 
 const safeJsonParse = (value) => {
   try {
@@ -26,12 +27,41 @@ const getQuizTitle = (quiz) =>
 
 const cleanLabel = (value, fallback) => String(value || fallback || "General").trim();
 
+const getQuizHelpUsageKey = (studentId, quizKey) =>
+  `quizHelpUsage:${String(studentId || "guest")}:${String(quizKey || "quiz")}`;
+
+const getQuizDraftKey = (studentId, quizKey) =>
+  `quizDraft:${String(studentId || "guest")}_${String(quizKey || "quiz")}`;
+
+const getQuizSubmissionKey = (studentId, quizKey) =>
+  `quizSubmitted:${String(studentId || "guest")}_${String(quizKey || "quiz")}`;
+
+const getQuizReportCacheKey = (studentId, quizKey) =>
+  `quizReport:${String(studentId || "guest")}_${String(quizKey || "quiz")}`;
+
 const getQuestionExplanation = (question) =>
   question?.explanation ||
   question?.concept_explanation ||
   question?.solution?.text ||
   question?.solution?.method ||
   question?.solution ||
+  "";
+
+const getQuestionHelpConcept = (question) =>
+  question?.notes ||
+  question?.concept ||
+  question?.concept_explanation ||
+  question?.hint ||
+  "";
+
+const getQuestionHelpSample = (question) =>
+  question?.example ||
+  question?.sampleQuestion ||
+  question?.sample_question ||
+  question?.sampleProblem ||
+  question?.sample_problem ||
+  question?.workedExample ||
+  question?.worked_example ||
   "";
 
 const normalizeOptions = (question) => {
@@ -246,8 +276,15 @@ const normalizeLatex = (value) =>
     .replace(/×/g, " \\times ")
     .replace(/÷/g, " \\div ");
 
+const decodeHtmlEntities = (value) => {
+  if (typeof window === "undefined") return String(value || "");
+  const textarea = window.document.createElement("textarea");
+  textarea.innerHTML = String(value || "");
+  return textarea.value;
+};
+
 const renderMathText = (value, className = "") => {
-  const text = decodeMathText(value);
+  const text = decodeHtmlEntities(decodeMathText(value));
   if (!text.trim()) return null;
 
   const parts = text.split(/(\$\$[\s\S]+?\$\$|\$[^$]+\$|\\\[[\s\S]+?\\\]|\\\([\s\S]+?\\\))/g);
@@ -303,6 +340,11 @@ const QuizPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [revealedQuestions, setRevealedQuestions] = useState({});
+  const [showHelpPanel, setShowHelpPanel] = useState(false);
+  const [isPaletteOpen, setIsPaletteOpen] = useState(() =>
+    typeof window !== "undefined" ? window.innerWidth > 980 : true
+  );
+  const [lastSavedCheckpoint, setLastSavedCheckpoint] = useState(0);
 
   const session = useMemo(() => safeJsonParse(localStorage.getItem("schoolStudentSession")), []);
   const requestedQuizIds = useMemo(() => {
@@ -342,11 +384,20 @@ const QuizPage = () => {
   }, [selectedQuizzes]);
 
   const currentTitle = location.state?.chapterName || selectedQuizzes.map(getQuizTitle).join(" + ") || "Quiz";
+  const quizAttemptKey = useMemo(
+    () => quizId || requestedQuizIds.filter(Boolean).join("_") || "quiz",
+    [quizId, requestedQuizIds]
+  );
   const currentQuestion = attemptQuestions[currentIndex];
   const analytics = useMemo(
     () => buildAnalytics(attemptQuestions, answers, statuses, startedAt),
     [attemptQuestions, answers, statuses, startedAt]
   );
+  const checkpointQuestions = useMemo(() => {
+    const total = attemptQuestions.length;
+    if (!total) return [];
+    return [...new Set([1, 2, 3].map((step) => Math.min(total, Math.ceil((total * step) / 3))))];
+  }, [attemptQuestions.length]);
   const answeredCount = analytics.summary.attempted;
   const completionPercentage = attemptQuestions.length
     ? Math.round((answeredCount / attemptQuestions.length) * 100)
@@ -357,14 +408,72 @@ const QuizPage = () => {
     return () => clearInterval(timer);
   }, [startedAt]);
 
+  const [helpUsedCount, setHelpUsedCount] = useState(0);
+
+  useEffect(() => {
+    const storageKey = getQuizHelpUsageKey(session?.id, quizAttemptKey);
+    const nextCount = Number(localStorage.getItem(storageKey) || 0);
+    setHelpUsedCount(Number.isFinite(nextCount) ? nextCount : 0);
+  }, [quizAttemptKey, session?.id]);
+
   useEffect(() => {
     if (!currentQuestion) return;
     setStatuses((prev) => (prev[currentQuestion.attemptId] ? prev : { ...prev, [currentQuestion.attemptId]: "visited" }));
   }, [currentQuestion]);
 
   useEffect(() => {
+    setShowHelpPanel(false);
+  }, [currentIndex]);
+
+  useEffect(() => {
+    if (!session?.id) return;
+    const submittedKey = getQuizSubmissionKey(session.id, quizAttemptKey);
+    const cachedSubmission = safeJsonParse(sessionStorage.getItem(submittedKey));
+    if (!cachedSubmission) return;
+
+    const reportCacheKey = getQuizReportCacheKey(session.id, quizAttemptKey);
+    const cachedReport = safeJsonParse(sessionStorage.getItem(reportCacheKey));
+    if (cachedReport) {
+      navigate("/quiz-report", { state: { report: cachedReport }, replace: true });
+      return;
+    }
+
+    navigate("/dashboard", { replace: true });
+  }, [navigate, quizAttemptKey, session?.id]);
+
+  useEffect(() => {
     if (!session?.id || !attemptQuestions.length) return;
-    const draftId = `${session.id}_${quizId || requestedQuizIds.join("_")}`;
+    const draftKey = getQuizDraftKey(session.id, quizAttemptKey);
+    const savedDraft = safeJsonParse(localStorage.getItem(draftKey));
+    if (!savedDraft) {
+      setLastSavedCheckpoint(0);
+      return;
+    }
+
+    if (savedDraft.answers && typeof savedDraft.answers === "object") {
+      setAnswers(savedDraft.answers);
+    }
+    if (savedDraft.statuses && typeof savedDraft.statuses === "object") {
+      setStatuses(savedDraft.statuses);
+    }
+    if (savedDraft.revealedQuestions && typeof savedDraft.revealedQuestions === "object") {
+      setRevealedQuestions(savedDraft.revealedQuestions);
+    }
+    if (Number.isInteger(savedDraft.currentIndex)) {
+      setCurrentIndex(Math.max(0, Math.min(savedDraft.currentIndex, attemptQuestions.length - 1)));
+    }
+    setLastSavedCheckpoint(Number(savedDraft.lastSavedCheckpoint) || 0);
+  }, [attemptQuestions.length, quizAttemptKey, session?.id]);
+
+  useEffect(() => {
+    if (!session?.id || !attemptQuestions.length || !checkpointQuestions.length) return;
+
+    const reachedCheckpoint = checkpointQuestions
+      .filter((questionNumber) => currentIndex + 1 >= questionNumber)
+      .at(-1);
+
+    if (!reachedCheckpoint || reachedCheckpoint <= lastSavedCheckpoint) return;
+
     const payload = {
       studentId: session.id,
       quizId,
@@ -372,6 +481,9 @@ const QuizPage = () => {
       quizTitle: currentTitle,
       answers,
       statuses,
+      revealedQuestions,
+      currentIndex,
+      lastSavedCheckpoint: reachedCheckpoint,
       liveScore: analytics.summary.score,
       subjectStats: analytics.subjectStats,
       chapterStats: analytics.chapterStats,
@@ -379,13 +491,51 @@ const QuizPage = () => {
       attempted: analytics.summary.attempted,
       updatedAt: new Date().toISOString(),
     };
-    localStorage.setItem(`quizDraft:${draftId}`, JSON.stringify(payload));
-    setDoc(doc(db, "quizLiveScores", draftId), payload, { merge: true }).catch(() => {});
-  }, [answers, statuses, analytics, attemptQuestions.length, currentTitle, quizId, requestedQuizIds, session?.id]);
+
+    const draftKey = getQuizDraftKey(session.id, quizAttemptKey);
+    localStorage.setItem(draftKey, JSON.stringify(payload));
+    setDoc(doc(db, "quizLiveScores", `${session.id}_${quizAttemptKey}`), payload, { merge: true }).catch(() => {});
+    setLastSavedCheckpoint(reachedCheckpoint);
+  }, [
+    analytics,
+    answers,
+    attemptQuestions.length,
+    checkpointQuestions,
+    currentIndex,
+    currentTitle,
+    lastSavedCheckpoint,
+    quizAttemptKey,
+    quizId,
+    requestedQuizIds,
+    revealedQuestions,
+    session?.id,
+    statuses,
+  ]);
 
   const revealQuestion = (question) => {
     if (!question) return;
     setRevealedQuestions((prev) => ({ ...prev, [question.attemptId]: true }));
+  };
+
+  const handleHelpToggle = () => {
+    if (!hasQuestionHelp) return;
+
+    if (showHelpPanel) {
+      setShowHelpPanel(false);
+      return;
+    }
+
+    if (helpUsedCount >= HELP_LIMIT_PER_QUIZ) {
+      setError(`Help limit reached for this quiz. You can use help only ${HELP_LIMIT_PER_QUIZ} times.`);
+      return;
+    }
+
+    const nextCount = helpUsedCount + 1;
+    const storageKey = getQuizHelpUsageKey(session?.id, quizAttemptKey);
+    localStorage.setItem(storageKey, String(nextCount));
+    setHelpUsedCount(nextCount);
+    setError("");
+    setShowHelpPanel(true);
   };
 
   const selectOption = (question, optionKey) => {
@@ -601,7 +751,25 @@ const QuizPage = () => {
       );
       await batch.commit();
 
-      navigate("/quiz-report", { state: { report } });
+      const draftKey = getQuizDraftKey(session.id, quizAttemptKey);
+      const helpUsageKey = getQuizHelpUsageKey(session.id, quizAttemptKey);
+      const submittedKey = getQuizSubmissionKey(session.id, quizAttemptKey);
+      const reportCacheKey = getQuizReportCacheKey(session.id, quizAttemptKey);
+
+      localStorage.removeItem(draftKey);
+      localStorage.removeItem(helpUsageKey);
+      sessionStorage.setItem(
+        submittedKey,
+        JSON.stringify({
+          attemptId,
+          submittedAt: report.submittedAt,
+          quizTitle: report.quizTitle,
+        })
+      );
+      sessionStorage.setItem(reportCacheKey, JSON.stringify(report));
+      sessionStorage.setItem("lastQuizReport", JSON.stringify(report));
+
+      navigate("/quiz-report", { state: { report }, replace: true });
     } catch (err) {
       setError("Unable to submit quiz: " + err.message);
     } finally {
@@ -618,22 +786,64 @@ const QuizPage = () => {
   const currentQuestionCorrect = isAnsweredCorrectly(currentQuestion, currentSelected);
   const currentQuestionExplanation = getQuestionExplanation(currentQuestion);
   const currentCorrectAnswerText = getCorrectAnswerText(currentQuestion);
+  const currentQuestionConceptHelp = getQuestionHelpConcept(currentQuestion);
+  const currentQuestionSampleHelp = getQuestionHelpSample(currentQuestion);
+  const hasQuestionHelp =
+    !!String(currentQuestionConceptHelp || "").trim() ||
+    !!String(currentQuestionSampleHelp || "").trim() ||
+    !!currentQuestion?.notesImage;
+  const helpRemaining = Math.max(0, HELP_LIMIT_PER_QUIZ - helpUsedCount);
 
-  return (
-    <div className="quiz-master-page">
-      <header className="qm-topbar">
-        <div>
-          <h1>{currentTitle}</h1>
-          <p>{selectedQuizzes.length} quiz set(s) | {attemptQuestions.length} questions | Time {formatTime(elapsedSeconds)}</p>
-        </div>
-        <div className="qm-score-box">
-          <span>Current Quiz Score</span>
-          <strong>{analytics.summary.score}</strong>
-        </div>
-      </header>
+    return (
+      <div className="quiz-master-page">
+        <header className="qm-topbar">
+          <div className="qm-topbar-main">
+            <button
+              type="button"
+              className="qm-back-icon-btn"
+              onClick={() => navigate("/dashboard")}
+              aria-label="Back to dashboard"
+              title="Back"
+            >
+              ←
+            </button>
+            <div>
+              <h1>{currentTitle}</h1>
+              <p>{selectedQuizzes.length} quiz set(s) | {attemptQuestions.length} questions | Time {formatTime(elapsedSeconds)}</p>
+            </div>
+          </div>
+          <div className="qm-score-box">
+            <span>Current Quiz Score</span>
+            <strong>{analytics.summary.score}</strong>
+          </div>
+        </header>
 
-      <div className="qm-body">
-        <aside className="qm-sidebar">
+      {isPaletteOpen ? (
+        <button
+          type="button"
+          className="qm-sidebar-scrim"
+          aria-label="Close question palette"
+          onClick={() => setIsPaletteOpen(false)}
+        />
+      ) : null}
+
+      <button
+        type="button"
+        className={`qm-sidebar-handle ${isPaletteOpen ? "open" : "closed"}`}
+        onClick={() => setIsPaletteOpen((prev) => !prev)}
+        aria-expanded={isPaletteOpen}
+        aria-controls="qm-question-palette"
+        aria-label={isPaletteOpen ? "Hide question palette" : "Show question palette"}
+        title={isPaletteOpen ? "Hide question palette" : "Show question palette"}
+      >
+        <span>{isPaletteOpen ? "‹" : "›"}</span>
+      </button>
+
+      <div className={`qm-body ${isPaletteOpen ? "palette-open" : "palette-closed"}`}>
+        <aside
+          id="qm-question-palette"
+          className={`qm-sidebar ${isPaletteOpen ? "open" : "closed"}`}
+        >
           <h3>Question Palette</h3>
           <div className="legend"><span className="dot not-visited" /> Not Visited</div>
           <div className="legend"><span className="dot visited" /> Visited</div>
@@ -642,13 +852,16 @@ const QuizPage = () => {
           <div className="qm-number-grid">
             {attemptQuestions.map((question, index) => {
               const status = getQuestionStatus(question);
+              const isCheckpoint = checkpointQuestions.includes(index + 1);
               return (
                 <button
                   key={question.attemptId}
-                  className={`qm-num ${status} ${index === currentIndex ? "current" : ""}`}
+                  className={`qm-num ${status} ${index === currentIndex ? "current" : ""} ${isCheckpoint ? "checkpoint" : ""}`}
                   onClick={() => goToQuestion(index)}
                   type="button"
+                  title={isCheckpoint ? `Checkpoint question ${index + 1}` : `Question ${index + 1}`}
                 >
+                  {isCheckpoint ? <span className="qm-num-flag">CP</span> : null}
                   {index + 1}
                 </button>
               );
@@ -671,16 +884,74 @@ const QuizPage = () => {
           <div className="qm-progress-line"><div style={{ width: `${completionPercentage}%` }} /></div>
 
           <section className="qm-question-card">
-            <div className="qm-question-kicker">
-              <span>{currentQuestion.subject}</span>
-              <span>{currentQuestion.chapterName}</span>
-              <span>{getDifficultyBucket(currentQuestion)}</span>
-            </div>
+            <div className="qm-question-topbar">
+              <div className="qm-question-kicker">
+                <span>{currentQuestion.subject}</span>
+                <span>{currentQuestion.chapterName}</span>
+                <span>{getDifficultyBucket(currentQuestion)}</span>
+              </div>
+                <button
+                  type="button"
+                  className="qm-help-btn"
+                  onClick={handleHelpToggle}
+                  aria-expanded={showHelpPanel}
+                  aria-controls="qm-help-panel"
+                  disabled={!hasQuestionHelp || (!showHelpPanel && helpUsedCount >= HELP_LIMIT_PER_QUIZ)}
+                  title={
+                    !hasQuestionHelp
+                      ? "No concept help available"
+                      : !showHelpPanel && helpUsedCount >= HELP_LIMIT_PER_QUIZ
+                        ? `Help limit reached (${HELP_LIMIT_PER_QUIZ}/${HELP_LIMIT_PER_QUIZ})`
+                        : `Show concept help (${helpRemaining} left)`
+                  }
+                >
+                  <span>?</span>
+                  <small>{helpRemaining}</small>
+                </button>
+              </div>
+              <div className="qm-help-usage">
+                Help used: {helpUsedCount}/{HELP_LIMIT_PER_QUIZ}
+                {hasQuestionHelp && helpRemaining > 0 ? ` • ${helpRemaining} left` : ""}
+              </div>
             <h2>
               <span>{currentIndex + 1}. </span>
               {renderMathText(currentQuestion.text, "qm-latex-question")}
             </h2>
             {currentQuestion.imageUrl && <img className="qm-question-image" src={currentQuestion.imageUrl} alt="Question" />}
+
+            {showHelpPanel && hasQuestionHelp && (
+              <aside id="qm-help-panel" className="qm-help-panel">
+                <div className="qm-help-panel-head">
+                  <strong>Question Help</strong>
+                  <span>Concept and worked sample from your dataset</span>
+                </div>
+
+                {currentQuestionConceptHelp ? (
+                  <div className="qm-help-block">
+                    <label>Concept</label>
+                    <div>{renderMathText(currentQuestionConceptHelp, "qm-latex-explanation")}</div>
+                  </div>
+                ) : null}
+
+                {currentQuestionSampleHelp ? (
+                  <div className="qm-help-block">
+                    <label>Sample Problem</label>
+                    <div>{renderMathText(currentQuestionSampleHelp, "qm-latex-explanation")}</div>
+                  </div>
+                ) : null}
+
+                {currentQuestion?.notesImage ? (
+                  <div className="qm-help-block">
+                    <label>Reference</label>
+                    <img
+                      className="qm-help-image"
+                      src={currentQuestion.notesImage}
+                      alt="Question help reference"
+                    />
+                  </div>
+                ) : null}
+              </aside>
+            )}
 
             {currentQuestion.isNumerical ? (
               <>
@@ -753,14 +1024,13 @@ const QuizPage = () => {
           </section>
 
           {error && <div className="login-error">{error}</div>}
-          <footer className="qm-footer">
-            <button type="button" onClick={() => navigate("/dashboard")}>Back</button>
+          <div className="qm-quiz-actions">
             <button type="button" onClick={() => goToQuestion(currentIndex - 1)} disabled={currentIndex === 0}>Previous</button>
             <button type="button" onClick={() => goToQuestion(currentIndex + 1)} disabled={currentIndex === attemptQuestions.length - 1}>Next</button>
             <button className="submit-btn" type="button" onClick={handleSubmit} disabled={submitting}>
               {submitting ? "Submitting..." : "Submit Quiz"}
             </button>
-          </footer>
+          </div>
         </main>
       </div>
     </div>

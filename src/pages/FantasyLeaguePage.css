@@ -1,0 +1,355 @@
+.fantasy-league-page {
+  background:
+    radial-gradient(circle at top left, rgba(22, 194, 95, 0.08), transparent 18%),
+    radial-gradient(circle at top right, rgba(19, 184, 208, 0.06), transparent 18%),
+    #f5f9fc;
+  isolation: isolate;
+  min-height: 100vh;
+  overflow-x: hidden;
+  padding: 28px;
+  position: relative;
+}
+
+.fantasy-league-shell {
+  margin: 0 auto;
+  max-width: 1600px;
+  position: relative;
+  width: 100%;
+  z-index: 1;
+}
+
+.fantasy-page-orb {
+  border-radius: 999px;
+  pointer-events: none;
+  position: absolute;
+  z-index: 0;
+}
+
+.fantasy-page-orb-one {
+  background: radial-gradient(circle, rgba(22, 194, 95, 0.16) 0%, rgba(22, 194, 95, 0) 72%);
+  height: 300px;
+  left: -100px;
+  top: -100px;
+  width: 300px;
+}
+
+.fantasy-page-orb-two {
+  background: radial-gradient(circle, rgba(19, 184, 208, 0.14) 0%, rgba(19, 184, 208, 0) 70%);
+  bottom: -140px;
+  right: -80px;
+  width: 320px;
+  height: 320px;
+}
+
+.fantasy-league-topbar {
+  align-items: center;
+  background:
+    linear-gradient(145deg, rgba(255, 255, 255, 0.9), rgba(246, 251, 248, 0.84)),
+    rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(203, 213, 225, 0.8);
+  border-radius: 24px;
+  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.06);
+  display: flex;
+  gap: 18px;
+  justify-content: space-between;
+  margin-bottom: 22px;
+  overflow: hidden;
+  padding: clamp(18px, 2vw, 28px);
+  position: relative;
+}
+
+.fantasy-league-topbar::before {
+  background:
+    radial-gradient(circle at top left, rgba(22, 194, 95, 0.12), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(19, 184, 208, 0.12), transparent 30%);
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+}
+
+.fantasy-league-topbar span {
+  color: #14b85a;
+  display: inline-block;
+  font-size: clamp(0.68rem, 1.4vw, 0.8rem);
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  margin-bottom: 10px;
+  text-transform: uppercase;
+}
+
+.fantasy-league-topbar-copy,
+.fantasy-league-topbar-actions {
+  min-width: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.fantasy-league-topbar-copy {
+  flex: 1 1 auto;
+}
+
+.fantasy-league-topbar h1 {
+  color: #1d2b3a;
+  font-size: clamp(1.7rem, 3vw, 3rem);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  margin: 0;
+  text-wrap: balance;
+}
+
+.fantasy-league-topbar p {
+  color: #64748b;
+  font-size: clamp(0.96rem, 1.35vw, 1.05rem);
+  line-height: 1.65;
+  margin: 10px 0 0;
+  max-width: 64ch;
+  text-wrap: pretty;
+}
+
+.fantasy-league-topbar-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.fantasy-league-topbar-badges span {
+  background: rgba(255, 255, 255, 0.86);
+  border: 1px solid rgba(191, 219, 203, 0.92);
+  border-radius: 999px;
+  box-shadow: 0 10px 24px rgba(15, 23, 42, 0.05);
+  color: #26523d;
+  font-size: 0.82rem;
+  font-weight: 700;
+  padding: 9px 13px;
+}
+
+.fantasy-league-topbar-actions {
+  align-items: flex-end;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.fantasy-league-status-card {
+  background: rgba(255, 255, 255, 0.84);
+  border: 1px solid rgba(203, 213, 225, 0.78);
+  border-radius: 18px;
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.04);
+  min-width: min(100%, 240px);
+  padding: 14px 16px;
+}
+
+.fantasy-league-status-card small {
+  color: #64748b;
+  display: block;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  margin-bottom: 6px;
+  text-transform: uppercase;
+}
+
+.fantasy-league-status-card strong {
+  color: #1f3347;
+  font-size: 1rem;
+  letter-spacing: -0.02em;
+}
+
+.fantasy-league-back {
+  background: linear-gradient(135deg, #1fd36a, #0ea85a 55%, #0aa56d);
+  border: 1px solid rgba(203, 213, 225, 0.9);
+  border-radius: 999px;
+  box-shadow: 0 10px 20px rgba(16, 168, 90, 0.14);
+  color: #ffffff;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  min-height: 48px;
+  padding: 0 22px;
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+  white-space: nowrap;
+}
+
+.fantasy-league-back:hover {
+  box-shadow: 0 12px 24px rgba(16, 168, 90, 0.18);
+  transform: translateY(-1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fantasy-league-back {
+    transition: none;
+  }
+
+  .fantasy-league-back:hover {
+    transform: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .fantasy-league-page {
+    padding: 18px;
+  }
+
+  .fantasy-league-topbar {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .fantasy-league-topbar-actions {
+    align-items: stretch;
+    width: 100%;
+  }
+
+  .fantasy-league-status-card {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .fantasy-league-back {
+    align-self: stretch;
+  }
+
+  .fantasy-league-page .league-shell {
+    padding: 18px;
+  }
+
+  .fantasy-league-page .league-topbar h1 {
+    font-size: clamp(1.55rem, 4.5vw, 2.2rem);
+  }
+
+  .fantasy-league-page .league-panel-heading h3,
+  .fantasy-league-page .league-team-profile h2 {
+    font-size: clamp(1.15rem, 3vw, 1.5rem);
+  }
+
+  .fantasy-league-page .league-phase-copy,
+  .fantasy-league-page .league-topbar-meta strong,
+  .fantasy-league-page .league-profile-stats strong,
+  .fantasy-league-page .league-sidebar-stat strong {
+    font-size: clamp(1.05rem, 2.6vw, 1.35rem);
+  }
+}
+
+@media (max-width: 560px) {
+  .fantasy-league-page {
+    padding: 12px;
+  }
+
+  .fantasy-league-topbar {
+    border-radius: 18px;
+    gap: 14px;
+    margin-bottom: 16px;
+    padding: 16px;
+  }
+
+  .fantasy-league-topbar h1 {
+    font-size: clamp(1.45rem, 8vw, 2rem);
+  }
+
+  .fantasy-league-topbar p {
+    font-size: 0.92rem;
+    line-height: 1.55;
+  }
+
+  .fantasy-league-topbar-badges {
+    gap: 8px;
+  }
+
+  .fantasy-league-topbar-badges span {
+    font-size: 0.76rem;
+    padding: 8px 11px;
+  }
+
+  .fantasy-league-back {
+    min-height: 44px;
+    padding: 0 16px;
+  }
+
+  .fantasy-league-page .league-shell {
+    border-radius: 18px;
+    gap: 16px;
+    padding: 14px;
+  }
+
+  .fantasy-league-page .league-topbar-meta {
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .fantasy-league-page .league-panel-title,
+  .fantasy-league-page .league-eyebrow {
+    font-size: 0.7rem;
+    letter-spacing: 0.14em;
+  }
+
+  .fantasy-league-page .league-team-profile h2,
+  .fantasy-league-page .league-panel-heading h3 {
+    font-size: 1.1rem;
+    line-height: 1.15;
+  }
+
+  .fantasy-league-page .league-topbar span,
+  .fantasy-league-page .league-team-profile p,
+  .fantasy-league-page .league-lineup-slot span,
+  .fantasy-league-page .league-note,
+  .fantasy-league-page .league-result-copy,
+  .fantasy-league-page .league-history-card p {
+    font-size: 0.88rem;
+    line-height: 1.45;
+  }
+
+  .fantasy-league-page .league-profile-stats,
+  .fantasy-league-page .league-inline-stats,
+  .fantasy-league-page .league-info-list,
+  .fantasy-league-page .league-radar-list {
+    gap: 10px;
+  }
+
+  .fantasy-league-page .league-confirm-btn,
+  .fantasy-league-page .league-acquire-btn,
+  .fantasy-league-page .league-captain-btn,
+  .fantasy-league-page .league-ghost-btn {
+    font-size: 0.92rem;
+    min-height: 46px;
+  }
+}
+
+@media (max-width: 420px) {
+  .fantasy-league-page {
+    padding: 10px;
+  }
+
+  .fantasy-page-orb-one {
+    height: 220px;
+    left: -80px;
+    top: -70px;
+    width: 220px;
+  }
+
+  .fantasy-page-orb-two {
+    height: 220px;
+    right: -90px;
+    width: 220px;
+  }
+
+  .fantasy-league-topbar {
+    padding: 14px;
+  }
+
+  .fantasy-league-page .league-shell {
+    padding: 12px;
+  }
+
+  .fantasy-league-page .league-lineup-slot strong,
+  .fantasy-league-page .league-standing-row strong,
+  .fantasy-league-page .league-student-copy h4 {
+    font-size: 0.98rem;
+  }
+
+  .fantasy-league-page .league-student-metrics strong,
+  .fantasy-league-page .league-student-price strong {
+    font-size: 0.95rem;
+  }
+}

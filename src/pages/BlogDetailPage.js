@@ -3,7 +3,9 @@ import { Link, useParams } from "react-router-dom";
 import { collection, getDocs } from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
 import "./BlogPages.css";
-import { BLOG_COLLECTION, BLOG_SITE_URL, formatBlogDate, normalizeBlog } from "../utils/blogs";
+import { BLOG_COLLECTION, formatBlogDate, normalizeBlog } from "../utils/blogs";
+import SeoHelmet from "../components/SeoHelmet";
+import { absoluteUrl, buildArticleSchema } from "../utils/schema";
 
 const HEPSY_LOGO = `${process.env.PUBLIC_URL || ""}/images/logo.png`;
 
@@ -47,86 +49,17 @@ export default function BlogDetailPage() {
     [allBlogs, slug]
   );
 
-  useEffect(() => {
-    const previousTitle = document.title;
-    const metaNodes = [];
-    const linkNodes = [];
-    const scriptNodes = [];
-
-    const upsertMeta = (key, value, attr = "name") => {
-      if (!value) return;
-      const node = document.createElement("meta");
-      node.setAttribute(attr, key);
-      node.setAttribute("content", value);
-      document.head.appendChild(node);
-      metaNodes.push(node);
-    };
-
-    if (!blog) {
-      document.title = "Hepsy Blog";
-      return () => {
-        document.title = previousTitle;
-      };
-    }
-
-    document.title = `${blog.seoTitle} | Hepsy`;
-    upsertMeta("description", blog.seoDescription);
-    upsertMeta("keywords", blog.seoKeywords.join(", "));
-    upsertMeta("og:title", blog.seoTitle, "property");
-    upsertMeta("og:description", blog.seoDescription, "property");
-    upsertMeta("og:type", "article", "property");
-    upsertMeta("og:url", blog.canonicalUrl, "property");
-    if (blog.featureImage) upsertMeta("og:image", blog.featureImage, "property");
-    upsertMeta("twitter:card", blog.featureImage ? "summary_large_image" : "summary");
-    upsertMeta("twitter:title", blog.seoTitle);
-    upsertMeta("twitter:description", blog.seoDescription);
-    if (blog.featureImage) upsertMeta("twitter:image", blog.featureImage);
-
-    const canonical = document.createElement("link");
-    canonical.setAttribute("rel", "canonical");
-    canonical.setAttribute("href", blog.canonicalUrl || `${BLOG_SITE_URL}/blogs/${slug}`);
-    document.head.appendChild(canonical);
-    linkNodes.push(canonical);
-
-    const schema = {
-      "@context": "https://schema.org",
-      "@type": "BlogPosting",
-      headline: blog.seoTitle,
-      description: blog.seoDescription,
-      image: blog.featureImage ? [blog.featureImage] : [],
-      author: {
-        "@type": "Person",
-        name: blog.author || "Hepsy Team",
-      },
-      publisher: {
-        "@type": "Organization",
-        name: "Hepsy",
-        logo: {
-          "@type": "ImageObject",
-          url: `${BLOG_SITE_URL}/images/logo.png`,
-        },
-      },
-      mainEntityOfPage: blog.canonicalUrl || `${BLOG_SITE_URL}/blogs/${slug}`,
-      datePublished: blog.publishedAtMs ? new Date(blog.publishedAtMs).toISOString() : undefined,
-      dateModified: blog.updatedAt ? new Date(blog.updatedAtMs || blog.publishedAtMs).toISOString() : undefined,
-      keywords: blog.seoKeywords.join(", "),
-    };
-    const schemaNode = document.createElement("script");
-    schemaNode.type = "application/ld+json";
-    schemaNode.text = JSON.stringify(schema);
-    document.head.appendChild(schemaNode);
-    scriptNodes.push(schemaNode);
-
-    return () => {
-      document.title = previousTitle;
-      metaNodes.forEach((node) => node.remove());
-      linkNodes.forEach((node) => node.remove());
-      scriptNodes.forEach((node) => node.remove());
-    };
-  }, [blog, slug]);
-
   return (
     <div className="blog-page-shell">
+      <SeoHelmet
+        title={blog ? `${blog.seoTitle} | Hepsy` : "Hepsy Blog"}
+        description={blog?.seoDescription || "Stories, study ideas, and product updates from Hepsy."}
+        keywords={blog?.seoKeywords || ["Hepsy blog", "study tips", "education"]}
+        canonicalUrl={blog?.canonicalUrl}
+        type="article"
+        image={absoluteUrl(blog?.featureImage)}
+        schemas={blog ? [buildArticleSchema(blog)] : []}
+      />
       <header className="blog-page-nav">
         <Link className="blog-page-brand" to="/">
           <img src={HEPSY_LOGO} alt="Hepsy logo" />
@@ -196,7 +129,7 @@ export default function BlogDetailPage() {
                       className="blog-list-card"
                       style={{
                         backgroundImage: item.featureImage
-                          ? `linear-gradient(180deg, rgba(11, 18, 38, 0.16) 0%, rgba(11, 18, 38, 0.84) 100%), url(${item.featureImage})`
+                          ? `linear-gradient(180deg, rgba(11, 18, 38, 0.42) 0%, rgba(11, 18, 38, 0.84) 100%), url(${item.featureImage})`
                           : "linear-gradient(145deg, rgba(109, 121, 255, 0.12), rgba(20, 200, 161, 0.16))",
                       }}
                     >

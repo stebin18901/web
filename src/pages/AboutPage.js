@@ -5,7 +5,7 @@ const AboutPage = () => {
     // Note: The HTML structure and content are placed inside JSX.
     // Class names like 'container' and 'footer' will need corresponding CSS rules.
     return (
-        <div className="container">
+        <div className="about-page container">
             <header>
                 <h1>From Foundation to Future: Revolutionizing Education for the 21st Century</h1>
             </header>

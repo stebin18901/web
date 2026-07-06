@@ -41,6 +41,10 @@ const safeJsonParse = (value) => {
     return null;
   }
 };
+const safeNumber = (value) => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : 0;
+};
 const formatDateLabel = (value) => {
   if (!value) return "Not available";
   const parsed = new Date(value);
@@ -59,6 +63,7 @@ const getDeviceLabel = () => {
 };
 const PROFILE_CARD_IMAGE = `${process.env.PUBLIC_URL || ""}/images/propic.png`;
 const HEPSY_LOGO = `${process.env.PUBLIC_URL || ""}/images/logo.png`;
+const LEAGUE_BANNER_IMAGE = `${process.env.PUBLIC_URL || ""}/images/career.png`;
 const getHolderTierByScore = (scoreValue) => {
   const score = Number(scoreValue || 0);
 
@@ -76,6 +81,12 @@ const getHolderTierByScore = (scoreValue) => {
   }
   return { key: "blue", label: "Blue Card Holder", accent: "Learning curve active" };
 };
+const HOLDER_TIER_ORDER = ["blue", "silver", "gold", "platinum", "black"];
+const getHolderTierRank = (tierKey) => {
+  const index = HOLDER_TIER_ORDER.indexOf(String(tierKey || "").toLowerCase());
+  return index >= 0 ? index : 0;
+};
+const getHolderTierStorageKey = (studentId) => `holderTier:${String(studentId || "guest")}`;
 const buildSessionFromEnrollment = (studentId, enrollment, fallbackSession) => {
   const selectedClasses = getUniqueClasses(
     enrollment?.selectedClasses || [enrollment?.className]
@@ -120,6 +131,14 @@ const buildSessionFromEnrollment = (studentId, enrollment, fallbackSession) => {
     deviceLabel: getDeviceLabel(),
   };
 };
+const toNotificationMillis = (value) => {
+  if (!value) return 0;
+  if (typeof value?.toMillis === "function") return value.toMillis();
+  if (typeof value?.seconds === "number") return value.seconds * 1000;
+  const parsed = Date.parse(value);
+  return Number.isNaN(parsed) ? 0 : parsed;
+};
+const getNotificationReadKey = (studentId) => `dashboardNotificationsRead_${studentId || "guest"}`;
 const makeSubjectLogo = (subjectName = "") => {
   const key = String(subjectName || "").trim().toLowerCase();
   if (key.includes("math")) return { icon: "fx", className: "logo-math" };
@@ -137,17 +156,17 @@ const makeSubjectLogo = (subjectName = "") => {
 
 const dashboardNavItems = [
   { key: "home", label: "Home", hint: "Overview", description: "Current dashboard view" },
+  { key: "league", label: "League", hint: "Mini-season", description: "Transfer market, simulated matchdays, and standings" },
+  { key: "updates", label: "Updates", hint: "Admin notices", description: "Announcements, releases, and school updates" },
   { key: "subjects", label: "Learn", hint: "Coming soon", description: "Guided learning journeys are being prepared" },
-  { key: "concepts", label: "Concepts", hint: "Coming soon", description: "Concept maps on the way" },
   { key: "practice", label: "Practice", hint: "Browse chapters", description: "Browse subjects, chapters, notes, and tests" },
   { key: "mock-tests", label: "Mock Tests", hint: "Coming soon", description: "Full test simulations soon" },
   { key: "leaderboard", label: "Leaderboard", hint: "Class ranking", description: "Competitive ranking view" },
   { key: "progress", label: "My Progress", hint: "Track growth", description: "Detailed learning analytics" },
   { key: "notes", label: "Notes", hint: "Coming soon", description: "Saved revision notes soon" },
-  { key: "goals", label: "Weekly Goals", hint: "Coming soon", description: "Goal planner coming soon" },
   { key: "profile", label: "Profile", hint: "Coming soon", description: "Profile tools coming soon" },
 ];
-const lockedNavKeys = new Set(["subjects", "concepts", "mock-tests", "notes", "goals"]);
+const lockedNavKeys = new Set(["subjects", "mock-tests", "notes"]);
 
 const dashboardBackdropUrl = `${process.env.PUBLIC_URL}/images/dashboard.png`;
 const practiceBackdropUrl = `${process.env.PUBLIC_URL}/images/week.png`;
@@ -174,8 +193,24 @@ const Dashboard = () => {
   const [newClassStudentName, setNewClassStudentName] = useState("");
   const [classError, setClassError] = useState("");
   const [navNotice, setNavNotice] = useState("");
+  const [adminNotifications, setAdminNotifications] = useState([]);
+  const [lastNotificationReadAt, setLastNotificationReadAt] = useState(() =>
+    safeNumber(localStorage.getItem(getNotificationReadKey(safeJsonParse(localStorage.getItem("schoolStudentSession"))?.id)))
+  );
+  const [holderTierPopup, setHolderTierPopup] = useState(null);
   const subjectScrollRef = useRef(null);
   const navigate = useNavigate();
+  const sessionId = session?.id || "";
+  const sessionSchoolId = session?.schoolId || "";
+  const sessionSchoolName = session?.schoolName || "";
+  const sessionClassName = session?.className || "";
+  const sessionPlanId = session?.planId || "";
+  const sessionPaymentStatus = session?.paymentStatus || "";
+  const sessionRegistrationStatus = session?.registrationStatus || "";
+  const sessionSelectedClasses = useMemo(
+    () => session?.selectedClasses || [],
+    [session?.selectedClasses]
+  );
 
   const selectedClasses = useMemo(() => getUniqueClasses(session?.selectedClasses || [session?.className]), [session]);
   const activePlan = useMemo(() => getDefaultSchoolPlan(session?.planId), [session?.planId]);
@@ -192,6 +227,91 @@ const Dashboard = () => {
     localStorage.setItem("schoolStudentSession", JSON.stringify(nextSession));
     setSession(nextSession);
   };
+
+  const markNotificationsRead = () => {
+    const stamp = Date.now();
+    localStorage.setItem(getNotificationReadKey(session?.id), String(stamp));
+    setLastNotificationReadAt(stamp);
+  };
+
+  useEffect(() => {
+    if (!sessionId) return;
+
+    let cancelled = false;
+
+    const syncLatestSessionMeta = async () => {
+      try {
+        const enrollmentSnap = await getDoc(doc(db, "defaultSchoolEnrollments", sessionId));
+        if (!enrollmentSnap.exists()) return;
+
+        const enrollmentData = enrollmentSnap.data() || {};
+        let latestSchoolName =
+          enrollmentData.schoolName || sessionSchoolName || "Default School";
+
+        const normalizedSchoolId = String(
+          enrollmentData.schoolId || sessionSchoolId || ""
+        ).trim();
+
+        if (normalizedSchoolId) {
+          const schoolSnap = await getDoc(doc(db, "schools", normalizedSchoolId));
+          if (schoolSnap.exists()) {
+            latestSchoolName =
+              schoolSnap.data()?.schoolName ||
+              latestSchoolName;
+          }
+        }
+
+        const nextSession = {
+          ...buildSessionFromEnrollment(sessionId, enrollmentData, session),
+          schoolName: latestSchoolName,
+        };
+
+        if (cancelled) return;
+
+        const hasChanged =
+          JSON.stringify({
+            schoolName: sessionSchoolName,
+            schoolId: sessionSchoolId,
+            className: sessionClassName,
+            selectedClasses: sessionSelectedClasses,
+            planId: sessionPlanId,
+            paymentStatus: sessionPaymentStatus,
+            registrationStatus: sessionRegistrationStatus,
+          }) !==
+          JSON.stringify({
+            schoolName: nextSession.schoolName,
+            schoolId: nextSession.schoolId,
+            className: nextSession.className,
+            selectedClasses: nextSession.selectedClasses,
+            planId: nextSession.planId,
+            paymentStatus: nextSession.paymentStatus,
+            registrationStatus: nextSession.registrationStatus,
+          });
+
+        if (hasChanged) {
+          persistSession(nextSession);
+        }
+      } catch (error) {
+        console.error("Failed to sync dashboard session metadata:", error);
+      }
+    };
+
+    syncLatestSessionMeta();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    session,
+    sessionId,
+    sessionSchoolId,
+    sessionSchoolName,
+    sessionClassName,
+    sessionPlanId,
+    sessionPaymentStatus,
+    sessionRegistrationStatus,
+    sessionSelectedClasses,
+  ]);
 
   const loadLinkedAccounts = async () => {
     if (!session?.phone || !session?.schoolId) {
@@ -413,6 +533,49 @@ const Dashboard = () => {
     if (!showAccountModal) return;
     loadLinkedAccounts();
   }, [showAccountModal, session?.phone, session?.schoolId]);
+
+  useEffect(() => {
+    if (!session?.id) return;
+    setLastNotificationReadAt(
+      safeNumber(localStorage.getItem(getNotificationReadKey(session.id)))
+    );
+  }, [session?.id]);
+
+  useEffect(() => {
+    if (!session?.schoolId) {
+      setAdminNotifications([]);
+      return;
+    }
+
+    const loadNotifications = async () => {
+      try {
+        const snap = await getDocs(collection(db, "adminNotifications"));
+        const nextItems = snap.docs
+          .map((entry) => ({ id: entry.id, ...entry.data() }))
+          .filter((item) => {
+            if (item.active === false) return false;
+            const targetSchoolId = String(item.schoolId || "").trim().toLowerCase();
+            if (!targetSchoolId) return true;
+            return targetSchoolId === String(session.schoolId || "").trim().toLowerCase();
+          })
+          .sort((a, b) => {
+            if (Boolean(b.pinned) !== Boolean(a.pinned)) {
+              return Number(Boolean(b.pinned)) - Number(Boolean(a.pinned));
+            }
+            return (
+              toNotificationMillis(b.updatedAt || b.createdAt) -
+              toNotificationMillis(a.updatedAt || a.createdAt)
+            );
+          });
+
+        setAdminNotifications(nextItems);
+      } catch (error) {
+        console.error("Failed to load admin notifications:", error);
+      }
+    };
+
+    loadNotifications();
+  }, [session?.schoolId]);
 
   const subjects = useMemo(() => {
     const map = {};
@@ -712,14 +875,48 @@ const Dashboard = () => {
     [studentStats.avgAccuracy]
   );
 
-  const placeholderView = useMemo(() => {
-    const activeItem = dashboardNavItems.find((item) => item.key === activeNav);
-    return {
-      title: activeItem?.label || "Coming Soon",
-      hint: activeItem?.hint || "Coming soon",
-      description: activeItem?.description || "This area is being prepared.",
+  useEffect(() => {
+    if (loading || !session?.id) return;
+
+    const storageKey = getHolderTierStorageKey(session.id);
+    const previousTier = safeJsonParse(localStorage.getItem(storageKey));
+    const currentTier = {
+      key: progressHolderTier.key,
+      label: progressHolderTier.label,
+      score: studentStats.avgAccuracy,
+      updatedAt: new Date().toISOString(),
     };
-  }, [activeNav]);
+
+    if (!previousTier?.key) {
+      localStorage.setItem(storageKey, JSON.stringify(currentTier));
+      return;
+    }
+
+    if (previousTier.key === currentTier.key) {
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify({ ...previousTier, score: currentTier.score, updatedAt: currentTier.updatedAt })
+      );
+      return;
+    }
+
+    const direction =
+      getHolderTierRank(currentTier.key) > getHolderTierRank(previousTier.key) ? "promotion" : "demotion";
+
+    setHolderTierPopup({
+      direction,
+      previousTier,
+      currentTier,
+      delta: currentTier.score - safeNumber(previousTier.score),
+    });
+    localStorage.setItem(storageKey, JSON.stringify(currentTier));
+  }, [loading, progressHolderTier.key, progressHolderTier.label, session?.id, studentStats.avgAccuracy]);
+
+  useEffect(() => {
+    if (!holderTierPopup) return undefined;
+    const timer = window.setTimeout(() => setHolderTierPopup(null), 6500);
+    return () => window.clearTimeout(timer);
+  }, [holderTierPopup]);
 
   useEffect(() => {
     const container = subjectScrollRef.current;
@@ -776,6 +973,45 @@ const Dashboard = () => {
     });
   };
 
+  const unreadNotifications = useMemo(
+    () =>
+      adminNotifications.filter(
+        (item) =>
+          toNotificationMillis(item.updatedAt || item.createdAt) >
+          safeNumber(lastNotificationReadAt)
+      ),
+    [adminNotifications, lastNotificationReadAt]
+  );
+
+  const visibleDashboardNavItems = useMemo(
+    () =>
+      dashboardNavItems.filter(
+        (item) => item.key !== "updates" || adminNotifications.length > 0
+      ),
+    [adminNotifications.length]
+  );
+
+  const placeholderView = useMemo(() => {
+    const activeItem = visibleDashboardNavItems.find((item) => item.key === activeNav);
+    return {
+      title: activeItem?.label || "Coming Soon",
+      hint: activeItem?.hint || "Coming soon",
+      description: activeItem?.description || "This area is being prepared.",
+    };
+  }, [activeNav, visibleDashboardNavItems]);
+
+  useEffect(() => {
+    if (activeNav === "updates" && !adminNotifications.length) {
+      setActiveNav("home");
+    }
+  }, [activeNav, adminNotifications.length]);
+
+  useEffect(() => {
+    if (!visibleDashboardNavItems.some((item) => item.key === activeNav)) {
+      setActiveNav("home");
+    }
+  }, [activeNav, visibleDashboardNavItems]);
+
   const handleNavSelect = (itemKey) => {
     if (lockedNavKeys.has(itemKey)) {
       setNavNotice("Stay tuned, coming soon.");
@@ -785,6 +1021,9 @@ const Dashboard = () => {
 
     setNavNotice("");
     setActiveNav(itemKey);
+    if (itemKey === "updates") {
+      markNotificationsRead();
+    }
     setIsSidebarOpen(false);
   };
 
@@ -832,7 +1071,7 @@ const Dashboard = () => {
             </button>
 
             <nav className="dashboard-nav" aria-label="Dashboard navigation">
-              {dashboardNavItems.map((item) => (
+              {visibleDashboardNavItems.map((item) => (
                 <button
                   key={item.key}
                   type="button"
@@ -849,6 +1088,38 @@ const Dashboard = () => {
                 </button>
               ))}
             </nav>
+
+            {adminNotifications.length ? (
+              <div className="dashboard-notifications-card">
+                <div className="dashboard-notifications-head">
+                  <div>
+                    <span>Admin Updates</span>
+                    <strong>{unreadNotifications.length ? `${unreadNotifications.length} new` : "All caught up"}</strong>
+                  </div>
+                  <button type="button" onClick={() => handleNavSelect("updates")}>
+                    View all
+                  </button>
+                </div>
+
+                <div className="dashboard-notifications-list">
+                  {adminNotifications.slice(0, 3).map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      className={`dashboard-notification-item ${
+                        toNotificationMillis(item.updatedAt || item.createdAt) > safeNumber(lastNotificationReadAt)
+                          ? "unread"
+                          : ""
+                      }`}
+                      onClick={() => handleNavSelect("updates")}
+                    >
+                      <span>{item.title}</span>
+                      <small>{item.summary || item.message}</small>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : null}
 
             <div className="dashboard-side-footer">
               <button
@@ -914,6 +1185,80 @@ const Dashboard = () => {
           </div>
         </aside>
         <section className="dashboard-stage">
+      {holderTierPopup && (
+        <div className="holder-tier-popup-backdrop" onClick={() => setHolderTierPopup(null)}>
+          <div
+            className={`holder-tier-popup holder-tier-popup-${holderTierPopup.direction}`}
+            onClick={(event) => event.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="holder-tier-popup-title"
+          >
+            <button
+              type="button"
+              className="holder-tier-popup-close"
+              onClick={() => setHolderTierPopup(null)}
+              aria-label="Close holder card update"
+            >
+              ×
+            </button>
+            <div className="holder-tier-popup-spark holder-tier-popup-spark-a" aria-hidden="true" />
+            <div className="holder-tier-popup-spark holder-tier-popup-spark-b" aria-hidden="true" />
+            <div className="holder-tier-popup-spark holder-tier-popup-spark-c" aria-hidden="true" />
+            <span className="holder-tier-popup-kicker">
+              {holderTierPopup.direction === "promotion" ? "Card Upgraded" : "Card Updated"}
+            </span>
+            <h3 id="holder-tier-popup-title">
+              {holderTierPopup.direction === "promotion"
+                ? `You are now a ${holderTierPopup.currentTier.label}`
+                : `You moved to ${holderTierPopup.currentTier.label}`}
+            </h3>
+            <p>
+              {holderTierPopup.direction === "promotion"
+                ? `Excellent work. Your performance moved from ${holderTierPopup.previousTier.label} to ${holderTierPopup.currentTier.label}.`
+                : `Your holding changed from ${holderTierPopup.previousTier.label} to ${holderTierPopup.currentTier.label}. Keep practicing to climb back stronger.`}
+            </p>
+            <div className="holder-tier-popup-track">
+              <div className={`holder-tier-popup-chip holder-tier-popup-chip-${holderTierPopup.previousTier.key}`}>
+                {holderTierPopup.previousTier.label}
+              </div>
+              <span className="holder-tier-popup-arrow" aria-hidden="true">→</span>
+              <div className={`holder-tier-popup-chip holder-tier-popup-chip-${holderTierPopup.currentTier.key}`}>
+                {holderTierPopup.currentTier.label}
+              </div>
+            </div>
+            <div className="holder-tier-popup-stats">
+              <div>
+                <span>Current Accuracy</span>
+                <strong>{studentStats.avgAccuracy}%</strong>
+              </div>
+              <div>
+                <span>Score Shift</span>
+                <strong>{holderTierPopup.delta > 0 ? `+${holderTierPopup.delta}` : holderTierPopup.delta}%</strong>
+              </div>
+            </div>
+            <div className="holder-tier-popup-actions">
+              <button
+                type="button"
+                className="holder-tier-popup-primary"
+                onClick={() => {
+                  setActiveNav("progress");
+                  setHolderTierPopup(null);
+                }}
+              >
+                View Progress
+              </button>
+              <button
+                type="button"
+                className="holder-tier-popup-secondary"
+                onClick={() => setHolderTierPopup(null)}
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
       {showAccountModal && (
         <div className="class-modal-backdrop" onClick={() => setShowAccountModal(false)}>
           <div className="class-modal account-modal" onClick={(event) => event.stopPropagation()}>
@@ -1084,11 +1429,18 @@ const Dashboard = () => {
                   <strong>Current rank #{studentStats.rank}</strong>
                   <p>See where you stand in class and what score you need to climb.</p>
                 </button>
+                <button type="button" className="dashboard-link-card" onClick={() => setActiveNav("league")}>
+                  <span className="dashboard-link-eyebrow">League</span>
+                  <strong>Run the mini-season demo</strong>
+                  <p>Buy players, advance the calendar, and watch the market and table shift live.</p>
+                </button>
               </div>
             </>
           )}
 
-          <div className={`dash-grid dashboard-view-grid ${activeNav === "practice" ? "practice-layout" : ""}`}>
+          <div
+            className={`dash-grid dashboard-view-grid ${activeNav === "practice" ? "practice-layout" : ""} ${activeNav === "league" ? "league-layout" : ""}`}
+          >
             <main className="hero-panel">
               {activeNav === "practice" && (
                 <>
@@ -1363,6 +1715,97 @@ const Dashboard = () => {
                 </>
               )}
 
+              {activeNav === "updates" && (
+                <>
+                  <section className="dashboard-view-hero dashboard-glass-card">
+                    <span className="dashboard-view-kicker">Admin Updates</span>
+                    <h2>Announcements, new releases, fantasy drops, and school notices in one stream.</h2>
+                    <p>These updates are published from the admin workspace and automatically filtered for your school when needed.</p>
+                  </section>
+                  <section className="dashboard-updates-feed">
+                    {adminNotifications.length ? (
+                      adminNotifications.map((item) => (
+                        <article key={item.id} className={`dashboard-update-card tone-${item.tone || "general"}`}>
+                          <div className="dashboard-update-copy">
+                            <div className="dashboard-update-meta">
+                              <span>{item.schoolId ? item.schoolName || item.schoolId : "All Schools"}</span>
+                              {item.pinned ? <strong>Pinned</strong> : null}
+                            </div>
+                            <h3>{item.title}</h3>
+                            <p>{item.message}</p>
+                            {item.ctaLabel && item.ctaLink ? (
+                              <button
+                                type="button"
+                                className="dashboard-update-cta"
+                                onClick={() => {
+                                  if (String(item.ctaLink).startsWith("/")) {
+                                    navigate(item.ctaLink);
+                                    return;
+                                  }
+                                  window.open(item.ctaLink, "_blank", "noopener,noreferrer");
+                                }}
+                              >
+                                {item.ctaLabel}
+                              </button>
+                            ) : null}
+                          </div>
+                          {item.imageUrl ? (
+                            <div className="dashboard-update-art">
+                              <img src={item.imageUrl} alt={item.title} />
+                            </div>
+                          ) : null}
+                        </article>
+                      ))
+                    ) : (
+                      <div className="empty-note">No admin updates available yet.</div>
+                    )}
+                  </section>
+                </>
+              )}
+
+              {activeNav === "league" && (
+                <section className="league-launch-banner">
+                  <div className="league-launch-orb league-launch-orb-one" aria-hidden="true" />
+                  <div className="league-launch-orb league-launch-orb-two" aria-hidden="true" />
+
+                  <div className="league-launch-copy">
+                    <span className="dashboard-view-kicker">Quiz Fantasy League</span>
+                    <h2>Draft your school squad and enter the fantasy arena.</h2>
+                    <p>
+                      Your full fantasy league experience is now on its own dedicated page for a cleaner,
+                      wider, and more immersive game flow.
+                    </p>
+                    <div className="league-launch-badges" aria-label="League highlights">
+                      <span>5 student lineup</span>
+                      <span>Captain always locked</span>
+                      <span>Live fantasy scoring</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="league-launch-cta"
+                      onClick={() => navigate("/league/fantasy")}
+                    >
+                      <span>Play Now</span>
+                      <strong>Fantasy Arena</strong>
+                    </button>
+                  </div>
+
+                  <div className="league-launch-art" aria-hidden="true">
+                    <div className="league-launch-art-frame">
+                      <img src={LEAGUE_BANNER_IMAGE} alt="" />
+                    </div>
+                    <div className="league-launch-floating-card league-launch-floating-card-top">
+                      <small>Lineup Power</small>
+                      <strong>Boosted by practice</strong>
+                    </div>
+                    <div className="league-launch-floating-card league-launch-floating-card-bottom">
+                      <small>School League</small>
+                      <strong>Ready for matchday</strong>
+                    </div>
+                  </div>
+                </section>
+              )}
+
               {activeNav === "profile" && (
                 <>
                   <section className="dashboard-view-hero dashboard-glass-card">
@@ -1423,7 +1866,7 @@ const Dashboard = () => {
                 </>
               )}
 
-              {!["home", "practice", "progress", "leaderboard", "profile"].includes(activeNav) && (
+              {!["home", "practice", "progress", "leaderboard", "updates", "league", "profile"].includes(activeNav) && (
                 <section className="dashboard-view-hero dashboard-glass-card dashboard-placeholder-card">
                   <span className="dashboard-view-kicker">{placeholderView.hint}</span>
                   <h2>{placeholderView.title}</h2>
@@ -1432,7 +1875,7 @@ const Dashboard = () => {
               )}
             </main>
 
-            {activeNav !== "practice" && (
+            {activeNav !== "practice" && activeNav !== "league" && activeNav !== "updates" && (
             <aside className="right-panel">
               {activeNav === "home" && (
                 <section className="stats-card">

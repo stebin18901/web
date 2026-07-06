@@ -15,6 +15,7 @@ import AdminQuizDemoPdf from "./Admin/AdminQuizDemoPdf";
 import AdminApkManagement from "./Admin/AdminApkManagement";
 import AdminHtmlDemoManager from "./Admin/AdminHtmlDemoManager";
 import AdminBlogs from "./Admin/AdminBlogs";
+import AdminNotifications from "./Admin/AdminNotifications";
 
 const tabs = [
   { id: "schoolQuiz", label: "School Quiz", group: "Schools", note: "Manage school quiz flows" },
@@ -27,6 +28,7 @@ const tabs = [
   { id: "blogs", label: "Blogs", group: "Content", note: "Create, publish, and manage blog stories" },
   { id: "report", label: "Report card", group: "Analytics", note: "Review student report summaries" },
   { id: "feature", label: "Feature", group: "Operations", note: "Manage feature announcements" },
+  { id: "notifications", label: "Notifications", group: "Operations", note: "Push dashboard notices, images, and updates" },
   { id: "calender", label: "Calender", group: "Operations", note: "Plan school calendar items" },
   { id: "news", label: "News template", group: "Operations", note: "Edit reusable news templates" },
   { id: "premiumchapter", label: "Premium chapter", group: "Operations", note: "Manage premium chapter access" },
@@ -134,6 +136,7 @@ const AdminPanel = () => {
           {activeTab === "report" && <ReportAdmin />}
           {activeTab === "premiumchapter" && <CreateTutor />}
           {activeTab === "feature" && <AdminAddFeature />}
+          {activeTab === "notifications" && <AdminNotifications />}
           {activeTab === "calender" && <AdminCalendar />}
           {activeTab === "news" && <AdminTemplates />}
           {activeTab === "league" && <AdminCreateLeague />}

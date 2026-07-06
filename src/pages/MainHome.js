@@ -5,6 +5,13 @@ import { db } from "../firebase/firebaseConfig";
 import "./MainHome.css";
 import Footer from "../components/Footer";
 import { BLOG_COLLECTION, formatBlogDate, normalizeBlog } from "../utils/blogs";
+import SeoHelmet from "../components/SeoHelmet";
+import {
+  absoluteUrl,
+  buildHomePageSchema,
+  buildOrganizationSchema,
+  buildWebsiteSchema,
+} from "../utils/schema";
 
 const heroTitleWords = ["Modern", "school", "routine."];
 const HEPSY_LOGO = `${process.env.PUBLIC_URL || ""}/images/logo.png`;
@@ -168,9 +175,40 @@ export default function MainHome() {
   }, []);
 
   const homeBlogs = useMemo(() => blogs.slice(0, 6), [blogs]);
+  const homeTitle = "Hepsy Learning Platform | Quiz-Based Study, Reports, and Subscription Plans";
+  const homeDescription =
+    "Hepsy helps students build daily momentum with quiz-based learning, progress reports, notes, and flexible subscription passes for Classes 6 to 10.";
+  const homeSchemas = useMemo(
+    () => [
+      buildOrganizationSchema(),
+      buildWebsiteSchema(),
+      buildHomePageSchema({
+        description: homeDescription,
+        plans: plans.map((plan) => ({
+          name: plan.name,
+          url: "/pricing",
+        })),
+      }),
+    ],
+    [homeDescription]
+  );
 
   return (
     <>
+      <SeoHelmet
+        title={homeTitle}
+        description={homeDescription}
+        keywords={[
+          "Hepsy learning platform",
+          "quiz based learning",
+          "student dashboard",
+          "online study plans",
+          "classes 6 to 10",
+        ]}
+        canonicalUrl={absoluteUrl("/")}
+        image={absoluteUrl("/images/banner.png")}
+        schemas={homeSchemas}
+      />
       <div className="home-shell">
         <div className="retro-grid-overlay" />
         <div className="blob b1" />

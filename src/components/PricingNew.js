@@ -14,6 +14,13 @@ import {
   getDaysRemaining,
 } from "../config/subscriptionConfig";
 import "./Pricing.css";
+import SeoHelmet from "./SeoHelmet";
+import {
+  absoluteUrl,
+  buildOrganizationSchema,
+  buildPricingProductSchema,
+  buildWebsiteSchema,
+} from "../utils/schema";
 
 export default function Pricing() {
   const navigate = useNavigate();
@@ -126,6 +133,26 @@ export default function Pricing() {
     "Live quiz practice and challenge rounds",
     "Cancel anytime from your dashboard",
   ];
+  const pageTitle = "Hepsy Pricing | Quarterly, Mid-Season, and Championship Passes";
+  const pageDescription =
+    "Compare Hepsy subscription passes with INR pricing for Quarterly, Mid-Season, and Championship access across classes 6 to 10.";
+  const pricingSchemas = comparisonPlans.map((plan) =>
+    buildPricingProductSchema({
+      plan: {
+        ...plan,
+        name:
+          plan.id === SUBSCRIPTION_PLANS.QUARTERLY.id
+            ? "Quarterly Pass"
+            : plan.id === SUBSCRIPTION_PLANS.HALF_YEARLY.id
+            ? "Mid-Season Pass"
+            : plan.id === SUBSCRIPTION_PLANS.YEARLY.id
+            ? "Championship Pass"
+            : plan.name,
+      },
+      price: pricing[plan.id],
+      features: SUBSCRIPTION_FEATURES,
+    })
+  );
 
   if (loading) {
     return (
@@ -137,10 +164,25 @@ export default function Pricing() {
   }
 
   return (
-    <div className="pricing-page">
-      <div className="pricing-orb pricing-orb-one"></div>
-      <div className="pricing-orb pricing-orb-two"></div>
-      <header className="pricing-header">
+    <>
+      <SeoHelmet
+        title={pageTitle}
+        description={pageDescription}
+        keywords={[
+          "Hepsy pricing",
+          "Quarterly pass",
+          "Mid-Season pass",
+          "Championship pass",
+          "INR subscription pricing",
+        ]}
+        canonicalUrl={absoluteUrl("/pricing")}
+        image={absoluteUrl("/images/logo.png")}
+        schemas={[buildOrganizationSchema(), buildWebsiteSchema(), ...pricingSchemas]}
+      />
+      <div className="pricing-page">
+        <div className="pricing-orb pricing-orb-one"></div>
+        <div className="pricing-orb pricing-orb-two"></div>
+        <header className="pricing-header">
         <div className="pricing-header-content">
           <span className="pricing-kicker">Subscription Plans</span>
           <h1>MINT Foundation Platform</h1>
@@ -159,9 +201,9 @@ export default function Pricing() {
             </div>
           )}
         </div>
-      </header>
+        </header>
 
-      <main className="pricing-container">
+        <main className="pricing-container">
         {isActive && subscription && (
           <section
             className="current-subscription"
@@ -403,7 +445,8 @@ export default function Pricing() {
             Automatic lifecycle updates and full platform coverage
           </p>
         </footer>
-      </main>
-    </div>
+        </main>
+      </div>
+    </>
   );
 }

@@ -1,5 +1,5 @@
 
-.container {
+.about-page.container {
     width: 90%;
     max-width: 1200px;
     margin: 20px auto;
@@ -8,39 +8,38 @@
     box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
     border-radius: 8px;
 }
-h1, h2, h3 {
-    color: #2c3e50;
+.about-page h1, .about-page h2, .about-page h3 {
     font-weight: 700;
 }
-h1 {
+.about-page h1 {
     text-align: center;
     font-size: 2.5em;
     margin-bottom: 0.5em;
 }
-h2 {
+.about-page h2 {
     font-size: 2em;
     
 }
-h3 {
+.about-page h3 {
     font-size: 1em;
     color: #34495e;
     margin-top: 25px;
 }
-p1 {
+.about-page p1 {
     margin-bottom: 15px;
     text-align: justify;
 }
-ul {
+.about-page ul {
     list-style-type: none;
     padding-left: 0;
 }
 
 
-.highlight {
+.about-page .highlight {
     color: #e74c3c;
     font-weight: bold;
 }
-.cta-button {
+.about-page .cta-button {
     display: inline-block;
     background-color: #3498db;
     color: #fff;
@@ -52,10 +51,10 @@ ul {
     margin-top: 20px;
     transition: background-color 0.3s ease;
 }
-.cta-button:hover {
+.about-page .cta-button:hover {
     background-color: #2980b9;
 }
-.footer {
+.about-page .footer {
     text-align: center;
     padding: 20px;
     margin-top: 40px;

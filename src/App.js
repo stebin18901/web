@@ -42,6 +42,7 @@ import DemoViewer from "./pages/DemoViewer";
 import AdminSchoolDetails from "./pages/Admin/AdminSchoolDetails";
 import BlogListPage from "./pages/BlogListPage";
 import BlogDetailPage from "./pages/BlogDetailPage";
+import FantasyLeaguePage from "./pages/FantasyLeaguePage";
 
 // --- STEP 3 IMPORTS: Compliance Components ---
 import Footer from "./components/Footer";
@@ -98,6 +99,7 @@ const AppContent = () => {
           <Route path="/notes-view" element={<PrivateRoute element={<StudentNotePage />} />} />
           <Route path="/leaderboard" element={<PrivateRoute element={<LeaderboardPage />} />} />
           <Route path="/league" element={<PrivateRoute element={<LeaguePage />} />} />
+          <Route path="/league/fantasy" element={<PrivateRoute element={<FantasyLeaguePage />} />} />
           <Route path="/league/create-quiz" element={<PrivateRoute element={<LeagueCreateQuizPage />} />} />
           <Route path="/league/create-quiz/:quizId" element={<PrivateRoute element={<LeagueCreateQuizPage />} />} />
           <Route path="/admin189201" element={<AdminProtect element={<AdminPanel />} />} />
