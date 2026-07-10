@@ -1,5 +1,5 @@
 import React, { lazy, Suspense, useEffect, useState } from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import Sidebar from "../SchoolAdmin/SchoolComponent/Sidebar";
 import { useTeacherAuth } from "../../context/TeacherAuthContext";
 import { db } from "../../firebase/firebaseConfig";
@@ -15,28 +15,34 @@ import {
   BarChart3,
   Megaphone,
   CalendarCheck,
-  User,
+  FileSpreadsheet,
+  LineChart,
 } from "lucide-react";
 
 // ✅ Lazy-loaded pages
 const TeacherClassManager = lazy(() => import("./components/Classes/TeacherClassManager"));
 const TeacherHome = lazy(() => import("./components/Home/TeacherHome"));
-const TeacherClasses = lazy(() => import("./components/Classes/TeacherClasses"));
+const TeacherGameChapterSelect = lazy(() => import("./components/Games/TeacherGameChapterSelect"));
+const TeacherGamePlay = lazy(() => import("./components/Games/TeacherGamePlay"));
 const TeacherSubjects = lazy(() => import("./components/Subjects/TeacherSubjects"));
 const TeacherAssignments = lazy(() => import("./components/Assignments/TeacherAssignments"));
 const TeacherPerformance = lazy(() => import("./components/Performance/TeacherPerformance"));
 const ClassAnnouncements = lazy(() => import("./components/Communication/ClassAnnouncements"));
-const ClassAttendance = lazy(() => import("./components/Attendance/ClassAttendance"));
+const AttendancePage = lazy(() => import("../SchoolAdmin/SchoolComponent/AttendancePage"));
+const ExamMarksPage = lazy(() => import("../SchoolAdmin/SchoolComponent/ExamMarksPage"));
+const AcademicReportsPage = lazy(() => import("../SchoolAdmin/SchoolComponent/AcademicReportsPage"));
 
 // ==============================
 // 🔹 MAIN DASHBOARD COMPONENT
 // ==============================
 const TeacherDashboard = () => {
   const { teacher, logout } = useTeacherAuth();
+  const location = useLocation();
   const [isClassTeacher, setIsClassTeacher] = useState(false);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [activeClass, setActiveClass] = useState("");
   const [classes, setClasses] = useState([]);
+  const isGamePlayRoute = /\/teacher-dashboard\/games\/[^/]+\/play$/.test(location.pathname);
 
   // 🔹 Detect class teacher
   useEffect(() => {
@@ -68,22 +74,19 @@ const TeacherDashboard = () => {
   const teacherLinks = [
     { name: "Dashboard", path: "/teacher-dashboard/home", icon: LayoutDashboard },
     { name: "My Subjects", path: "/teacher-dashboard/subjects", icon: BookOpen },
+    { name: "Exam Marks", path: "/teacher-dashboard/exam-marks", icon: FileSpreadsheet },
+    { name: "Academic Reports", path: "/teacher-dashboard/academic-reports", icon: LineChart },
     { name: "Assignments", path: "/teacher-dashboard/assignments", icon: ClipboardList },
     { name: "Performance", path: "/teacher-dashboard/performance", icon: BarChart3 },
     ...(isClassTeacher
       ? [
-          { divider: true },
+          { divider: true, name: "Class Tools" },
           { name: "My Class", path: "/teacher-dashboard/classes", icon: Users },
           { name: "Attendance", path: "/teacher-dashboard/attendance", icon: CalendarCheck },
           { name: "Announcements", path: "/teacher-dashboard/announcements", icon: Megaphone },
         ]
       : []),
   ];
-
-  const safeLinks = teacherLinks.map((l) => ({
-    ...l,
-    icon: l.icon || User,
-  }));
 
   // ==============================
   // 🔹 Floating Class Switcher
@@ -110,20 +113,22 @@ const TeacherDashboard = () => {
   // 🔹 MAIN RENDER
   // ==============================
   return (
-    <div className="teacher-dashboard-layout">
+    <div className={`teacher-dashboard-layout ${isGamePlayRoute ? "game-play-mode" : ""}`}>
       {/* === Sidebar === */}
-      <Sidebar
-        sidebarTitle={isClassTeacher ? "Class Teacher Panel" : "Teacher Panel"}
-        sidebarLogo={teacher?.profilePic || null}
-        links={safeLinks}
-        onLogout={logout}
-        onCollapseChange={setSidebarCollapsed}
-      />
+      {!isGamePlayRoute ? (
+        <Sidebar
+          sidebarTitle={isClassTeacher ? "Class Teacher Panel" : "Teacher Panel"}
+          sidebarLogo={teacher?.profilePic || null}
+          links={teacherLinks}
+          onLogout={logout}
+          onCollapseChange={setSidebarCollapsed}
+        />
+      ) : null}
 
       {/* === Main Area === */}
-      <main className={`teacher-content-area ${sidebarCollapsed ? "collapsed" : ""}`}>
+      <main className={`teacher-content-area ${sidebarCollapsed ? "collapsed" : ""} ${isGamePlayRoute ? "full-screen-game" : ""}`}>
         {/* 🔹 Floating class switch */}
-        <FloatingSwitcher />
+        {!isGamePlayRoute ? <FloatingSwitcher /> : null}
 
         <Suspense fallback={<div className="teacher-loader">Loading...</div>}>
           <Routes>
@@ -132,7 +137,30 @@ const TeacherDashboard = () => {
 
             {/* Common teacher routes */}
             <Route path="home" element={<TeacherHome teacher={teacher} />} />
+            <Route path="games/:gameId" element={<TeacherGameChapterSelect />} />
+            <Route path="games/:gameId/play" element={<TeacherGamePlay />} />
             <Route path="subjects" element={<TeacherSubjects teacher={teacher} />} />
+            <Route
+              path="exam-marks"
+              element={
+                <ExamMarksPage
+                  schoolId={teacher?.schoolId}
+                  mode="teacher"
+                  teacher={{ ...teacher, assignedClass: activeClass || teacher?.assignedClass }}
+                  actorName={teacher?.name || teacher?.fullName || teacher?.email || "Teacher"}
+                />
+              }
+            />
+            <Route
+              path="academic-reports"
+              element={
+                <AcademicReportsPage
+                  schoolId={teacher?.schoolId}
+                  mode="teacher"
+                  teacher={{ ...teacher, assignedClass: activeClass || teacher?.assignedClass }}
+                />
+              }
+            />
             <Route path="assignments" element={<TeacherAssignments teacher={teacher} />} />
             <Route path="performance" element={<TeacherPerformance teacher={teacher} />} />
 
@@ -145,7 +173,14 @@ const TeacherDashboard = () => {
                 />
                 <Route
                   path="attendance"
-                  element={<ClassAttendance teacher={{ ...teacher, assignedClass: activeClass }} />}
+                  element={
+                    <AttendancePage
+                      schoolId={teacher?.schoolId}
+                      mode="teacher"
+                      teacher={{ ...teacher, assignedClass: activeClass || teacher?.assignedClass }}
+                      actorName={teacher?.name || teacher?.fullName || teacher?.email || "Teacher"}
+                    />
+                  }
                 />
                 <Route
                   path="announcements"

@@ -4,7 +4,9 @@ import {
   doc,
   getDoc,
   getDocs,
+  query,
   setDoc,
+  where,
 } from "firebase/firestore";
 import { db } from "../../../../firebase/firebaseConfig";
 import "./StudentRollSetup.css";
@@ -21,6 +23,8 @@ const StudentRollSetup = ({ schoolId, className }) => {
   const [preview, setPreview] = useState([]);
   const [saving, setSaving] = useState(false);
   const [status, setStatus] = useState("");
+  const normalizedSchoolId = String(schoolId || "").trim().toLowerCase();
+  const normalizedClassName = String(className || "").trim().toUpperCase();
 
   // 🔹 Fetch roll setup + student count
   useEffect(() => {
@@ -32,7 +36,6 @@ const StudentRollSetup = ({ schoolId, className }) => {
         if (snap.exists()) {
           const data = snap.data();
           setRollSetup(data);
-          setStudentCount(data.studentCount || 30);
           setFormat(data.format || "numeric");
           setPrefix(data.prefix || "");
           setStart(data.range?.start || 1);
@@ -46,14 +49,20 @@ const StudentRollSetup = ({ schoolId, className }) => {
           });
         }
 
-        const studentsSnap = await getDocs(collection(db, "classes", classId, "students"));
+        const studentsSnap = await getDocs(
+          query(
+            collection(db, "studentAccounts"),
+            where("schoolId", "==", normalizedSchoolId),
+            where("className", "==", normalizedClassName)
+          )
+        );
         setStudentCount(studentsSnap.size);
       } catch (err) {
         console.error("Failed to load roll setup:", err);
       }
     };
     loadData();
-  }, [classId]);
+  }, [classId, normalizedClassName, normalizedSchoolId]);
 
   // 🔹 Generate preview rolls
   useEffect(() => {
@@ -87,23 +96,6 @@ const StudentRollSetup = ({ schoolId, className }) => {
   setStatus("Saving...");
 
   const total = end - start + 1;
-  const rolls = [];
-  for (let i = 0; i < total; i++) {
-    const num = start + i;
-    let roll = "";
-    switch (format) {
-      case "numeric":
-        roll = num.toString();
-        break;
-      case "prefixed":
-        roll = `${prefix}${num}`;
-        break;
-      case "zeroPad":
-        roll = `${prefix}${num.toString().padStart(2, "0")}`;
-        break;
-    }
-    rolls.push(roll);
-  }
 
   try {
     // ✅ Ensure parent class doc exists
@@ -122,25 +114,16 @@ const StudentRollSetup = ({ schoolId, className }) => {
       updatedAt: new Date(),
     });
 
-    const studentsRef = collection(db, "classes", classId, "students");
-    const existingSnap = await getDocs(studentsRef);
-    const existingRolls = new Set(existingSnap.docs.map((d) => d.id));
-
-    // Create missing students
-    await Promise.all(
-      rolls.map((roll) =>
-        existingRolls.has(roll)
-          ? Promise.resolve()
-          : setDoc(doc(studentsRef, roll), {
-              rollNumber: roll,
-              name: `Student ${roll}`,
-              createdAt: new Date(),
-            })
+    const studentsSnap = await getDocs(
+      query(
+        collection(db, "studentAccounts"),
+        where("schoolId", "==", normalizedSchoolId),
+        where("className", "==", normalizedClassName)
       )
     );
 
-    setStudentCount(total);
-    setStatus("✅ Setup updated!");
+    setStudentCount(studentsSnap.size);
+    setStatus("✅ Roll setup updated");
   } catch (err) {
     console.error("Error saving setup:", err);
     setStatus("❌ Failed to save");

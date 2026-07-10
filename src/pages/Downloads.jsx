@@ -1,7 +1,9 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { doc, getDoc } from "firebase/firestore";
+import { useSearchParams } from "react-router-dom";
 
 import { db } from "../firebase/firebaseConfig";
+import { getAppReleaseConfig } from "../utils/appReleaseConfig";
 
 const shellStyle = {
   minHeight: "100vh",
@@ -23,6 +25,11 @@ const cardStyle = {
 };
 
 export default function Downloads() {
+  const [searchParams] = useSearchParams();
+  const appRelease = useMemo(
+    () => getAppReleaseConfig(searchParams.get("app") || "student"),
+    [searchParams]
+  );
   const [state, setState] = useState({
     loading: true,
     error: "",
@@ -34,7 +41,7 @@ export default function Downloads() {
 
     async function loadDownloadTarget() {
       try {
-        const snapshot = await getDoc(doc(db, "app_metadata", "android_config"));
+        const snapshot = await getDoc(doc(db, "app_metadata", appRelease.configDocId));
         const data = snapshot.data();
 
         if (!active) {
@@ -54,13 +61,13 @@ export default function Downloads() {
 
         setState({
           loading: false,
-          error: "The Android APK is not configured yet.",
+          error: `The ${appRelease.label.toLowerCase()} APK is not configured yet.`,
           downloadUrl: "",
         });
       } catch (error) {
         setState({
           loading: false,
-          error: "We could not fetch the latest APK right now.",
+          error: `We could not fetch the latest ${appRelease.label.toLowerCase()} APK right now.`,
           downloadUrl: "",
         });
       }
@@ -71,7 +78,7 @@ export default function Downloads() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [appRelease]);
 
   return (
     <main style={shellStyle}>
@@ -85,7 +92,7 @@ export default function Downloads() {
             letterSpacing: "0.08em",
           }}
         >
-          Android APK
+          {appRelease.shortLabel} Android APK
         </p>
         <h1
           style={{
@@ -95,7 +102,7 @@ export default function Downloads() {
             lineHeight: 1.02,
           }}
         >
-          Download the latest parent app build
+          Download the latest {appRelease.label.toLowerCase()} build
         </h1>
         <p style={{ margin: 0, color: "#475569", lineHeight: 1.7, fontSize: "1rem" }}>
           {state.loading

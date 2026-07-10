@@ -452,6 +452,57 @@
   line-height: 1.55;
 }
 
+.dashboard-app-update-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 20px;
+  background: linear-gradient(145deg, rgba(67, 240, 125, 0.12), rgba(8, 12, 18, 0.32));
+  border: 1px solid rgba(67, 240, 125, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.dashboard-app-update-copy {
+  display: grid;
+  gap: 5px;
+}
+
+.dashboard-app-update-copy span {
+  color: rgba(125, 244, 165, 0.92);
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.dashboard-app-update-copy strong {
+  color: #ffffff;
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.dashboard-app-update-copy small {
+  color: rgba(208, 216, 230, 0.82);
+  line-height: 1.45;
+}
+
+.dashboard-app-update-button {
+  border: none;
+  border-radius: 999px;
+  padding: 12px 14px;
+  background: linear-gradient(135deg, #43f07d 0%, #17b95b 100%);
+  color: #041108;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+}
+
+.dashboard-app-update-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 28px rgba(67, 240, 125, 0.24);
+}
+
 .dashboard-side-footer strong {
   display: block;
   margin: 8px 0 6px;
@@ -3416,6 +3467,28 @@
 .dashboard-side-footer p,
 .dashboard-side-footer span {
   color: #6f8096 !important;
+}
+
+.dashboard-app-update-card {
+  background: linear-gradient(145deg, rgba(237, 255, 243, 0.98), rgba(248, 252, 248, 0.96)) !important;
+  border: 1px solid rgba(46, 184, 91, 0.16) !important;
+  box-shadow: 0 18px 38px rgba(121, 145, 171, 0.1) !important;
+}
+
+.dashboard-app-update-copy span {
+  color: #1f9e4b !important;
+}
+
+.dashboard-app-update-copy strong {
+  color: #13264a !important;
+}
+
+.dashboard-app-update-copy small {
+  color: #60738d !important;
+}
+
+.dashboard-app-update-button {
+  color: #ffffff !important;
 }
 
 .dash-logout {

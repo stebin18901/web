@@ -108,6 +108,13 @@
   color: #1e293b;
 }
 
+.helper-note {
+  margin: -2px 0 0;
+  font-size: 0.84rem;
+  line-height: 1.45;
+  color: #64748b;
+}
+
 .otp-notice {
   margin: 0;
   font-size: 0.85rem;

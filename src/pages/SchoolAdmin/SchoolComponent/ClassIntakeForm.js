@@ -1,10 +1,9 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { addDoc, collection, doc, getDoc, getDocs, query, setDoc, where } from "firebase/firestore";
-import { RecaptchaVerifier, signInWithPhoneNumber, signOut } from "firebase/auth";
+import { collection, doc, getDoc, getDocs, query, setDoc, updateDoc, where } from "firebase/firestore";
+import { RecaptchaVerifier, createUserWithEmailAndPassword, signInWithPhoneNumber, signOut } from "firebase/auth";
 import { auth, db } from "../../../firebase/firebaseConfig";
 import {
-  DEFAULT_SCHOOL_CLASS_OPTIONS,
   MAX_PARENT_ACCOUNTS_PER_PHONE,
   getUniqueClasses,
 } from "../../../config/defaultSchool";
@@ -14,6 +13,13 @@ import "./ClassIntakeForm.css";
 const normalize = (v) => String(v || "").trim();
 const normalizePhone = (value) => String(value || "").replace(/\D/g, "").slice(-10);
 const PHONE_PLACEHOLDER = "Phone Number (10 digits, e.g. 9876543210)";
+const hasPaidSchoolAccess = (schoolData) => {
+  const rawStatus =
+    schoolData?.isPaidSchool ?? schoolData?.isPaid ?? schoolData?.paymentStatus ?? schoolData?.status;
+  if (typeof rawStatus === "boolean") return rawStatus;
+  const normalizedStatus = String(rawStatus || "").trim().toLowerCase();
+  return ["paid", "active", "true", "yes"].includes(normalizedStatus);
+};
 
 export default function ClassIntakeForm() {
   const navigate = useNavigate();
@@ -21,6 +27,7 @@ export default function ClassIntakeForm() {
   const [status, setStatus] = useState("");
   const [loading, setLoading] = useState(false);
   const [schoolName, setSchoolName] = useState("School");
+  const [schoolMeta, setSchoolMeta] = useState({});
   const [paymentLinkToShow, setPaymentLinkToShow] = useState("");
   const [availableClassOptions, setAvailableClassOptions] = useState([]);
   const [otpCode, setOtpCode] = useState("");
@@ -37,14 +44,9 @@ export default function ClassIntakeForm() {
   const normalizedSchoolId = useMemo(() => schoolIdValue.toLowerCase(), [schoolIdValue]);
   const normalizedClassName = useMemo(() => normalize(className).toUpperCase(), [className]);
   const formType = type === "teacher" ? "teacher" : "student";
-  const classOptions = useMemo(
-    () =>
-      getUniqueClasses([
-        normalizedClassName,
-        ...availableClassOptions,
-        ...DEFAULT_SCHOOL_CLASS_OPTIONS.map((value) => String(value)),
-      ]),
-    [availableClassOptions, normalizedClassName]
+  const studentClassOptions = useMemo(
+    () => getUniqueClasses(availableClassOptions),
+    [availableClassOptions]
   );
 
   const [studentForm, setStudentForm] = useState({
@@ -61,6 +63,7 @@ export default function ClassIntakeForm() {
     phone: "",
     subject: "",
     className: "",
+    password: "",
   });
 
   useEffect(() => {
@@ -74,28 +77,35 @@ export default function ClassIntakeForm() {
 
         if (schoolSnap?.exists()) {
           const data = schoolSnap.data();
+          setSchoolMeta(data);
           setSchoolName(data.schoolName || "School");
         } else {
+          setSchoolMeta({});
           setSchoolName("School");
         }
 
-        const classesSnap = await getDocs(
-          query(collection(db, "classes"), where("schoolId", "==", schoolIdValue || normalizedSchoolId))
-        );
+        const classesSnap = await getDocs(collection(db, "classes"));
         const discoveredClasses = classesSnap.docs
-          .map((entry) => String(entry.data()?.className || "").toUpperCase())
+          .map((entry) => ({ id: entry.id, ...entry.data() }))
+          .filter((entry) => {
+            const entrySchoolId = String(entry.schoolId || entry.schoolIdRaw || "").trim().toLowerCase();
+            return entrySchoolId === normalizedSchoolId;
+          })
+          .map((entry) => String(entry.className || "").toUpperCase())
           .filter(Boolean)
           .sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
         setAvailableClassOptions(discoveredClasses);
-        const defaultClassName = normalizedClassName || discoveredClasses[0] || DEFAULT_SCHOOL_CLASS_OPTIONS[0] || "";
+        const defaultStudentClassName =
+          discoveredClasses.includes(normalizedClassName) ? normalizedClassName : discoveredClasses[0] || "";
+        const defaultTeacherClassName = normalizedClassName || discoveredClasses[0] || "";
         setStudentForm((prev) => ({
           ...prev,
-          className: prev.className || defaultClassName,
+          className: prev.className || defaultStudentClassName,
         }));
         setTeacherForm((prev) => ({
           ...prev,
-          className: prev.className || defaultClassName,
+          className: prev.className || defaultTeacherClassName,
         }));
       } catch {
         setSchoolName("School");
@@ -268,13 +278,17 @@ export default function ClassIntakeForm() {
     }
   };
 
-  const ensureClassExists = async (selectedClassName) => {
+  const ensureClassExists = async (selectedClassName, options = {}) => {
+    const { allowCreate = true } = options;
     const resolvedClassName = normalize(selectedClassName || normalizedClassName).toUpperCase();
     const classId = `${schoolIdValue || normalizedSchoolId}_${resolvedClassName}`;
     const classRef = doc(db, "classes", classId);
     const classSnap = await getDoc(classRef);
 
     if (!classSnap.exists()) {
+      if (!allowCreate) {
+        throw new Error("Selected class or division is not available for this school.");
+      }
       const grade = parseInt(resolvedClassName.match(/^\d+/)?.[0] || "0", 10);
       await setDoc(classRef, {
         schoolId: schoolIdValue || normalizedSchoolId,
@@ -287,6 +301,19 @@ export default function ClassIntakeForm() {
     }
 
     return classId;
+  };
+
+  const findExistingTeacher = async (emailValue) => {
+    const normalizedEmail = normalize(emailValue).toLowerCase();
+    if (!normalizedEmail) return null;
+
+    const teacherQuery = query(
+      collection(db, "users"),
+      where("schoolId", "==", schoolIdValue || normalizedSchoolId)
+    );
+    const snap = await getDocs(teacherQuery);
+    const match = snap.docs.find((entry) => normalize(entry.data()?.email).toLowerCase() === normalizedEmail);
+    return match ? { id: match.id, ...match.data() } : null;
   };
 
   const getLinkedAccountsForPhone = async (cleanPhone) => {
@@ -309,6 +336,16 @@ export default function ClassIntakeForm() {
     const selectedClassName = normalize(studentForm.className || normalizedClassName).toUpperCase();
     const cleanPhone = normalizePhone(studentForm.phone);
     const cleanPin = normalize(studentForm.pin);
+    const schoolIsPaid = hasPaidSchoolAccess(schoolMeta);
+    const selectedPlanId = schoolMeta.selectedPlanId || "";
+    const selectedPlanName = schoolMeta.selectedPlanName || "";
+    const planAmount = Number(schoolMeta.planAmount || 0);
+    const feeCollectionCycle = normalize(schoolMeta.feeCollectionCycle || "monthly").toLowerCase() || "monthly";
+    const feeAmount = Number(schoolMeta.feeAmount || 0);
+    const paymentStatus = schoolIsPaid ? "paid" : "pending_plan_selection";
+    const registrationStatus = schoolIsPaid ? "active" : "pending_plan_selection";
+    const studentIsPaid = schoolIsPaid;
+    const feeStatus = schoolIsPaid ? "pending" : "not_applicable";
 
     if (!studentForm.fullName || !selectedClassName || !studentForm.rollNumber || !cleanPin || !cleanPhone) {
       setStatus("Please fill name, class, roll number, PIN, and phone number.");
@@ -349,14 +386,25 @@ export default function ClassIntakeForm() {
       }
 
       const linkedAccounts = await getLinkedAccountsForPhone(cleanPhone);
-      const classId = await ensureClassExists(selectedClassName);
+      if (!studentClassOptions.includes(selectedClassName)) {
+        throw new Error("This class or division is not active yet. Ask the school admin to create it first.");
+      }
+
+      const classId = await ensureClassExists(selectedClassName, { allowCreate: false });
       const roll = normalize(studentForm.rollNumber);
       const enrollmentId = `${normalizedSchoolId}_${selectedClassName}_${roll}`;
       const fullName = normalize(studentForm.fullName);
       const currentLinkedAccount = linkedAccounts.find((entry) => entry.id === enrollmentId);
+      const existingStudentSnap = await getDoc(doc(db, "studentAccounts", enrollmentId));
+      const existingStudent = existingStudentSnap.exists() ? existingStudentSnap.data() : null;
 
       if (!currentLinkedAccount && linkedAccounts.length >= MAX_PARENT_ACCOUNTS_PER_PHONE) {
         setStatus(`A single parent phone number can be linked to a maximum of ${MAX_PARENT_ACCOUNTS_PER_PHONE} child accounts.`);
+        return;
+      }
+
+      if (existingStudent && normalize(existingStudent.parentPhone || existingStudent.phone) !== cleanPhone) {
+        setStatus(`Roll number ${roll} is already assigned in ${selectedClassName}. Use a different roll number.`);
         return;
       }
 
@@ -371,10 +419,19 @@ export default function ClassIntakeForm() {
         schoolId: normalizedSchoolId,
         schoolIdRaw: schoolIdValue || normalizedSchoolId,
         schoolName,
+        selectedPlanId,
+        selectedPlanName,
+        planAmount,
+        isPaid: studentIsPaid,
         createdAt: new Date(),
         source: "class_form",
-        paymentStatus: "pending_plan_selection",
-        registrationStatus: "pending_plan_selection",
+        paymentStatus,
+        registrationStatus,
+        feeStatus,
+        feeCollectionCycle,
+        feeAmount,
+        feePaidAmount: 0,
+        feePendingAmount: schoolIsPaid ? feeAmount : 0,
       };
 
       await setDoc(doc(db, "studentAccounts", enrollmentId), studentPayload, { merge: true });
@@ -392,9 +449,17 @@ export default function ClassIntakeForm() {
           accessMode: "school-plan",
           selectedClasses: [selectedClassName],
           pin: cleanPin,
-          isPaid: false,
-          paymentStatus: "pending_plan_selection",
-          registrationStatus: "pending_plan_selection",
+          selectedPlanId,
+          selectedPlanName,
+          planAmount,
+          isPaid: studentIsPaid,
+          paymentStatus,
+          registrationStatus,
+          feeStatus,
+          feeCollectionCycle,
+          feeAmount,
+          feePaidAmount: 0,
+          feePendingAmount: schoolIsPaid ? feeAmount : 0,
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         },
@@ -412,8 +477,17 @@ export default function ClassIntakeForm() {
           createdAt: new Date(),
           source: "class_form",
           pin: cleanPin,
-          paymentStatus: "pending_plan_selection",
-          registrationStatus: "pending_plan_selection",
+          selectedPlanId,
+          selectedPlanName,
+          planAmount,
+          isPaid: studentIsPaid,
+          paymentStatus,
+          registrationStatus,
+          feeStatus,
+          feeCollectionCycle,
+          feeAmount,
+          feePaidAmount: 0,
+          feePendingAmount: schoolIsPaid ? feeAmount : 0,
         },
         { merge: true }
       );
@@ -427,17 +501,27 @@ export default function ClassIntakeForm() {
         { merge: true }
       );
 
-      setStatus(`Details saved for ${selectedClassName}. Continue to choose a plan.`);
+      setStatus(
+        schoolIsPaid
+          ? `Details saved for ${selectedClassName}. This school is already paid, so the student can log in directly.`
+          : `Details saved for ${selectedClassName}. Continue to choose a plan.`
+      );
       setStudentForm({
         fullName: "",
-        className: normalizedClassName || classOptions[0] || "",
+        className: studentClassOptions.includes(normalizedClassName)
+          ? normalizedClassName
+          : studentClassOptions[0] || "",
         rollNumber: "",
         phone: "",
         pin: "",
       });
       resetOtpState();
 
-      navigate(`/plan-selection?enrollmentId=${encodeURIComponent(enrollmentId)}`, { replace: true });
+      if (schoolIsPaid) {
+        navigate("/login", { replace: true });
+      } else {
+        navigate(`/plan-selection?enrollmentId=${encodeURIComponent(enrollmentId)}`, { replace: true });
+      }
     } catch (err) {
       setStatus(`Submission failed: ${err.message}`);
     } finally {
@@ -447,10 +531,18 @@ export default function ClassIntakeForm() {
 
   const submitTeacher = async (e) => {
     e.preventDefault();
-    const selectedClassName = normalize(teacherForm.className || normalizedClassName || classOptions[0]).toUpperCase();
+    const teacherEmail = normalize(teacherForm.email).toLowerCase();
+    const teacherName = normalize(teacherForm.name);
+    const teacherSubject = normalize(teacherForm.subject);
+    const teacherPassword = String(teacherForm.password || "");
 
-    if (!teacherForm.name || !teacherForm.email || !selectedClassName) {
-      setStatus("Please fill teacher name, email, and class/division.");
+    if (!teacherName || !teacherEmail || !teacherPassword) {
+      setStatus("Please fill teacher name, email, and password.");
+      return;
+    }
+
+    if (teacherPassword.length < 6) {
+      setStatus("Password must be at least 6 characters.");
       return;
     }
 
@@ -458,36 +550,50 @@ export default function ClassIntakeForm() {
     setStatus("");
 
     try {
-      const classId = await ensureClassExists(selectedClassName);
-      const teacherRef = await addDoc(collection(db, "users"), {
-        name: normalize(teacherForm.name),
-        email: normalize(teacherForm.email).toLowerCase(),
+      const existingTeacher = await findExistingTeacher(teacherEmail);
+      let teacherId = existingTeacher?.uid || "";
+
+      if (existingTeacher?.uid) {
+        setStatus("This teacher account already exists. Please use the teacher login page.");
+        setLoading(false);
+        return;
+      }
+
+      const teacherPayload = {
+        name: teacherName,
+        email: teacherEmail,
         phone: normalize(teacherForm.phone),
-        subject: normalize(teacherForm.subject),
+        subject: teacherSubject,
         role: "teacher",
         schoolId: schoolIdValue || normalizedSchoolId,
-        assignedClass: selectedClassName,
-        createdAt: new Date(),
+        assignedClass: existingTeacher?.assignedClass || "",
+        assignedClasses: Array.from(new Set(existingTeacher?.assignedClasses || [])),
         source: "class_form",
-      });
+        updatedAt: new Date(),
+      };
 
-      const classRef = doc(db, "classes", classId);
-      const classSnap = await getDoc(classRef);
-      const currentTeam = classSnap.exists() && Array.isArray(classSnap.data().team) ? classSnap.data().team : [];
-      const nextTeam = [
-        ...currentTeam,
-        {
-          userId: teacherRef.id,
-          name: normalize(teacherForm.name),
-          email: normalize(teacherForm.email).toLowerCase(),
-          subjects: teacherForm.subject ? [normalize(teacherForm.subject)] : [],
-        },
-      ];
+      await signOut(auth).catch(() => {});
+      const credential = await createUserWithEmailAndPassword(auth, teacherEmail, teacherPassword);
+      teacherId = credential.user.uid;
 
-      await setDoc(classRef, { team: nextTeam, updatedAt: new Date() }, { merge: true });
+      await setDoc(doc(db, "users", teacherId), {
+        uid: teacherId,
+        ...teacherPayload,
+        createdAt: existingTeacher?.createdAt || new Date(),
+      }, { merge: true });
 
-      setStatus("Teacher details submitted successfully.");
-      setTeacherForm({ name: "", email: "", phone: "", subject: "", className: normalizedClassName || classOptions[0] || "" });
+      if (existingTeacher && existingTeacher.id !== teacherId) {
+        await updateDoc(doc(db, "users", existingTeacher.id), {
+          migratedToUid: teacherId,
+          updatedAt: new Date(),
+        }).catch(() => {});
+      }
+
+      await signOut(auth).catch(() => {});
+
+      setStatus("Teacher account created successfully. Class assignment can be handled later from the school dashboard.");
+      setTeacherForm({ name: "", email: "", phone: "", subject: "", className: "", password: "" });
+      navigate("/teacher-login", { replace: true });
     } catch (err) {
       setStatus(`Submission failed: ${err.message}`);
     } finally {
@@ -516,11 +622,15 @@ export default function ClassIntakeForm() {
           <div className="plan-summary-card">
             <div>
               <span className="meta-label">Plan Selection</span>
-              <strong>Choose after form submission</strong>
+              <strong>{hasPaidSchoolAccess(schoolMeta) ? "Handled by school" : "Choose after form submission"}</strong>
             </div>
             <div>
               <span className="meta-label">What happens next</span>
-              <strong>OTP, details saved, plan choice, payment</strong>
+              <strong>
+                {hasPaidSchoolAccess(schoolMeta)
+                  ? "OTP, details saved, direct activation"
+                  : "OTP, details saved, plan choice, payment"}
+              </strong>
             </div>
           </div>
         )}
@@ -541,14 +651,18 @@ export default function ClassIntakeForm() {
             <select
               value={studentForm.className || normalizedClassName || ""}
               onChange={(e) => setStudentForm((p) => ({ ...p, className: e.target.value }))}
+              disabled={!studentClassOptions.length}
             >
-              <option value="">Select Class / Division</option>
-              {classOptions.map((option) => (
+              <option value="">{studentClassOptions.length ? "Select Class / Division" : "No classes available yet"}</option>
+              {studentClassOptions.map((option) => (
                 <option key={option} value={option}>
                   {option}
                 </option>
               ))}
             </select>
+            {!studentClassOptions.length ? (
+              <p className="helper-note">No active classes found yet. Please ask the school admin to create classes first.</p>
+            ) : null}
             <input
               value={studentForm.rollNumber}
               onChange={(e) => setStudentForm((p) => ({ ...p, rollNumber: e.target.value }))}
@@ -610,6 +724,7 @@ export default function ClassIntakeForm() {
           </form>
         ) : (
           <form onSubmit={submitTeacher} className="intake-form">
+            <p className="helper-note">Create the teacher account first. Class and subject assignment can be managed later from the school admin dashboard.</p>
             <input
               value={teacherForm.name}
               onChange={(e) => setTeacherForm((p) => ({ ...p, name: e.target.value }))}
@@ -620,17 +735,12 @@ export default function ClassIntakeForm() {
               onChange={(e) => setTeacherForm((p) => ({ ...p, email: e.target.value }))}
               placeholder="Teacher Email"
             />
-            <select
-              value={teacherForm.className || normalizedClassName || ""}
-              onChange={(e) => setTeacherForm((p) => ({ ...p, className: e.target.value }))}
-            >
-              <option value="">Select Class / Division</option>
-              {classOptions.map((option) => (
-                <option key={option} value={option}>
-                  {option}
-                </option>
-              ))}
-            </select>
+            <input
+              value={teacherForm.password}
+              onChange={(e) => setTeacherForm((p) => ({ ...p, password: e.target.value }))}
+              placeholder="Create Password"
+              type="password"
+            />
             <input
               value={teacherForm.phone}
               onChange={(e) => setTeacherForm((p) => ({ ...p, phone: normalizePhone(e.target.value) }))}

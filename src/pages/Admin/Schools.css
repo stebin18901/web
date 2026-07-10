@@ -189,6 +189,20 @@
   gap: 0.9rem;
 }
 
+.school-paid-toggle {
+  display: grid;
+  gap: 0.45rem;
+  align-self: end;
+}
+
+.school-paid-toggle span {
+  color: #475569;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
 .school-form input,
 .search-bar input,
 .auth-link-card input,
@@ -228,6 +242,79 @@
 .school-form button:hover {
   transform: translateY(-1px);
   box-shadow: 0 10px 20px rgba(36, 87, 197, 0.22);
+}
+
+.school-paid-switch {
+  position: relative;
+  min-height: 54px;
+  border: 1px solid #d7e2f3;
+  border-radius: 16px;
+  background: #f8fbff;
+  color: #1e293b;
+  cursor: pointer;
+  overflow: hidden;
+  padding: 0.8rem 0.95rem;
+  text-align: left;
+  transition: var(--transition);
+}
+
+.school-paid-switch:hover {
+  border-color: #bfd3f7;
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.08);
+}
+
+.school-paid-switch strong {
+  position: relative;
+  z-index: 2;
+  display: inline-block;
+  margin-left: 2.1rem;
+  font-size: 0.95rem;
+  font-weight: 800;
+}
+
+.school-paid-switch-track {
+  position: absolute;
+  left: 0.95rem;
+  top: 50%;
+  width: 34px;
+  height: 18px;
+  border-radius: 999px;
+  background: #cbd5e1;
+  transform: translateY(-50%);
+  transition: var(--transition);
+}
+
+.school-paid-switch-thumb {
+  position: absolute;
+  left: 0.99rem;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  border-radius: 999px;
+  background: #ffffff;
+  transform: translateY(-50%);
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.2);
+  transition: var(--transition);
+}
+
+.school-paid-switch.is-paid {
+  background: linear-gradient(135deg, #ecfdf5, #f0fdf4);
+  border-color: #a7f3d0;
+  color: #166534;
+}
+
+.school-paid-switch.is-paid .school-paid-switch-track {
+  background: #22c55e;
+}
+
+.school-paid-switch.is-paid .school-paid-switch-thumb {
+  left: 1.95rem;
+}
+
+.school-paid-switch.is-unpaid {
+  background: linear-gradient(135deg, #fff7ed, #fffaf5);
+  border-color: #fed7aa;
+  color: #9a3412;
 }
 
 .search-bar {
@@ -448,6 +535,24 @@
   color: #166534;
   font-size: 0.76rem;
   font-weight: 800;
+}
+
+.school-payment-badge {
+  padding: 0.28rem 0.62rem;
+  border-radius: 999px;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.school-payment-badge.is-paid {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.school-payment-badge.is-unpaid {
+  background: #ffedd5;
+  color: #9a3412;
 }
 
 .actions .btn-default {

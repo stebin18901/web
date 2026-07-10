@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { collection, doc, getDoc, getDocs, query, setDoc, where } from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
 import { DEFAULT_SCHOOL_CLASS_OPTIONS, getDefaultSchoolPlan, getUniqueClasses, normalizeClassName } from "../config/defaultSchool";
+import { compareReleaseVersions, getAppReleaseConfig } from "../utils/appReleaseConfig";
 import "./Dashboard.css";
 
 const normalizeClassToken = (value) => String(value || "").trim().toUpperCase().replace(/\s+/g, "");
@@ -64,6 +65,7 @@ const getDeviceLabel = () => {
 const PROFILE_CARD_IMAGE = `${process.env.PUBLIC_URL || ""}/images/propic.png`;
 const HEPSY_LOGO = `${process.env.PUBLIC_URL || ""}/images/logo.png`;
 const LEAGUE_BANNER_IMAGE = `${process.env.PUBLIC_URL || ""}/images/career.png`;
+const STUDENT_APP_RELEASE = getAppReleaseConfig("student");
 const getHolderTierByScore = (scoreValue) => {
   const score = Number(scoreValue || 0);
 
@@ -198,6 +200,12 @@ const Dashboard = () => {
     safeNumber(localStorage.getItem(getNotificationReadKey(safeJsonParse(localStorage.getItem("schoolStudentSession"))?.id)))
   );
   const [holderTierPopup, setHolderTierPopup] = useState(null);
+  const [appUpdate, setAppUpdate] = useState({
+    visible: false,
+    latestVersion: "",
+    downloadUrl: "",
+    forceUpdate: false,
+  });
   const subjectScrollRef = useRef(null);
   const navigate = useNavigate();
   const sessionId = session?.id || "";
@@ -963,6 +971,60 @@ const Dashboard = () => {
     return () => window.removeEventListener("resize", syncSidebarState);
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadStudentAppRelease = async () => {
+      try {
+        const snapshot = await getDoc(
+          doc(db, "app_metadata", STUDENT_APP_RELEASE.configDocId)
+        );
+
+        if (!snapshot.exists() || cancelled) {
+          return;
+        }
+
+        const data = snapshot.data() || {};
+        const latestVersion = String(
+          data.latest_version || data.min_version || ""
+        ).trim();
+        const currentVersion = String(
+          session?.appVersion ||
+            localStorage.getItem("hepsyStudentAppVersion") ||
+            localStorage.getItem("hepsyAppVersion") ||
+            ""
+        ).trim();
+        const onAndroid =
+          typeof navigator !== "undefined" &&
+          /android/i.test(navigator.userAgent || "");
+        const shouldShow =
+          Boolean(data.download_url) &&
+          (Boolean(data.is_force_update) ||
+            (latestVersion &&
+              currentVersion &&
+              compareReleaseVersions(latestVersion, currentVersion) > 0) ||
+            (!currentVersion && onAndroid));
+
+        if (cancelled) return;
+
+        setAppUpdate({
+          visible: shouldShow,
+          latestVersion,
+          downloadUrl: data.download_url || "",
+          forceUpdate: Boolean(data.is_force_update),
+        });
+      } catch (error) {
+        console.error("Failed to load student app release config:", error);
+      }
+    };
+
+    loadStudentAppRelease();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.appVersion]);
+
   const scrollSubjects = (direction) => {
     const container = subjectScrollRef.current;
     if (!container) return;
@@ -1122,6 +1184,39 @@ const Dashboard = () => {
             ) : null}
 
             <div className="dashboard-side-footer">
+              {appUpdate.visible ? (
+                <div className="dashboard-app-update-card">
+                  <div className="dashboard-app-update-copy">
+                    <span>App Update</span>
+                    <strong>
+                      {appUpdate.latestVersion
+                        ? `Version ${appUpdate.latestVersion} available`
+                        : "A newer Android build is available"}
+                    </strong>
+                    <small>
+                      {appUpdate.forceUpdate
+                        ? "This release is marked as required before continuing in older app builds."
+                        : "Open the latest student app build for a smoother experience."}
+                    </small>
+                  </div>
+                  <button
+                    type="button"
+                    className="dashboard-app-update-button"
+                    onClick={() => {
+                      const target =
+                        appUpdate.downloadUrl || STUDENT_APP_RELEASE.downloadRoute;
+                      if (String(target).startsWith("http")) {
+                        window.open(target, "_blank", "noopener,noreferrer");
+                        return;
+                      }
+                      navigate(target);
+                    }}
+                  >
+                    Update
+                  </button>
+                </div>
+              ) : null}
+
               <button
                 type="button"
                 className="dashboard-side-account brand-wrap brand-button"

@@ -1,0 +1,454 @@
+.upload-students-page {
+  display: grid;
+  gap: 1.25rem;
+  color: #1e293b;
+}
+
+.upload-students-hero {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.5rem 1.6rem;
+  border: 1px solid #dbe4f0;
+  border-radius: 24px;
+  background:
+    radial-gradient(circle at top right, rgba(34, 197, 94, 0.08), transparent 32%),
+    linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+}
+
+.upload-students-kicker {
+  margin: 0 0 0.35rem;
+  color: #16a34a;
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.upload-students-hero h2 {
+  margin: 0;
+  font-size: clamp(1.9rem, 2.8vw, 2.5rem);
+  color: #17233b;
+}
+
+.upload-students-subtitle {
+  margin: 0.55rem 0 0;
+  max-width: 700px;
+  color: #5b6b83;
+  line-height: 1.7;
+}
+
+.upload-students-hero-badge {
+  min-width: 220px;
+  padding: 1rem 1.1rem;
+  border: 1px solid #dbe7f5;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.85);
+}
+
+.upload-students-hero-badge span {
+  display: block;
+  color: #64748b;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.upload-students-hero-badge strong {
+  display: block;
+  margin-top: 0.45rem;
+  font-size: 1.05rem;
+  color: #17233b;
+}
+
+.upload-students-state-card,
+.upload-students-card {
+  padding: 1.3rem;
+  border: 1px solid #dbe4f0;
+  border-radius: 22px;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfdff 100%);
+  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+}
+
+.upload-students-state-card {
+  color: #475569;
+  line-height: 1.7;
+}
+
+.upload-students-state-card.blocked {
+  border-color: #fed7aa;
+  background: linear-gradient(180deg, #fffaf5 0%, #ffffff 100%);
+  color: #9a3412;
+}
+
+.upload-students-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.8fr) minmax(0, 1.2fr);
+  gap: 1.25rem;
+}
+
+.upload-students-card-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.upload-students-card-head.compact {
+  margin-top: 0.35rem;
+}
+
+.upload-students-card-head h3 {
+  margin: 0;
+  color: #17233b;
+  font-size: 1.15rem;
+}
+
+.upload-students-card-head p {
+  margin: 0.35rem 0 0;
+  color: #5f6f87;
+  line-height: 1.6;
+}
+
+.upload-students-code-block {
+  margin: 0;
+  padding: 1rem;
+  overflow-x: auto;
+  border-radius: 16px;
+  background: #0f172a;
+  color: #e2e8f0;
+  font-size: 0.82rem;
+  line-height: 1.7;
+}
+
+.upload-students-columns {
+  margin: 0.9rem 0 0;
+  color: #5f6f87;
+  line-height: 1.6;
+}
+
+.upload-students-file-picker {
+  display: grid;
+  gap: 0.65rem;
+}
+
+.upload-students-workspace-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.upload-students-tabs {
+  display: inline-flex;
+  gap: 0.5rem;
+  padding: 0.35rem;
+  width: fit-content;
+  border: 1px solid #dbe4f0;
+  border-radius: 16px;
+  background: #f8fbff;
+}
+
+.upload-students-tabs button {
+  border: none;
+  border-radius: 12px;
+  padding: 0.8rem 1.05rem;
+  background: transparent;
+  color: #5f6f87;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.2s ease-out;
+}
+
+.upload-students-tabs button.active {
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #ffffff;
+  box-shadow: 0 10px 20px rgba(34, 197, 94, 0.2);
+}
+
+.upload-students-tab-panel {
+  display: grid;
+  gap: 1rem;
+  min-height: 100%;
+  padding: 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.upload-students-sheet-panel {
+  padding-bottom: 1.2rem;
+}
+
+.upload-students-partition-head h4 {
+  margin: 0.35rem 0 0;
+  color: #17233b;
+  font-size: 1.02rem;
+}
+
+.upload-students-partition-head p {
+  margin: 0.45rem 0 0;
+  color: #5f6f87;
+  line-height: 1.6;
+}
+
+.upload-students-partition-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.6rem;
+  border-radius: 999px;
+  background: #ecfdf5;
+  color: #166534;
+  font-size: 0.74rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.upload-students-file-picker span {
+  color: #475569;
+  font-size: 0.82rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.upload-students-file-picker input,
+.upload-students-form-grid input {
+  width: 100%;
+  border: 1px solid #dbe4f0;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #17233b;
+  transition: all 0.2s ease-out;
+}
+
+.upload-students-file-picker input {
+  padding: 0.82rem 0.95rem;
+}
+
+.upload-students-form-grid input {
+  padding: 0.88rem 0.95rem;
+}
+
+.upload-students-file-picker input:focus,
+.upload-students-form-grid input:focus {
+  outline: none;
+  border-color: #22c55e;
+  box-shadow: 0 0 0 4px rgba(34, 197, 94, 0.12);
+}
+
+.upload-students-divider {
+  height: 1px;
+  margin: 1.2rem 0;
+  background: linear-gradient(90deg, transparent, #dbe4f0, transparent);
+}
+
+.upload-students-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.upload-students-form-grid .span-2 {
+  grid-column: span 2;
+}
+
+.upload-students-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.upload-students-actions.between {
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.upload-students-primary-btn,
+.upload-students-secondary-btn {
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  font-weight: 800;
+  transition: all 0.2s ease-out;
+}
+
+.upload-students-primary-btn {
+  padding: 0.9rem 1.2rem;
+  background: linear-gradient(135deg, #22c55e, #16a34a);
+  color: #ffffff;
+  box-shadow: 0 14px 28px rgba(34, 197, 94, 0.22);
+}
+
+.upload-students-primary-btn:hover:not(:disabled),
+.upload-students-secondary-btn:hover {
+  transform: translateY(-1px);
+}
+
+.upload-students-primary-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.upload-students-secondary-btn {
+  padding: 0.82rem 1.1rem;
+  background: #eff6ff;
+  color: #2457c5;
+}
+
+.upload-students-preview-card {
+  display: grid;
+  gap: 1rem;
+}
+
+.upload-students-sheet-wrap {
+  overflow-x: auto;
+  border: 1px solid #dbe4f0;
+  border-radius: 18px;
+  background: #ffffff;
+}
+
+.upload-students-sheet-wrap.full-size {
+  min-height: 420px;
+}
+
+.upload-students-sheet {
+  min-width: 940px;
+  display: grid;
+  grid-template-columns: 1.5fr 0.75fr 0.75fr 0.8fr 0.9fr 1fr 1.35fr 0.9fr;
+}
+
+.upload-students-sheet-head {
+  padding: 0.85rem 0.8rem;
+  background: #f8fbff;
+  border-bottom: 1px solid #dbe4f0;
+  color: #475569;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.upload-students-sheet input {
+  width: 100%;
+  min-width: 0;
+  padding: 0.82rem 0.78rem;
+  border: none;
+  border-right: 1px solid #eef2f7;
+  border-bottom: 1px solid #eef2f7;
+  color: #17233b;
+  background: #ffffff;
+}
+
+.upload-students-sheet input:focus {
+  outline: none;
+  background: #f8fff9;
+  box-shadow: inset 0 0 0 1px #22c55e;
+}
+
+.upload-students-sheet-remove {
+  margin: 0.45rem;
+  border: none;
+  border-radius: 12px;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease-out;
+}
+
+.upload-students-sheet-remove:hover {
+  background: #fecaca;
+}
+
+.upload-students-preview-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.85rem;
+}
+
+.upload-students-preview-item {
+  display: grid;
+  gap: 0.28rem;
+  padding: 0.95rem 1rem;
+  border: 1px solid #dbe7f5;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.upload-students-preview-item strong {
+  color: #17233b;
+  font-size: 0.98rem;
+}
+
+.upload-students-preview-item span {
+  color: #5f6f87;
+  font-size: 0.89rem;
+}
+
+.upload-students-empty {
+  padding: 1.2rem;
+  border: 1px dashed #cbd5e1;
+  border-radius: 18px;
+  color: #64748b;
+  text-align: center;
+  background: #f8fbff;
+}
+
+.upload-students-status {
+  margin: 0;
+  color: #166534;
+  font-weight: 700;
+}
+
+@media (max-width: 980px) {
+  .upload-students-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .upload-students-card-head {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 720px) {
+  .upload-students-hero {
+    flex-direction: column;
+  }
+
+  .upload-students-hero-badge {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .upload-students-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .upload-students-form-grid .span-2 {
+    grid-column: auto;
+  }
+
+  .upload-students-actions {
+    justify-content: stretch;
+  }
+
+  .upload-students-primary-btn,
+  .upload-students-secondary-btn {
+    width: 100%;
+  }
+
+  .upload-students-actions.between {
+    flex-direction: column;
+  }
+
+  .upload-students-tabs {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+}

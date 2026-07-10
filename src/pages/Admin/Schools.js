@@ -19,6 +19,7 @@ const Schools = () => {
   const [editSchoolId, setEditSchoolId] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [password, setPassword] = useState("");
+  const [isPaidSchool, setIsPaidSchool] = useState(false);
   const [activeStudentSchoolId, setActiveStudentSchoolId] = useState("");
   const [generatedLink, setGeneratedLink] = useState("");
   const [generatedLogoutLink, setGeneratedLogoutLink] = useState("");
@@ -129,6 +130,7 @@ const Schools = () => {
           schoolName,
           schoolId,
           password,
+          isPaidSchool,
         });
         alert("School updated successfully!");
         setEditSchoolId(null);
@@ -137,12 +139,14 @@ const Schools = () => {
           schoolName,
           schoolId,
           password,
+          isPaidSchool,
         });
         alert("School added successfully!");
       }
       setSchoolName("");
       setSchoolId("");
       setPassword("");
+      setIsPaidSchool(false);
       fetchSchools();
     } catch (error) {
       alert("Error: " + error.message);
@@ -164,6 +168,7 @@ const Schools = () => {
     setSchoolId(school.schoolId);
     setEditSchoolId(school.id);
     setPassword(school.password || "");
+    setIsPaidSchool(Boolean(school.isPaidSchool));
   };
 
   const handleStudentAuth = (school) => {
@@ -384,6 +389,20 @@ const Schools = () => {
                   onChange={(e) => setPassword(e.target.value)}
                   required
                 />
+                <label className="school-paid-toggle" htmlFor="school-paid-toggle">
+                  <span>School Access</span>
+                  <button
+                    id="school-paid-toggle"
+                    type="button"
+                    className={`school-paid-switch ${isPaidSchool ? "is-paid" : "is-unpaid"}`}
+                    onClick={() => setIsPaidSchool((prev) => !prev)}
+                    aria-pressed={isPaidSchool}
+                  >
+                    <span className="school-paid-switch-track" />
+                    <span className="school-paid-switch-thumb" />
+                    <strong>{isPaidSchool ? "Paid" : "Unpaid"}</strong>
+                  </button>
+                </label>
                 <button type="submit">{editSchoolId ? "Update School" : "Add School"}</button>
               </form>
             </div>
@@ -441,6 +460,9 @@ const Schools = () => {
                           {defaultSchoolId === normalizeSchoolId(school.schoolId) && (
                             <span className="default-school-badge">Default</span>
                           )}
+                          <span className={`school-payment-badge ${school.isPaidSchool ? "is-paid" : "is-unpaid"}`}>
+                            {school.isPaidSchool ? "Paid" : "Unpaid"}
+                          </span>
                         </div>
                         <span className="school-item-id">ID: {school.schoolId}</span>
                       </button>
@@ -508,6 +530,7 @@ const Schools = () => {
                   <tr>
                     <th>School</th>
                     <th>School ID</th>
+                    <th>Status</th>
                     <th>General Form Link</th>
                     <th>Total Registration</th>
                     <th>Plan Enrollment</th>
@@ -525,6 +548,11 @@ const Schools = () => {
                         <tr key={school.id} className="schools-details-row" onClick={() => openSchoolDetails(school)}>
                           <td>{school.schoolName}</td>
                           <td>{school.schoolId}</td>
+                          <td>
+                            <span className={`school-payment-badge ${school.isPaidSchool ? "is-paid" : "is-unpaid"}`}>
+                              {school.isPaidSchool ? "Paid" : "Unpaid"}
+                            </span>
+                          </td>
                           <td className="schools-link-cell">
                             <a
                               href={getGeneralFormLink(school)}
@@ -549,7 +577,7 @@ const Schools = () => {
                     })
                   ) : (
                     <tr>
-                      <td colSpan="8">No schools found.</td>
+                      <td colSpan="9">No schools found.</td>
                     </tr>
                   )}
                 </tbody>

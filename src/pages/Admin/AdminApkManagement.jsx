@@ -1,13 +1,13 @@
 import React, { useEffect, useRef, useState } from "react";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
-import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { getDownloadURL, ref, uploadBytesResumable } from "firebase/storage";
 
 import { db, storage } from "../../firebase/firebaseConfig";
+import { getAppReleaseConfig } from "../../utils/appReleaseConfig";
 import "./AdminApkManagement.css";
 
-const APK_STORAGE_PATH = "apk/app.apk";
-
-export default function AdminApkManagement() {
+export default function AdminApkManagement({ appKey = "student" }) {
+  const appRelease = getAppReleaseConfig(appKey);
   const [apkFile, setApkFile] = useState(null);
   const [dragging, setDragging] = useState(false);
   const [minVersion, setMinVersion] = useState("");
@@ -17,6 +17,8 @@ export default function AdminApkManagement() {
     loading: false,
     error: "",
     success: "",
+    progress: 0,
+    phase: "",
   });
   const fileInputRef = useRef(null);
 
@@ -25,7 +27,7 @@ export default function AdminApkManagement() {
 
     async function loadConfig() {
       try {
-        const snapshot = await getDoc(doc(db, "app_metadata", "android_config"));
+        const snapshot = await getDoc(doc(db, "app_metadata", appRelease.configDocId));
 
         if (!active || !snapshot.exists()) {
           return;
@@ -36,7 +38,7 @@ export default function AdminApkManagement() {
         setMinVersion(data?.min_version || "");
         setIsForceUpdate(Boolean(data?.is_force_update));
       } catch (error) {
-        console.error("Failed to fetch APK config", error);
+        console.error(`Failed to fetch ${appRelease.key} APK config`, error);
       }
     }
 
@@ -45,7 +47,7 @@ export default function AdminApkManagement() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [appRelease.configDocId, appRelease.key]);
 
   function setSelectedFile(file) {
     if (!file) {
@@ -57,6 +59,8 @@ export default function AdminApkManagement() {
         loading: false,
         error: "Only .apk files are allowed here.",
         success: "",
+        progress: 0,
+        phase: "",
       });
       return;
     }
@@ -66,6 +70,8 @@ export default function AdminApkManagement() {
       loading: false,
       error: "",
       success: "",
+      progress: 0,
+      phase: "",
     });
   }
 
@@ -95,6 +101,8 @@ export default function AdminApkManagement() {
         loading: false,
         error: "Select the new APK before publishing.",
         success: "",
+        progress: 0,
+        phase: "",
       });
       return;
     }
@@ -104,6 +112,8 @@ export default function AdminApkManagement() {
         loading: false,
         error: "Enter the minimum supported version, for example 1.1.0.",
         success: "",
+        progress: 0,
+        phase: "",
       });
       return;
     }
@@ -112,24 +122,55 @@ export default function AdminApkManagement() {
       loading: true,
       error: "",
       success: "",
+      progress: 0,
+      phase: "Uploading APK to Firebase Storage...",
     });
 
     try {
-      const storageRef = ref(storage, APK_STORAGE_PATH);
-
-      await uploadBytes(storageRef, apkFile, {
+      const storageRef = ref(storage, appRelease.storagePath);
+      const uploadTask = uploadBytesResumable(storageRef, apkFile, {
         contentType: "application/vnd.android.package-archive",
       });
 
+      await new Promise((resolve, reject) => {
+        uploadTask.on(
+          "state_changed",
+          (snapshot) => {
+            const progress = snapshot.totalBytes
+              ? Math.round((snapshot.bytesTransferred / snapshot.totalBytes) * 100)
+              : 0;
+
+            setStatus((prev) => ({
+              ...prev,
+              loading: true,
+              progress,
+              phase:
+                progress >= 100
+                  ? "Finalizing APK upload..."
+                  : `Uploading APK to Firebase Storage... ${progress}%`,
+            }));
+          },
+          reject,
+          resolve
+        );
+      });
+
+      setStatus((prev) => ({
+        ...prev,
+        loading: true,
+        progress: 100,
+        phase: "Refreshing live release policy...",
+      }));
       const binaryUrl = await getDownloadURL(storageRef);
       const nextConfig = {
+        latest_version: minVersion.trim(),
         min_version: minVersion.trim(),
         download_url: binaryUrl,
         is_force_update: isForceUpdate,
         updated_at: serverTimestamp(),
       };
 
-      await setDoc(doc(db, "app_metadata", "android_config"), nextConfig, {
+      await setDoc(doc(db, "app_metadata", appRelease.configDocId), nextConfig, {
         merge: true,
       });
 
@@ -141,37 +182,45 @@ export default function AdminApkManagement() {
       setStatus({
         loading: false,
         error: "",
-        success: "APK published successfully. New devices and forced updates will now use this build.",
+        success: `${appRelease.label} APK published successfully. New installs and update prompts will now use this build.`,
+        progress: 100,
+        phase: "Publish complete.",
       });
     } catch (error) {
-      console.error("APK publish failed", error);
+      console.error(`${appRelease.key} APK publish failed`, error);
       setStatus({
         loading: false,
         error: error?.message || "Publishing failed. Please try again.",
         success: "",
+        progress: 0,
+        phase: "",
       });
     }
   }
+
+  const fileSizeLabel = apkFile
+    ? `${(apkFile.size / (1024 * 1024)).toFixed(1)} MB`
+    : "";
 
   return (
     <div className="apk-admin-shell">
       <section className="apk-admin-hero">
         <p className="apk-admin-kicker">Release Control</p>
-        <h3>APK Management</h3>
+        <h3>{appRelease.label} APK Management</h3>
         <p>
-          Upload the production Android package, set the minimum supported
-          version, and decide whether older app versions must hard-update before
-          they can continue.
+          {appRelease.description} Upload the production Android package, set
+          the minimum supported version, and decide whether older app versions
+          must hard-update before they can continue.
         </p>
       </section>
 
       <div className="apk-admin-grid">
         <section className="apk-admin-card">
-          <h4>Publish a new Android build</h4>
+          <h4>Publish a new {appRelease.shortLabel.toLowerCase()} Android build</h4>
           <p>
-            The uploaded file will overwrite <code>/apk/app.apk</code> in
-            Firebase Storage and then refresh the global version policy in
-            Firestore.
+            The uploaded file will overwrite <code>/{appRelease.storagePath}</code>{" "}
+            in Firebase Storage and then refresh the live release policy in
+            Firestore for the {appRelease.audienceLabel}.
           </p>
 
           <div
@@ -186,6 +235,7 @@ export default function AdminApkManagement() {
                 ? `Selected file: ${apkFile.name}`
                 : "Drop a .apk file here or use the button below to browse."}
             </span>
+            {apkFile ? <small className="apk-file-meta">File size: {fileSizeLabel}</small> : null}
 
             <button
               type="button"
@@ -219,8 +269,9 @@ export default function AdminApkManagement() {
               <div>
                 <div className="apk-toggle-label">Enforce Hard Update Validation</div>
                 <p>
-                  When enabled, mobile app builds below the minimum version will
-                  be blocked until users update from the download page.
+                  When enabled, {appRelease.audienceLabel} builds below the
+                  minimum version will be blocked until users update from the
+                  download page.
                 </p>
               </div>
               <input
@@ -240,6 +291,25 @@ export default function AdminApkManagement() {
             </button>
           </div>
 
+          {status.loading ? (
+            <div className="apk-progress-card" aria-live="polite">
+              <div className="apk-progress-head">
+                <strong>{status.phase || "Uploading..."}</strong>
+                <span>{status.progress}%</span>
+              </div>
+              <div className="apk-progress-track">
+                <div
+                  className="apk-progress-fill"
+                  style={{ width: `${Math.max(4, status.progress)}%` }}
+                />
+              </div>
+              <p>
+                Large APK uploads can take a little while. The browser console
+                preload warning is unrelated to this upload.
+              </p>
+            </div>
+          ) : null}
+
           {status.error ? <div className="apk-status error">{status.error}</div> : null}
           {status.success ? <div className="apk-status success">{status.success}</div> : null}
         </section>
@@ -247,10 +317,15 @@ export default function AdminApkManagement() {
         <aside className="apk-admin-card">
           <h4>Current live policy</h4>
           <p>
-            This reflects the last known release metadata stored in Firestore.
+            This reflects the last known release metadata stored in Firestore
+            for the {appRelease.audienceLabel}.
           </p>
 
           <div className="apk-meta-list">
+            <div className="apk-meta-item">
+              <strong>Live release version</strong>
+              <span>{currentConfig?.latest_version || currentConfig?.min_version || "Not set yet"}</span>
+            </div>
             <div className="apk-meta-item">
               <strong>Minimum version</strong>
               <span>{currentConfig?.min_version || "Not set yet"}</span>

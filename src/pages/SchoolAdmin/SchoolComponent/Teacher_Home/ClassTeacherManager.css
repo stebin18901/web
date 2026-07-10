@@ -104,6 +104,152 @@
   gap: 10px;
   flex-wrap: wrap;
   align-items: flex-start;
+  flex: 1;
+}
+
+.class-flow-note {
+  margin: 0 0 14px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #f8fbff, #eef5ff);
+  border: 1px solid #dbe7ff;
+  color: #475569;
+  font-size: 0.92rem;
+  line-height: 1.5;
+}
+
+.grade-add-trigger {
+  min-width: 154px;
+  min-height: 60px;
+  padding: 0 16px;
+  border: 1px dashed #94a3b8;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #ffffff, #f8fbff);
+  color: #334155;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.grade-add-trigger span {
+  display: block;
+  font-size: 1.25rem;
+  line-height: 1;
+  margin-bottom: 4px;
+  color: #6366f1;
+}
+
+.grade-add-trigger:hover {
+  border-color: #6366f1;
+  color: #111827;
+  transform: translateY(-2px);
+  box-shadow: 0 12px 24px rgba(99, 102, 241, 0.12);
+}
+
+.grade-add-trigger.compact {
+  min-width: auto;
+  min-height: 42px;
+  padding: 0 14px;
+  border-style: solid;
+  font-size: 0.85rem;
+}
+
+.grade-add-trigger.compact span {
+  display: inline;
+  margin: 0;
+}
+
+.grade-creator-card {
+  width: min(100%, 460px);
+  padding: 14px;
+  border-radius: 14px;
+  background: #ffffff;
+  border: 1px solid #dbe7ff;
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+}
+
+.grade-creator-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.grade-creator-head strong {
+  color: #0f172a;
+  font-size: 0.95rem;
+}
+
+.grade-creator-close {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4f46e5;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.grade-creator-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.grade-creator-grid label {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.grade-creator-grid label span {
+  color: #64748b;
+  font-size: 0.76rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.grade-creator-grid select,
+.grade-creator-grid input {
+  width: 100%;
+  min-height: 42px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 1px solid #dbe2f0;
+  background: #ffffff;
+  color: #0f172a;
+  outline: none;
+}
+
+.grade-creator-grid label:last-child:nth-child(3) {
+  grid-column: 1 / -1;
+}
+
+.grade-creator-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+}
+
+.grade-creator-primary {
+  min-height: 42px;
+  padding: 0 16px;
+  border: none;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #4f46e5, #6366f1);
+  color: #ffffff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.grade-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
 }
 
 /* ================================
@@ -256,7 +402,7 @@
 }
 
 .add-division input {
-  width: 70px;
+  width: 88px;
   padding: 8px;
   border-radius: 6px;
   border: 1px solid #e5e7eb;
@@ -343,5 +489,29 @@
   
   .right-panel {
     order: -1; /* Move teacher list to top on mobile if needed */
+  }
+
+  .grade-creator-card {
+    width: 100%;
+  }
+}
+
+@media (max-width: 720px) {
+  .grade-row {
+    flex-direction: column;
+  }
+
+  .grade-label {
+    min-width: 0;
+    padding-top: 0;
+  }
+
+  .grade-creator-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .class-box,
+  .grade-add-trigger {
+    width: 100%;
   }
 }

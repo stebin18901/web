@@ -1,5 +1,5 @@
 // src/pages/SchoolAdmin/SchoolComponent/Sidebar.js
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { NavLink } from "react-router-dom";
 import {
   Menu,
@@ -18,6 +18,8 @@ export default function Sidebar({
   sidebarLogo = null,
   links = [],
   commonFormLink = "",
+  teacherFormLink = "",
+  onCollapseChange,
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
@@ -36,12 +38,12 @@ export default function Sidebar({
 
   const hideTooltip = () => setTooltip({ ...tooltip, visible: false });
 
-  const handleCopyCommonLink = async () => {
-    if (!commonFormLink) return;
+  const handleCopyLink = async (value, label) => {
+    if (!value) return;
 
     try {
-      await navigator.clipboard.writeText(commonFormLink);
-      setCopyMessage("Common form link copied");
+      await navigator.clipboard.writeText(value);
+      setCopyMessage(`${label} copied`);
       setTimeout(() => setCopyMessage(""), 2000);
       setIsOpen(false);
     } catch {
@@ -49,6 +51,12 @@ export default function Sidebar({
       setTimeout(() => setCopyMessage(""), 2000);
     }
   };
+
+  useEffect(() => {
+    if (typeof onCollapseChange === "function") {
+      onCollapseChange(collapsed);
+    }
+  }, [collapsed, onCollapseChange]);
 
   return (
     <>
@@ -83,51 +91,92 @@ export default function Sidebar({
 
         {/* === Navigation === */}
         <nav className="sa-sidebar-nav">
-          {links.map(({ name, path, icon: Icon }) => (
-            <NavLink
-              key={name}
-              to={path}
-              className={({ isActive }) =>
-                `sa-sidebar-link ${isActive ? "active" : ""}`
-              }
-              onMouseEnter={(e) => showTooltip(e, name)}
-              onMouseLeave={hideTooltip}
-              onClick={() => setIsOpen(false)}
-            >
-              <div className="sa-icon-wrap">
-                <Icon size={20} strokeWidth={2} />
-              </div>
-              <span className="sa-link-text">{name}</span>
-            </NavLink>
-          ))}
+          {links.map(({ name, path, icon: Icon, divider }) =>
+            divider ? (
+              <div key={`divider-${name || path || Math.random()}`} className="sa-sidebar-divider" aria-hidden="true" />
+            ) : (
+              <NavLink
+                key={name}
+                to={path}
+                className={({ isActive }) =>
+                  `sa-sidebar-link ${isActive ? "active" : ""}`
+                }
+                onMouseEnter={(e) => showTooltip(e, name)}
+                onMouseLeave={hideTooltip}
+                onClick={() => setIsOpen(false)}
+              >
+                <div className="sa-icon-wrap">
+                  <Icon size={20} strokeWidth={2} />
+                </div>
+                <span className="sa-link-text">{name}</span>
+              </NavLink>
+            )
+          )}
         </nav>
 
         {/* === Footer === */}
         <div className="sa-sidebar-footer">
-          {commonFormLink && (
+          {(teacherFormLink || commonFormLink) && (
             <>
-              <button
-                className="sa-sidebar-link sa-share-link"
-                onClick={handleCopyCommonLink}
-                onMouseEnter={(e) => showTooltip(e, "Copy common form link")}
-                onMouseLeave={hideTooltip}
-              >
-                <div className="sa-icon-wrap">
-                  <Link2 size={20} strokeWidth={2} />
-                </div>
-                <span className="sa-link-text">Copy Common Link</span>
-              </button>
+              {teacherFormLink ? (
+                <div className="sa-form-link-block">
+                  <div className="sa-form-link-head">
+                    <span>Teacher Form</span>
+                  </div>
+                  <button
+                    className="sa-sidebar-link sa-share-link"
+                    onClick={() => handleCopyLink(teacherFormLink, "Teacher form link")}
+                    onMouseEnter={(e) => showTooltip(e, "Copy teacher form link")}
+                    onMouseLeave={hideTooltip}
+                  >
+                    <div className="sa-icon-wrap">
+                      <Link2 size={20} strokeWidth={2} />
+                    </div>
+                    <span className="sa-link-text">Copy Teacher Link</span>
+                  </button>
 
-              {!collapsed && (
-                <a
-                  href={commonFormLink}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="sa-common-link-preview"
-                >
-                  Open shared student form
-                </a>
-              )}
+                  {!collapsed && (
+                    <a
+                      href={teacherFormLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="sa-common-link-preview"
+                    >
+                      Open teacher form
+                    </a>
+                  )}
+                </div>
+              ) : null}
+
+              {commonFormLink ? (
+                <div className="sa-form-link-block">
+                  <div className="sa-form-link-head">
+                    <span>Student Form</span>
+                  </div>
+                  <button
+                    className="sa-sidebar-link sa-share-link"
+                    onClick={() => handleCopyLink(commonFormLink, "Student form link")}
+                    onMouseEnter={(e) => showTooltip(e, "Copy student form link")}
+                    onMouseLeave={hideTooltip}
+                  >
+                    <div className="sa-icon-wrap">
+                      <Link2 size={20} strokeWidth={2} />
+                    </div>
+                    <span className="sa-link-text">Copy Student Link</span>
+                  </button>
+
+                  {!collapsed && (
+                    <a
+                      href={commonFormLink}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="sa-common-link-preview"
+                    >
+                      Open student form
+                    </a>
+                  )}
+                </div>
+              ) : null}
 
               {!collapsed && copyMessage && (
                 <p className="sa-common-link-status">{copyMessage}</p>

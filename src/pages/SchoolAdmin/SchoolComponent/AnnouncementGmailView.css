@@ -208,6 +208,85 @@
   background: #fafafa;
 }
 
+.ann-attachments label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 10px;
+}
+
+.ann-inline-media {
+  margin-top: 12px;
+  padding: 12px;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #ffffff, #f8fbff);
+  border: 1px solid #dbe6f3;
+}
+
+.ann-inline-media-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.ann-inline-media-head span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.ann-inline-media-head small {
+  color: #64748b;
+  font-size: 12px;
+}
+
+.ann-inline-media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.ann-inline-media-card {
+  overflow: hidden;
+  border-radius: 14px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+}
+
+.ann-inline-media-image {
+  width: 100%;
+  height: 120px;
+  object-fit: cover;
+  display: block;
+  background: #e2e8f0;
+}
+
+.ann-inline-media-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 10px;
+}
+
+.ann-inline-media-meta span {
+  font-size: 12px;
+  font-weight: 600;
+  color: #1e293b;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .ann-attach-list {
   margin-top: 8px;
   display: flex;
@@ -217,18 +296,131 @@
 
 .ann-file-item {
   display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
+  font-size: 13px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+}
+
+.ann-file-main {
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  min-width: 0;
 }
 
 .ann-file-item a {
   color: #4f46e5;
   text-decoration: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .ann-file-item a:hover {
   text-decoration: underline;
+}
+
+.ann-chip-btn {
+  all: unset;
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid #d7deea;
+  background: #f8fafc;
+  color: #475569;
+  font-size: 11px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.ann-chip-btn:hover {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  color: #4338ca;
+}
+
+.ann-mail-preview {
+  border-radius: 18px;
+  border: 1px solid #dbe4ee;
+  background: linear-gradient(180deg, #ffffff, #fbfdff);
+  box-shadow: 0 10px 26px rgba(15, 23, 42, 0.05);
+  overflow: hidden;
+}
+
+.ann-mail-preview-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  border-bottom: 1px solid #e8eef6;
+  background: #f8fbff;
+}
+
+.ann-preview-label {
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #64748b;
+}
+
+.ann-mail-preview-head h4 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.ann-mail-preview-body {
+  padding: 18px;
+}
+
+.ann-mail-preview-body p {
+  margin: 0 0 12px;
+  color: #334155;
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+.ann-preview-image-stack {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.ann-preview-body-image {
+  width: 100%;
+  max-height: 340px;
+  object-fit: cover;
+  border-radius: 16px;
+  border: 1px solid #dbe4ee;
+  background: #e2e8f0;
+}
+
+.ann-preview-files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.ann-preview-file-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border: 1px solid #dbe4ee;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 600;
 }
 
 /* Utility */
@@ -250,5 +442,26 @@
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 960px) {
+  .ann-view-container {
+    flex-direction: column;
+    height: auto;
+  }
+
+  .ann-sidebar {
+    width: 100%;
+    min-height: 220px;
+  }
+
+  .ann-detail {
+    padding: 16px;
+  }
+
+  .ann-mail-preview-head {
+    flex-direction: column;
+    align-items: flex-start;
   }
 }

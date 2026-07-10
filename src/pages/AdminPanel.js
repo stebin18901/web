@@ -33,7 +33,8 @@ const tabs = [
   { id: "news", label: "News template", group: "Operations", note: "Edit reusable news templates" },
   { id: "premiumchapter", label: "Premium chapter", group: "Operations", note: "Manage premium chapter access" },
   { id: "league", label: "League", group: "Operations", note: "Run league events and schedules" },
-  { id: "apk", label: "APK Management", group: "Operations", note: "Publish Android app releases" },
+  { id: "apk-student", label: "Student APK", group: "Operations", note: "Publish Android releases for the student app" },
+  { id: "apk-parent", label: "Parent APK", group: "Operations", note: "Publish Android releases for the parent app" },
 ];
 
 const AdminPanel = () => {
@@ -100,7 +101,7 @@ const AdminPanel = () => {
             <p className="admin-topbar-eyebrow">Workspace</p>
             <h2 className="topbar-title">{activeTabLabel}</h2>
             <p className="admin-subtitle">
-              {activeTabMeta?.note || "Manage schools, quizzes, reports, templates, league operations, and APK releases."}
+              {activeTabMeta?.note || "Manage schools, quizzes, reports, templates, league operations, and Android app releases."}
             </p>
           </div>
           <div className="admin-topbar-badge">{tabs.length} modules</div>
@@ -140,7 +141,8 @@ const AdminPanel = () => {
           {activeTab === "calender" && <AdminCalendar />}
           {activeTab === "news" && <AdminTemplates />}
           {activeTab === "league" && <AdminCreateLeague />}
-          {activeTab === "apk" && <AdminApkManagement />}
+          {activeTab === "apk-student" && <AdminApkManagement appKey="student" />}
+          {activeTab === "apk-parent" && <AdminApkManagement appKey="parent" />}
         </div>
       </div>
     </div>
