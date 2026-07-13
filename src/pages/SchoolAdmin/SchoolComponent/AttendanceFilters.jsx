@@ -3,11 +3,9 @@ import React from "react";
 const AttendanceFilters = ({
   classes = [],
   selectedClass = "",
-  selectedSection = "",
   selectedDate = "",
   searchTerm = "",
   onClassChange,
-  onSectionChange,
   onDateChange,
   onSearchChange,
   onMarkAllPresent,
@@ -15,15 +13,6 @@ const AttendanceFilters = ({
   onReset,
   onExport,
 }) => {
-  const sectionOptions = Array.from(
-    new Set(
-      classes
-        .filter((entry) => !selectedClass || entry.className === selectedClass)
-        .map((entry) => entry.section)
-        .filter(Boolean)
-    )
-  );
-
   return (
     <section className="academic-card">
       <div className="academic-card-head">
@@ -62,17 +51,6 @@ const AttendanceFilters = ({
         <div className="academic-field">
           <label>Date</label>
           <input className="academic-input" type="date" value={selectedDate} onChange={(e) => onDateChange(e.target.value)} />
-        </div>
-        <div className="academic-field">
-          <label>Section</label>
-          <select className="academic-select" value={selectedSection} onChange={(e) => onSectionChange(e.target.value)}>
-            <option value="">{sectionOptions.length ? "All / Auto" : "No sections"}</option>
-            {sectionOptions.map((section) => (
-              <option key={section} value={section}>
-                {section}
-              </option>
-            ))}
-          </select>
         </div>
         <div className="academic-field">
           <label>Search</label>

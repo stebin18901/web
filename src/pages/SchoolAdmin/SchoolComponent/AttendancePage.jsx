@@ -36,7 +36,6 @@ const AttendancePage = ({ schoolId, mode = "school_admin", teacher = null, actor
   const [rows, setRows] = useState([]);
   const [attendanceDocs, setAttendanceDocs] = useState([]);
   const [selectedClass, setSelectedClass] = useState("");
-  const [selectedSection, setSelectedSection] = useState("");
   const [selectedDate, setSelectedDate] = useState(formatDateInput());
   const [selectedMonth, setSelectedMonth] = useState(formatMonthInput());
   const [searchTerm, setSearchTerm] = useState("");
@@ -46,6 +45,7 @@ const AttendancePage = ({ schoolId, mode = "school_admin", teacher = null, actor
   const [saving, setSaving] = useState(false);
   const [dirty, setDirty] = useState(false);
   const [toast, setToast] = useState(null);
+  const [confirmBulkAction, setConfirmBulkAction] = useState(null);
 
   useEffect(() => {
     const loadScope = async () => {
@@ -59,13 +59,11 @@ const AttendancePage = ({ schoolId, mode = "school_admin", teacher = null, actor
           } else {
             setClasses(scope.classes);
             setSelectedClass(scope.classes[0]?.className || "");
-            setSelectedSection(scope.classes[0]?.section || "");
           }
         } else {
           const schoolClasses = await resolveSchoolClasses(schoolId);
           setClasses(schoolClasses);
           setSelectedClass(schoolClasses[0]?.className || "");
-          setSelectedSection(schoolClasses[0]?.section || "");
         }
       } catch (error) {
         setToast({ type: "error", message: error.message || "Failed to load attendance scope." });
@@ -76,25 +74,12 @@ const AttendancePage = ({ schoolId, mode = "school_admin", teacher = null, actor
     loadScope();
   }, [mode, schoolId, teacher]);
 
-  useEffect(() => {
-    if (!selectedClass) {
-      setSelectedSection("");
-      return;
-    }
-    const matchingSections = classes
-      .filter((entry) => entry.className === selectedClass)
-      .map((entry) => entry.section)
-      .filter(Boolean);
-
-    if (!matchingSections.length) {
-      setSelectedSection("");
-      return;
-    }
-
-    if (!selectedSection || !matchingSections.includes(selectedSection)) {
-      setSelectedSection(matchingSections[0] || "");
-    }
-  }, [classes, selectedClass, selectedSection]);
+  const selectedSection = useMemo(() => {
+    if (!selectedClass) return "";
+    const matchedClass = classes.find((entry) => entry.className === selectedClass);
+    if (matchedClass?.section) return matchedClass.section;
+    return splitClassAndDivision(selectedClass)?.division || "";
+  }, [classes, selectedClass]);
 
   useEffect(() => {
     const loadStudents = async () => {
@@ -231,6 +216,34 @@ const AttendancePage = ({ schoolId, mode = "school_admin", teacher = null, actor
     setDirty(true);
   };
 
+  const requestBulkAttendanceAction = (type) => {
+    if (!rows.length) return;
+
+    const config =
+      type === "present"
+        ? {
+            title: "Mark all students present?",
+            message: `This will update all ${rows.length} loaded students to present for ${selectedDate}.`,
+            confirmLabel: "Mark All Present",
+            action: () => applyBulkStatus("present"),
+          }
+        : type === "absent"
+          ? {
+              title: "Mark all students absent?",
+              message: `This will update all ${rows.length} loaded students to absent for ${selectedDate}.`,
+              confirmLabel: "Mark All Absent",
+              action: () => applyBulkStatus("absent"),
+            }
+          : {
+              title: "Reset attendance changes?",
+              message: `This will reset all ${rows.length} loaded students back to present in the current editor.`,
+              confirmLabel: "Reset Attendance",
+              action: handleReset,
+            };
+
+    setConfirmBulkAction(config);
+  };
+
   const handleSave = async () => {
     if (!selectedClass || !selectedDate) {
       setToast({ type: "error", message: "Select class and date before saving attendance." });
@@ -333,16 +346,14 @@ const AttendancePage = ({ schoolId, mode = "school_admin", teacher = null, actor
       <AttendanceFilters
         classes={classes}
         selectedClass={selectedClass}
-        selectedSection={selectedSection}
         selectedDate={selectedDate}
         searchTerm={searchTerm}
         onClassChange={setSelectedClass}
-        onSectionChange={setSelectedSection}
         onDateChange={setSelectedDate}
         onSearchChange={setSearchTerm}
-        onMarkAllPresent={() => applyBulkStatus("present")}
-        onMarkAllAbsent={() => applyBulkStatus("absent")}
-        onReset={handleReset}
+        onMarkAllPresent={() => requestBulkAttendanceAction("present")}
+        onMarkAllAbsent={() => requestBulkAttendanceAction("absent")}
+        onReset={() => requestBulkAttendanceAction("reset")}
         onExport={exportCsv}
       />
 
@@ -390,6 +401,31 @@ const AttendancePage = ({ schoolId, mode = "school_admin", teacher = null, actor
           onStudentChange={setHistoryStudentId}
         />
       )}
+
+      {confirmBulkAction ? (
+        <div className="academic-modal-overlay" onClick={() => setConfirmBulkAction(null)}>
+          <div className="academic-modal" onClick={(event) => event.stopPropagation()}>
+            <h4>{confirmBulkAction.title}</h4>
+            <p>{confirmBulkAction.message}</p>
+            <div className="academic-modal-actions">
+              <button type="button" className="academic-btn-secondary" onClick={() => setConfirmBulkAction(null)}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="academic-btn-danger"
+                onClick={() => {
+                  const action = confirmBulkAction.action;
+                  setConfirmBulkAction(null);
+                  action?.();
+                }}
+              >
+                {confirmBulkAction.confirmLabel}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {toast ? <div className={`academic-toast tone-${toast.type === "error" ? "danger" : toast.type === "success" ? "success" : "info"}`}>{toast.message}</div> : null}
     </div>

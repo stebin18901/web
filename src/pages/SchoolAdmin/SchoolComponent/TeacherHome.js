@@ -14,7 +14,7 @@ export default function TeacherHome({ schoolId, school }) {
   const tabs = [
     { id: "overview", label: "Overview", component: <StatsOverview /> },
     { id: "classes", label: "Class", component: <ClassTeacherManager schoolId={schoolId} school={school} /> },
-    { id: "timetable", label: "Table", component: <TimetableManager /> },
+    { id: "timetable", label: "Table", component: <TimetableManager schoolId={schoolId} school={school} /> },
     { id: "performers", label: "Toppers", component: <TopPerformers students={mockStudents} /> },
   ];
 

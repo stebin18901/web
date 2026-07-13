@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import { collection, doc, getDoc, getDocs, serverTimestamp, setDoc } from "firebase/firestore";
 import { db } from "../../../firebase/firebaseConfig";
 import "./AcademicManagement.css";
@@ -22,6 +22,35 @@ import {
   splitClassAndDivision,
 } from "./academicUtils";
 
+const buildSubjectPreferenceKey = ({ schoolId, className, section }) =>
+  `hepsy_exam_subject_pref:${normalizeSchoolId(schoolId)}:${normalizeClassName(className)}:${normalizeSection(section || "general")}`;
+
+const readSubjectPreference = (key) => {
+  if (!key || typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(key);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return {
+      subjects: Array.isArray(parsed?.subjects) ? parsed.subjects.filter(Boolean) : [],
+      availableSubjects: Array.isArray(parsed?.availableSubjects) ? parsed.availableSubjects.filter(Boolean) : [],
+      maxMarks: parsed?.maxMarks && typeof parsed.maxMarks === "object" ? parsed.maxMarks : {},
+    };
+  } catch (error) {
+    console.warn("Unable to read exam subject preference:", error);
+    return null;
+  }
+};
+
+const writeSubjectPreference = (key, value) => {
+  if (!key || typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(key, JSON.stringify(value));
+  } catch (error) {
+    console.warn("Unable to store exam subject preference:", error);
+  }
+};
+
 const ExamMarksPage = ({ schoolId, mode = "school_admin", teacher = null, actorName = "School Admin" }) => {
   const [classes, setClasses] = useState([]);
   const [students, setStudents] = useState([]);
@@ -44,6 +73,9 @@ const ExamMarksPage = ({ schoolId, mode = "school_admin", teacher = null, actorN
   });
   const [availableSubjects, setAvailableSubjects] = useState(["Mathematics", "Science", "English", "Social", "General Knowledge"]);
   const [subjectDraft, setSubjectDraft] = useState("");
+  const [subjectRemovalTarget, setSubjectRemovalTarget] = useState("");
+  const activeSubjectPreferenceKeyRef = useRef("");
+  const restoringSubjectPreferenceRef = useRef(false);
 
   useEffect(() => {
     const loadScope = async () => {
@@ -89,6 +121,67 @@ const ExamMarksPage = ({ schoolId, mode = "school_admin", teacher = null, actorN
     const derivedSection = matchedClass?.section || "";
     setForm((prev) => (prev.section === derivedSection ? prev : { ...prev, section: derivedSection }));
   }, [classes, form.className]);
+
+  useEffect(() => {
+    if (!schoolId || !form.className) return;
+
+    const preferenceKey = buildSubjectPreferenceKey({
+      schoolId,
+      className: form.className,
+      section: form.section,
+    });
+
+    activeSubjectPreferenceKeyRef.current = preferenceKey;
+    const preference = readSubjectPreference(preferenceKey);
+    if (!preference?.subjects?.length && !preference?.availableSubjects?.length) return;
+
+    restoringSubjectPreferenceRef.current = true;
+    setAvailableSubjects((prev) =>
+      Array.from(new Set([...prev, ...(preference.availableSubjects || []), ...(preference.subjects || [])])).filter(Boolean)
+    );
+    setForm((prev) => {
+      const resolvedSubjects = preference.subjects?.length ? preference.subjects : prev.subjects;
+      const resolvedMaxMarks = resolvedSubjects.reduce((accumulator, subject) => {
+        const storedValue = preference.maxMarks?.[subject];
+        const currentValue = prev.maxMarks?.[subject];
+        accumulator[subject] =
+          storedValue === 0 || storedValue
+            ? storedValue
+            : currentValue === 0 || currentValue
+              ? currentValue
+              : 100;
+        return accumulator;
+      }, {});
+
+      return {
+        ...prev,
+        subjects: resolvedSubjects,
+        maxMarks: resolvedMaxMarks,
+      };
+    });
+
+    const resetTimer = window.setTimeout(() => {
+      restoringSubjectPreferenceRef.current = false;
+    }, 0);
+
+    return () => window.clearTimeout(resetTimer);
+  }, [form.className, form.section, schoolId]);
+
+  useEffect(() => {
+    if (!activeSubjectPreferenceKeyRef.current || restoringSubjectPreferenceRef.current || !form.className) return;
+
+    const trackedSubjects = Array.from(new Set([...availableSubjects, ...form.subjects])).filter(Boolean);
+    writeSubjectPreference(activeSubjectPreferenceKeyRef.current, {
+      subjects: form.subjects,
+      availableSubjects: trackedSubjects,
+      maxMarks: trackedSubjects.reduce((accumulator, subject) => {
+        const value = form.maxMarks?.[subject];
+        if (value === 0 || value) accumulator[subject] = value;
+        return accumulator;
+      }, {}),
+      updatedAt: new Date().toISOString(),
+    });
+  }, [availableSubjects, form.className, form.maxMarks, form.subjects]);
 
   useEffect(() => {
     const loadStudents = async () => {
@@ -235,6 +328,34 @@ const ExamMarksPage = ({ schoolId, mode = "school_admin", teacher = null, actorN
     setSubjectDraft("");
   };
 
+  const handleSaveSubjectPreferences = () => {
+    if (!schoolId || !form.className) {
+      setToast({ type: "error", message: "Choose a class before saving subjects." });
+      return;
+    }
+
+    const preferenceKey = buildSubjectPreferenceKey({
+      schoolId,
+      className: form.className,
+      section: form.section,
+    });
+
+    const trackedSubjects = Array.from(new Set([...availableSubjects, ...form.subjects])).filter(Boolean);
+    writeSubjectPreference(preferenceKey, {
+      subjects: form.subjects,
+      availableSubjects: trackedSubjects,
+      maxMarks: trackedSubjects.reduce((accumulator, subject) => {
+        const value = form.maxMarks?.[subject];
+        if (value === 0 || value) accumulator[subject] = value;
+        return accumulator;
+      }, {}),
+      updatedAt: new Date().toISOString(),
+    });
+
+    activeSubjectPreferenceKeyRef.current = preferenceKey;
+    setToast({ type: "success", message: `Saved subjects for ${form.className}${form.section ? ` ${form.section}` : ""}.` });
+  };
+
   const removeSubject = (subject) => {
     setAvailableSubjects((prev) => prev.filter((item) => item !== subject));
     setForm((prev) => {
@@ -246,6 +367,11 @@ const ExamMarksPage = ({ schoolId, mode = "school_admin", teacher = null, actorN
         maxMarks: nextMaxMarks,
       };
     });
+    setSubjectRemovalTarget("");
+  };
+
+  const requestSubjectRemoval = (subject) => {
+    setSubjectRemovalTarget(subject);
   };
 
   const updateRecord = (studentId, field, value, isRemark = false) => {
@@ -361,7 +487,8 @@ const ExamMarksPage = ({ schoolId, mode = "school_admin", teacher = null, actorN
         onToggleSubject={toggleSubject}
         onMaxMarksChange={updateMaxMarks}
         onAddSubject={addSubject}
-        onRemoveSubject={removeSubject}
+        onRemoveSubject={requestSubjectRemoval}
+        onSaveSubjects={handleSaveSubjectPreferences}
         subjectDraft={subjectDraft}
         onSubjectDraftChange={setSubjectDraft}
         canManageSubjects={mode !== "teacher" || teacher?.role === "school_admin"}
@@ -446,6 +573,27 @@ const ExamMarksPage = ({ schoolId, mode = "school_admin", teacher = null, actorN
           {saving ? "Saving..." : "Save Exam Marks"}
         </button>
       </div>
+
+      {subjectRemovalTarget ? (
+        <div className="academic-modal-overlay" onClick={() => setSubjectRemovalTarget("")}>
+          <div className="academic-modal" onClick={(event) => event.stopPropagation()}>
+            <h4>Remove subject from this class setup?</h4>
+            <p>
+              <strong>{subjectRemovalTarget}</strong> will be removed from the available subject list and current exam setup
+              for {form.className}
+              {form.section ? ` ${form.section}` : ""}.
+            </p>
+            <div className="academic-modal-actions">
+              <button type="button" className="academic-btn-secondary" onClick={() => setSubjectRemovalTarget("")}>
+                Cancel
+              </button>
+              <button type="button" className="academic-btn-danger" onClick={() => removeSubject(subjectRemovalTarget)}>
+                Remove Subject
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {toast ? <div className={`academic-toast tone-${toast.type === "error" ? "danger" : "success"}`}>{toast.message}</div> : null}
     </div>

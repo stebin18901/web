@@ -6,14 +6,19 @@ import "./UploadStudents.css";
 
 const normalize = (value) => String(value || "").trim();
 const normalizeSchoolId = (value) => normalize(value).toLowerCase();
+const inferSectionFromClassName = (value) => {
+  const trimmed = normalize(value);
+  const matched = trimmed.match(/^(\d+)\s*([A-Za-z]+)$/);
+  return matched?.[2]?.toUpperCase() || "";
+};
 const hasPaidSchoolAccess = (schoolData) => {
-  const rawStatus = schoolData?.isPaidSchool ?? schoolData?.isPaid ?? schoolData?.paymentStatus ?? schoolData?.status;
-  if (typeof rawStatus === "boolean") return rawStatus;
-  const normalizedStatus = String(rawStatus || "").trim().toLowerCase();
-  return ["paid", "active", "true", "yes"].includes(normalizedStatus);
+  const explicitPaid = schoolData?.isPaidSchool === true || schoolData?.isPaid === true;
+  const paymentStatus = String(schoolData?.paymentStatus || "").trim().toLowerCase();
+  const status = String(schoolData?.status || "").trim().toLowerCase();
+  return explicitPaid || ["paid", "active", "true", "yes"].includes(paymentStatus) || ["paid", "active", "true", "yes"].includes(status);
 };
 
-const UploadStudents = ({ school, schoolId }) => {
+const UploadStudents = ({ school, schoolId, forcePaidAccess = false }) => {
   const emptyStudentRow = {
     fullName: "",
     className: "",
@@ -31,25 +36,34 @@ const UploadStudents = ({ school, schoolId }) => {
     { ...emptyStudentRow },
     { ...emptyStudentRow },
   ]);
+  const [classOptions, setClassOptions] = useState([]);
+  const [useSamePin, setUseSamePin] = useState(false);
+  const [sharedPin, setSharedPin] = useState("");
   const [isPaidSchool, setIsPaidSchool] = useState(false);
   const [loadingSchool, setLoadingSchool] = useState(true);
   const [resolvedSchool, setResolvedSchool] = useState(school || null);
+  const [confirmUploadOpen, setConfirmUploadOpen] = useState(false);
 
   const normalizedSchoolId = useMemo(() => normalize(schoolId).toLowerCase(), [schoolId]);
   const rawSchoolId = useMemo(() => normalize(schoolId), [schoolId]);
+  const propSchoolIsPaid = useMemo(() => forcePaidAccess || hasPaidSchoolAccess(school), [forcePaidAccess, school]);
 
   useEffect(() => {
     setResolvedSchool(school || null);
     if (school) {
-      setIsPaidSchool(hasPaidSchoolAccess(school));
+      setIsPaidSchool(forcePaidAccess || hasPaidSchoolAccess(school));
+      return;
     }
-  }, [school]);
+    if (forcePaidAccess) {
+      setIsPaidSchool(true);
+    }
+  }, [forcePaidAccess, school]);
 
   useEffect(() => {
     const loadSchoolAccess = async () => {
       setLoadingSchool(true);
       try {
-        const directCandidates = [rawSchoolId, normalizedSchoolId].filter(Boolean);
+        const directCandidates = [school?.id, rawSchoolId, normalizedSchoolId].filter(Boolean);
         for (const candidate of directCandidates) {
           const schoolSnap = await getDoc(doc(db, "schools", candidate));
           if (schoolSnap.exists()) {
@@ -61,16 +75,18 @@ const UploadStudents = ({ school, schoolId }) => {
           }
         }
 
-        const bySchoolId = await getDocs(
-          query(collection(db, "schools"), where("schoolId", "==", normalizedSchoolId), limit(1))
-        );
-        if (!bySchoolId.empty) {
-          const match = bySchoolId.docs[0];
-          const nextSchool = { id: match.id, ...match.data() };
-          setResolvedSchool(nextSchool);
-          setIsPaidSchool(hasPaidSchoolAccess(nextSchool));
-          setLoadingSchool(false);
-          return;
+        for (const candidate of [rawSchoolId, normalizedSchoolId].filter(Boolean)) {
+          const bySchoolId = await getDocs(
+            query(collection(db, "schools"), where("schoolId", "==", candidate), limit(1))
+          );
+          if (!bySchoolId.empty) {
+            const match = bySchoolId.docs[0];
+            const nextSchool = { id: match.id, ...match.data() };
+            setResolvedSchool(nextSchool);
+            setIsPaidSchool(hasPaidSchoolAccess(nextSchool));
+            setLoadingSchool(false);
+            return;
+          }
         }
 
         const allSchools = await getDocs(collection(db, "schools"));
@@ -78,7 +94,10 @@ const UploadStudents = ({ school, schoolId }) => {
           const data = entry.data() || {};
           return [entry.id, data.schoolId]
             .filter(Boolean)
-            .some((value) => normalizeSchoolId(value) === normalizedSchoolId);
+            .some((value) => {
+              const normalizedValue = normalizeSchoolId(value);
+              return normalizedValue === normalizedSchoolId || normalizedValue === normalizeSchoolId(rawSchoolId);
+            });
         });
 
         if (matchedSchool) {
@@ -86,25 +105,76 @@ const UploadStudents = ({ school, schoolId }) => {
           setResolvedSchool(nextSchool);
           setIsPaidSchool(hasPaidSchoolAccess(nextSchool));
         } else {
-          setResolvedSchool(null);
-          setIsPaidSchool(false);
+          setResolvedSchool((prev) => prev || school || null);
+          setIsPaidSchool((prev) => prev || propSchoolIsPaid);
         }
       } catch (error) {
         console.error("Failed to load school payment status:", error);
-        setResolvedSchool(null);
-        setIsPaidSchool(false);
+        setResolvedSchool((prev) => prev || school || null);
+        setIsPaidSchool((prev) => prev || propSchoolIsPaid);
       } finally {
         setLoadingSchool(false);
       }
     };
 
     if (!rawSchoolId && !normalizedSchoolId) {
+      setIsPaidSchool((prev) => prev || propSchoolIsPaid);
       setLoadingSchool(false);
       return;
     }
 
     loadSchoolAccess();
+  }, [normalizedSchoolId, propSchoolIsPaid, rawSchoolId, school]);
+
+  useEffect(() => {
+    const loadClassOptions = async () => {
+      if (!normalizedSchoolId && !rawSchoolId) {
+        setClassOptions([]);
+        return;
+      }
+
+      try {
+        const candidateIds = Array.from(new Set([normalizedSchoolId, rawSchoolId].filter(Boolean)));
+        const snapshots = await Promise.all(
+          candidateIds.map((candidate) => getDocs(query(collection(db, "classes"), where("schoolId", "==", candidate))))
+        );
+
+        const optionsMap = new Map();
+        snapshots.forEach((snapshot) => {
+          snapshot.docs.forEach((entry) => {
+            const data = entry.data() || {};
+            const className = normalize(data.className || data.name);
+            if (!className) return;
+            optionsMap.set(className, {
+              className,
+              section: normalize(data.section) || inferSectionFromClassName(className),
+            });
+          });
+        });
+
+        setClassOptions(
+          Array.from(optionsMap.values()).sort((left, right) =>
+            left.className.localeCompare(right.className, undefined, { numeric: true, sensitivity: "base" })
+          )
+        );
+      } catch (error) {
+        console.error("Failed to load school classes for upload workspace:", error);
+        setClassOptions([]);
+      }
+    };
+
+    loadClassOptions();
   }, [normalizedSchoolId, rawSchoolId]);
+
+  useEffect(() => {
+    if (!useSamePin) return;
+    setSheetRows((prev) =>
+      prev.map((row) => ({
+        ...row,
+        pin: sharedPin,
+      }))
+    );
+  }, [sharedPin, useSamePin]);
 
   const handleFileUpload = (e) => {
     const file = e.target.files?.[0];
@@ -137,6 +207,14 @@ const UploadStudents = ({ school, schoolId }) => {
         rowIndex === index
           ? {
               ...row,
+              ...(field === "className"
+                ? {
+                    className: value,
+                    section:
+                      classOptions.find((option) => option.className === value)?.section || inferSectionFromClassName(value),
+                  }
+                : null),
+              ...(field === "pin" && useSamePin ? { pin: sharedPin } : null),
               [field]: field === "email" ? normalize(value).toLowerCase() : value,
             }
           : row
@@ -169,17 +247,19 @@ const UploadStudents = ({ school, schoolId }) => {
 
     setStudents((prev) => [...prev, ...validRows]);
     setSheetRows([{ ...emptyStudentRow }, { ...emptyStudentRow }, { ...emptyStudentRow }]);
+    setSharedPin("");
+    setUseSamePin(false);
   };
 
   const uploadToFirestore = async () => {
-    if (!normalizedSchoolId || students.length === 0 || !isPaidSchool) return;
+    if (!normalizedSchoolId || students.length === 0 || (!isPaidSchool && !forcePaidAccess)) return;
 
     setUploadStatus("Uploading students...");
 
     try {
       // fetch school's current plan configuration to attach to student records
       const schoolData = resolvedSchool || {};
-      const schoolIsPaid = hasPaidSchoolAccess(schoolData);
+      const schoolIsPaid = forcePaidAccess || hasPaidSchoolAccess(schoolData);
       const selectedPlanId = schoolData.selectedPlanId || "";
       const selectedPlanName = schoolData.selectedPlanName || "";
       const planAmount = Number(schoolData.planAmount || 0);
@@ -237,6 +317,14 @@ const UploadStudents = ({ school, schoolId }) => {
     }
   };
 
+  const requestUploadConfirmation = () => {
+    if (!students.length) {
+      setUploadStatus("Add at least one student before uploading.");
+      return;
+    }
+    setConfirmUploadOpen(true);
+  };
+
   return (
     <div className="upload-students-page">
       <div className="upload-students-hero">
@@ -254,7 +342,7 @@ const UploadStudents = ({ school, schoolId }) => {
       </div>
       {loadingSchool ? (
         <div className="upload-students-state-card">Checking school access...</div>
-      ) : !isPaidSchool ? (
+      ) : !(isPaidSchool || forcePaidAccess) ? (
         <div className="upload-students-state-card blocked">
           Student upload is available only for schools marked as paid by admin. Keep using the
           normal student payment and registration flow for unpaid schools.
@@ -262,25 +350,6 @@ const UploadStudents = ({ school, schoolId }) => {
       ) : (
         <>
       <div className="upload-students-grid">
-      <section className="upload-students-card upload-students-sample-card">
-        <div className="upload-students-card-head">
-          <div>
-            <h3>Sample CSV Format</h3>
-            <p>Use these exact column headers in the first row of your CSV file.</p>
-          </div>
-        </div>
-        <pre className="upload-students-code-block">
-{`fullName,className,section,rollNumber,pin,phone,email
-Pavan Kumar,10,A,1,1234,9876543210,pavan@example.com
-Maria S,10,A,2,2345,9876543211,maria@example.com
-John D,10,B,1,3456,9876543212,john@example.com
-Sarah K,9,C,12,4567,9876543213,sarah@example.com`}
-        </pre>
-        <p className="upload-students-columns">
-          CSV columns: `fullName`, `className`, `section`, `rollNumber`, `pin`, `phone`, `email`
-        </p>
-      </section>
-
       <section className="upload-students-card upload-students-workspace-card">
         <div className="upload-students-card-head">
           <div>
@@ -322,7 +391,42 @@ Sarah K,9,C,12,4567,9876543213,sarah@example.com`}
             <div className="upload-students-partition-head">
               <span className="upload-students-partition-tag">Full Workspace</span>
               <h4>Spreadsheet Input</h4>
-              <p>Fill rows directly here when you want to build the student list inside the app.</p>
+              <p>Choose classes from your existing school setup and fill the student rows directly here.</p>
+            </div>
+            <div className="upload-students-sheet-toolbar">
+              <div className="upload-students-sheet-toolbar-copy">
+                <strong>Class source</strong>
+                <span>
+                  {classOptions.length
+                    ? `${classOptions.length} class${classOptions.length === 1 ? "" : "es"} available from your school setup`
+                    : "No created classes found yet. Create classes first to get guided selection here."}
+                </span>
+              </div>
+              <label className="upload-students-pin-toggle">
+                <input
+                  type="checkbox"
+                  checked={useSamePin}
+                  onChange={(event) => {
+                    const checked = event.target.checked;
+                    setUseSamePin(checked);
+                    if (!checked) {
+                      setSharedPin("");
+                    }
+                  }}
+                />
+                <span>Same PIN for all</span>
+              </label>
+              {useSamePin ? (
+                <div className="upload-students-shared-pin">
+                  <span>Common PIN</span>
+                  <input
+                    type="text"
+                    value={sharedPin}
+                    onChange={(event) => setSharedPin(normalize(event.target.value))}
+                    placeholder="Enter one PIN for all rows"
+                  />
+                </div>
+              ) : null}
             </div>
             <div className="upload-students-sheet-wrap full-size">
               <div className="upload-students-sheet">
@@ -337,10 +441,22 @@ Sarah K,9,C,12,4567,9876543213,sarah@example.com`}
                 {sheetRows.map((row, index) => (
                   <React.Fragment key={`sheet-row-${index}`}>
                     <input value={row.fullName} onChange={(e) => updateSheetRow(index, "fullName", e.target.value)} placeholder="Student name" />
-                    <input value={row.className} onChange={(e) => updateSheetRow(index, "className", e.target.value)} placeholder="10" />
-                    <input value={row.section} onChange={(e) => updateSheetRow(index, "section", e.target.value)} placeholder="A" />
+                    <select value={row.className} onChange={(e) => updateSheetRow(index, "className", e.target.value)}>
+                      <option value="">{classOptions.length ? "Select class" : "No classes available"}</option>
+                      {classOptions.map((option) => (
+                        <option key={option.className} value={option.className}>
+                          {option.className}
+                        </option>
+                      ))}
+                    </select>
+                    <input value={row.section} readOnly placeholder="Auto" />
                     <input value={row.rollNumber} onChange={(e) => updateSheetRow(index, "rollNumber", e.target.value)} placeholder="1" />
-                    <input value={row.pin} onChange={(e) => updateSheetRow(index, "pin", e.target.value)} placeholder="1234" />
+                    <input
+                      value={useSamePin ? sharedPin : row.pin}
+                      onChange={(e) => updateSheetRow(index, "pin", e.target.value)}
+                      placeholder="1234"
+                      readOnly={useSamePin}
+                    />
                     <input value={row.phone} onChange={(e) => updateSheetRow(index, "phone", e.target.value)} placeholder="9876543210" />
                     <input value={row.email} onChange={(e) => updateSheetRow(index, "email", e.target.value)} placeholder="student@email.com" />
                     <button type="button" className="upload-students-sheet-remove" onClick={() => removeSheetRow(index)}>
@@ -373,7 +489,7 @@ Sarah K,9,C,12,4567,9876543213,sarah@example.com`}
           <button
             type="button"
             className="upload-students-primary-btn"
-            onClick={uploadToFirestore}
+            onClick={requestUploadConfirmation}
             disabled={students.length === 0}
           >
             Upload to Database
@@ -402,6 +518,36 @@ Sarah K,9,C,12,4567,9876543213,sarah@example.com`}
       </section>
         </>
       )}
+
+      {confirmUploadOpen ? (
+        <div className="upload-students-modal-overlay" onClick={() => setConfirmUploadOpen(false)}>
+          <div className="upload-students-modal" onClick={(event) => event.stopPropagation()}>
+            <h4>Upload students to live database?</h4>
+            <p>
+              This will create {students.length} student account{students.length === 1 ? "" : "s"} for{" "}
+              {resolvedSchool?.schoolName || school?.schoolName || "this school"}.
+            </p>
+            <div className="upload-students-modal-note">
+              Duplicate class and roll number checks will run before the final save.
+            </div>
+            <div className="upload-students-modal-actions">
+              <button type="button" className="upload-students-secondary-btn" onClick={() => setConfirmUploadOpen(false)}>
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="upload-students-primary-btn"
+                onClick={async () => {
+                  setConfirmUploadOpen(false);
+                  await uploadToFirestore();
+                }}
+              >
+                Confirm Upload
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 };

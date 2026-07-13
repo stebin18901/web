@@ -58,6 +58,7 @@ export default function FeeManagement({ schoolId, schoolName = "" }) {
   const [setupOpen, setSetupOpen] = useState(false);
   const [configSaving, setConfigSaving] = useState(false);
   const [paymentDrafts, setPaymentDrafts] = useState({});
+  const [confirmAction, setConfirmAction] = useState(null);
   const [feeConfig, setFeeConfig] = useState({
     cycle: "monthly",
     amount: "0",
@@ -314,6 +315,51 @@ export default function FeeManagement({ schoolId, schoolName = "" }) {
     }
   };
 
+  const handleSingleStatusUpdate = (student, nextStatus) => {
+    const amountInput = paymentDrafts[student.id];
+    if (nextStatus === "partial" && toAmount(amountInput) <= 0) {
+      setStatusMessage(`Enter a partial amount for ${student.fullName}.`);
+      return;
+    }
+    updateStudentFeeStatus(student, nextStatus);
+  };
+
+  const openBulkActionConfirm = (nextStatus) => {
+    if (!filteredStudents.length || !normalizedSchoolId) return;
+
+    const isPendingReset = nextStatus === "pending";
+    setConfirmAction({
+      type: "bulk",
+      title: isPendingReset ? "Reset visible students to pending?" : "Mark visible students as paid?",
+      message: isPendingReset
+        ? `This will reset ${filteredStudents.length} visible student${filteredStudents.length === 1 ? "" : "s"} to pending status.`
+        : `This will mark ${filteredStudents.length} visible student${filteredStudents.length === 1 ? "" : "s"} as paid.`,
+      detail: "This action updates live fee records for the currently filtered students.",
+      confirmLabel: isPendingReset ? "Reset to Pending" : "Mark Visible Paid",
+      tone: isPendingReset ? "danger" : "primary",
+      onConfirm: () => bulkMarkVisible(nextStatus),
+    });
+  };
+
+  const openSetupConfirm = () => {
+    const amount = toAmount(feeConfig.amount);
+    const cycle = normalize(feeConfig.cycle).toLowerCase();
+    if (!["weekly", "monthly", "yearly"].includes(cycle)) {
+      setStatusMessage("Choose a valid collection cycle.");
+      return;
+    }
+
+    setConfirmAction({
+      type: "setup",
+      title: "Save fee setup for this school?",
+      message: `Collection cycle will be set to ${cycle} and the default fee amount will be Rs ${amount.toLocaleString("en-IN")}.`,
+      detail: `This also recalculates fee records for ${students.length} student${students.length === 1 ? "" : "s"} in this school.`,
+      confirmLabel: "Save Setup",
+      tone: "danger",
+      onConfirm: saveFeeSetup,
+    });
+  };
+
   const saveFeeSetup = async () => {
     if (!normalizedSchoolId) return;
     const amount = toAmount(feeConfig.amount);
@@ -442,7 +488,7 @@ export default function FeeManagement({ schoolId, schoolName = "" }) {
           </div>
 
           <div className="fee-setup-actions">
-            <button type="button" className="save-setup" onClick={saveFeeSetup} disabled={configSaving}>
+            <button type="button" className="save-setup" onClick={openSetupConfirm} disabled={configSaving}>
               <Save size={16} />
               {configSaving ? "Saving..." : "Save Setup"}
             </button>
@@ -493,7 +539,7 @@ export default function FeeManagement({ schoolId, schoolName = "" }) {
           <button
             type="button"
             className="bulk-paid"
-            onClick={() => bulkMarkVisible("paid")}
+            onClick={() => openBulkActionConfirm("paid")}
             disabled={!filteredStudents.length || savingId.startsWith("bulk-")}
           >
             Mark Visible Paid
@@ -501,10 +547,10 @@ export default function FeeManagement({ schoolId, schoolName = "" }) {
           <button
             type="button"
             className="bulk-pending"
-            onClick={() => bulkMarkVisible("pending")}
+            onClick={() => openBulkActionConfirm("pending")}
             disabled={!filteredStudents.length || savingId.startsWith("bulk-")}
           >
-            Reset Visible Pending
+            Reset Visible To Pending
           </button>
         </div>
       </div>
@@ -568,7 +614,7 @@ export default function FeeManagement({ schoolId, schoolName = "" }) {
                           type="button"
                           className="mark-paid"
                           disabled={isSaving || student.feeStatus === "paid"}
-                          onClick={() => updateStudentFeeStatus(student, "paid")}
+                          onClick={() => handleSingleStatusUpdate(student, "paid")}
                         >
                           <CheckCircle2 size={14} />
                           Paid
@@ -594,7 +640,7 @@ export default function FeeManagement({ schoolId, schoolName = "" }) {
                             type="button"
                             className="mark-partial"
                             disabled={isSaving}
-                            onClick={() => updateStudentFeeStatus(student, "partial")}
+                            onClick={() => handleSingleStatusUpdate(student, "partial")}
                           >
                             Partial
                           </button>
@@ -604,7 +650,7 @@ export default function FeeManagement({ schoolId, schoolName = "" }) {
                           type="button"
                           className="mark-pending"
                           disabled={isSaving || student.feeStatus === "pending"}
-                          onClick={() => updateStudentFeeStatus(student, "pending")}
+                          onClick={() => handleSingleStatusUpdate(student, "pending")}
                         >
                           <XCircle size={14} />
                           Pending
@@ -618,6 +664,31 @@ export default function FeeManagement({ schoolId, schoolName = "" }) {
           </table>
         </div>
       )}
+
+      {confirmAction ? (
+        <div className="fee-modal-overlay" onClick={() => setConfirmAction(null)}>
+          <div className="fee-modal" onClick={(event) => event.stopPropagation()}>
+            <h4>{confirmAction.title}</h4>
+            <p>{confirmAction.message}</p>
+            {confirmAction.detail ? <div className="fee-modal-detail">{confirmAction.detail}</div> : null}
+            <div className="modal-actions">
+              <button className="modal-cancel" onClick={() => setConfirmAction(null)}>
+                Cancel
+              </button>
+              <button
+                className={`modal-confirm ${confirmAction.tone === "primary" ? "fee-confirm-primary" : ""}`}
+                onClick={async () => {
+                  const runAction = confirmAction.onConfirm;
+                  setConfirmAction(null);
+                  await runAction?.();
+                }}
+              >
+                {confirmAction.confirmLabel || "Confirm"}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

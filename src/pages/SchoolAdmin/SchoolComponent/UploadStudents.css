@@ -86,7 +86,7 @@
 
 .upload-students-grid {
   display: grid;
-  grid-template-columns: minmax(320px, 0.8fr) minmax(0, 1.2fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 1.25rem;
 }
 
@@ -110,23 +110,6 @@
 
 .upload-students-card-head p {
   margin: 0.35rem 0 0;
-  color: #5f6f87;
-  line-height: 1.6;
-}
-
-.upload-students-code-block {
-  margin: 0;
-  padding: 1rem;
-  overflow-x: auto;
-  border-radius: 16px;
-  background: #0f172a;
-  color: #e2e8f0;
-  font-size: 0.82rem;
-  line-height: 1.7;
-}
-
-.upload-students-columns {
-  margin: 0.9rem 0 0;
   color: #5f6f87;
   line-height: 1.6;
 }
@@ -180,6 +163,72 @@
 
 .upload-students-sheet-panel {
   padding-bottom: 1.2rem;
+}
+
+.upload-students-sheet-toolbar {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) auto auto;
+  gap: 0.9rem;
+  align-items: end;
+  padding: 0.95rem 1rem;
+  border: 1px solid #dbe4f0;
+  border-radius: 18px;
+  background: #ffffff;
+}
+
+.upload-students-sheet-toolbar-copy {
+  display: grid;
+  gap: 0.28rem;
+}
+
+.upload-students-sheet-toolbar-copy strong {
+  color: #17233b;
+  font-size: 0.92rem;
+}
+
+.upload-students-sheet-toolbar-copy span {
+  color: #5f6f87;
+  font-size: 0.86rem;
+  line-height: 1.5;
+}
+
+.upload-students-pin-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 46px;
+  padding: 0 0.95rem;
+  border: 1px solid #dbe4f0;
+  border-radius: 14px;
+  background: #f8fbff;
+  color: #2457c5;
+  font-weight: 700;
+}
+
+.upload-students-pin-toggle input {
+  accent-color: #16a34a;
+}
+
+.upload-students-shared-pin {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.upload-students-shared-pin span {
+  color: #475569;
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.upload-students-shared-pin input {
+  min-width: 200px;
+  padding: 0.8rem 0.9rem;
+  border: 1px solid #dbe4f0;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #17233b;
 }
 
 .upload-students-partition-head h4 {
@@ -333,7 +382,8 @@
   letter-spacing: 0.08em;
 }
 
-.upload-students-sheet input {
+.upload-students-sheet input,
+.upload-students-sheet select {
   width: 100%;
   min-width: 0;
   padding: 0.82rem 0.78rem;
@@ -344,10 +394,16 @@
   background: #ffffff;
 }
 
-.upload-students-sheet input:focus {
+.upload-students-sheet input:focus,
+.upload-students-sheet select:focus {
   outline: none;
   background: #f8fff9;
   box-shadow: inset 0 0 0 1px #22c55e;
+}
+
+.upload-students-sheet input[readonly] {
+  color: #64748b;
+  background: #f8fbff;
 }
 
 .upload-students-sheet-remove {
@@ -405,6 +461,56 @@
   font-weight: 700;
 }
 
+.upload-students-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.46);
+  backdrop-filter: blur(4px);
+}
+
+.upload-students-modal {
+  width: min(100%, 460px);
+  padding: 24px;
+  border: 1px solid #dbe7f5;
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 30px 60px rgba(15, 23, 42, 0.16);
+}
+
+.upload-students-modal h4 {
+  margin: 0;
+  color: #17233b;
+  font-size: 1.1rem;
+}
+
+.upload-students-modal p {
+  margin: 0.85rem 0 0;
+  color: #4b5b74;
+  line-height: 1.6;
+}
+
+.upload-students-modal-note {
+  margin-top: 1rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid #dbe7f5;
+  border-radius: 16px;
+  background: #f8fbff;
+  color: #51637e;
+  font-size: 0.92rem;
+}
+
+.upload-students-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
 @media (max-width: 980px) {
   .upload-students-grid {
     grid-template-columns: 1fr;
@@ -412,6 +518,11 @@
 
   .upload-students-card-head {
     flex-direction: column;
+  }
+
+  .upload-students-sheet-toolbar {
+    grid-template-columns: 1fr;
+    align-items: stretch;
   }
 }
 
@@ -450,5 +561,9 @@
     width: 100%;
     display: grid;
     grid-template-columns: 1fr 1fr;
+  }
+
+  .upload-students-modal-actions {
+    flex-direction: column-reverse;
   }
 }

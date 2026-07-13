@@ -1,6 +1,6 @@
 // src/pages/SchoolAdmin/MainPage.js
 import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate, NavLink, Outlet } from "react-router-dom";
 import { collection, doc, getDoc, getDocs, limit, query, where } from "firebase/firestore";
 import { db } from "../../firebase/firebaseConfig";
 import UploadStudents from "./SchoolComponent/UploadStudents";
@@ -14,23 +14,49 @@ import AcademicReportsPage from "./SchoolComponent/AcademicReportsPage";
 import FeeManagement from "./SchoolComponent/FeeManagement";
 import {
   LayoutDashboard,
-  Upload,
   Users,
-  BarChart3,
   Megaphone,
   CalendarCheck,
   FileSpreadsheet,
-  LineChart,
   BadgeIndianRupee,
 } from "lucide-react";
 import "./MainPage.css";
 import Announcement from "./SchoolComponent/Announcement";
 
+const SectionShell = ({ title, description, tabs = [] }) => (
+  <div className="school-admin-section-shell">
+    <div className="school-admin-section-head">
+      <div>
+        <p className="school-admin-section-kicker">{title}</p>
+        <h1>{title}</h1>
+        <p>{description}</p>
+      </div>
+    </div>
+
+    <div className="school-admin-top-tabs">
+      {tabs.map((tab) => (
+        <NavLink
+          key={tab.to}
+          to={tab.to}
+          end={tab.end}
+          className={({ isActive }) => `school-admin-top-tab ${isActive ? "active" : ""}`}
+        >
+          {tab.label}
+        </NavLink>
+      ))}
+    </div>
+
+    <div className="school-admin-section-content">
+      <Outlet />
+    </div>
+  </div>
+);
+
 const hasPaidSchoolAccess = (schoolData) => {
-  const rawStatus = schoolData?.isPaidSchool ?? schoolData?.isPaid ?? schoolData?.paymentStatus ?? schoolData?.status;
-  if (typeof rawStatus === "boolean") return rawStatus;
-  const normalizedStatus = String(rawStatus || "").trim().toLowerCase();
-  return ["paid", "active", "true", "yes"].includes(normalizedStatus);
+  const explicitPaid = schoolData?.isPaidSchool === true || schoolData?.isPaid === true;
+  const paymentStatus = String(schoolData?.paymentStatus || "").trim().toLowerCase();
+  const status = String(schoolData?.status || "").trim().toLowerCase();
+  return explicitPaid || ["paid", "active", "true", "yes"].includes(paymentStatus) || ["paid", "active", "true", "yes"].includes(status);
 };
 
 const MainPage = ({ school, onLogout }) => {
@@ -86,16 +112,14 @@ const MainPage = ({ school, onLogout }) => {
 
   const sidebarLinks = [
     { name: "Dashboard", path: "/school-admin/home", icon: LayoutDashboard },
-    { name: "Student Details", path: "/school-admin/students", icon: Users },
+    { name: "Students", path: "/school-admin/students", icon: Users },
     { name: "Attendance", path: "/school-admin/attendance", icon: CalendarCheck },
-    { name: "Exam Marks", path: "/school-admin/exam-marks", icon: FileSpreadsheet },
-    { name: "Academic Reports", path: "/school-admin/academic-reports", icon: LineChart },
-    { name: "Quiz Analytics", path: "/school-admin/analytics", icon: BarChart3 },
+    { name: "Academics", path: "/school-admin/academics", icon: FileSpreadsheet },
     { name: "Announcements", path: "/school-admin/announcements", icon: Megaphone },
   ];
-  if (hasPaidSchoolAccess(currentSchool)) {
-    sidebarLinks.splice(1, 0, { name: "Upload Students", path: "/school-admin/upload", icon: Upload });
-    sidebarLinks.splice(3, 0, {
+  const isPaidSchool = hasPaidSchoolAccess(currentSchool);
+  if (isPaidSchool) {
+    sidebarLinks.splice(2, 0, {
       name: "Fee Management",
       path: "/school-admin/fees",
       icon: BadgeIndianRupee,
@@ -124,8 +148,28 @@ const MainPage = ({ school, onLogout }) => {
           <Routes>
             <Route path="/" element={<Navigate to="home" />} />
             <Route path="home" element={<TeacherHome school={currentSchool} schoolId={currentSchool.schoolId} />} />
-            <Route path="upload" element={<UploadStudents school={currentSchool} schoolId={currentSchool.schoolId} />} />
-            <Route path="students" element={<StudentDetails schoolId={currentSchool.schoolId} />} />
+            <Route
+              path="students"
+              element={
+                <SectionShell
+                  title="Students"
+                  description="Manage student uploads and review student records from one shared workspace."
+                  tabs={[
+                    ...(isPaidSchool ? [{ label: "Upload Students", to: "upload" }] : []),
+                    { label: "Student Details", to: "details" },
+                  ]}
+                />
+              }
+            >
+              <Route index element={<Navigate to={isPaidSchool ? "upload" : "details"} replace />} />
+              {isPaidSchool ? (
+                <Route
+                  path="upload"
+                  element={<UploadStudents school={currentSchool} schoolId={currentSchool.schoolId} forcePaidAccess={isPaidSchool} />}
+                />
+              ) : null}
+              <Route path="details" element={<StudentDetails schoolId={currentSchool.schoolId} />} />
+            </Route>
             <Route
               path="fees"
               element={<FeeManagement schoolId={currentSchool.schoolId} schoolName={currentSchool?.schoolName || ""} />}
@@ -140,16 +184,36 @@ const MainPage = ({ school, onLogout }) => {
               }
             />
             <Route
-              path="exam-marks"
+              path="academics"
               element={
-                <ExamMarksPage
-                  schoolId={currentSchool.schoolId}
-                  actorName={currentSchool?.schoolName || "School Admin"}
+                <SectionShell
+                  title="Academics"
+                  description="Work across exam marks, academic reports, and quiz analytics from one academic command center."
+                  tabs={[
+                    { label: "Exam Marks", to: "exam-marks" },
+                    { label: "Academic Reports", to: "reports" },
+                    { label: "Quiz Analytics", to: "analytics" },
+                  ]}
                 />
               }
-            />
-            <Route path="academic-reports" element={<AcademicReportsPage schoolId={currentSchool.schoolId} />} />
-            <Route path="analytics" element={<QuizAnalytics schoolId={currentSchool.schoolId} />} />
+            >
+              <Route index element={<Navigate to="exam-marks" replace />} />
+              <Route
+                path="exam-marks"
+                element={
+                  <ExamMarksPage
+                    schoolId={currentSchool.schoolId}
+                    actorName={currentSchool?.schoolName || "School Admin"}
+                  />
+                }
+              />
+              <Route path="reports" element={<AcademicReportsPage schoolId={currentSchool.schoolId} />} />
+              <Route path="analytics" element={<QuizAnalytics schoolId={currentSchool.schoolId} />} />
+            </Route>
+            <Route path="upload" element={<Navigate to={isPaidSchool ? "/school-admin/students/upload" : "/school-admin/students/details"} replace />} />
+            <Route path="exam-marks" element={<Navigate to="/school-admin/academics/exam-marks" replace />} />
+            <Route path="academic-reports" element={<Navigate to="/school-admin/academics/reports" replace />} />
+            <Route path="analytics" element={<Navigate to="/school-admin/academics/analytics" replace />} />
             <Route path="announcements" element={<Announcement schoolId={currentSchool.schoolId} />} />
             <Route path="*" element={<h2>Page Not Found</h2>} />
           </Routes>

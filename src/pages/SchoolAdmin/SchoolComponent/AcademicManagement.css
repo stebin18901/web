@@ -514,6 +514,47 @@
   color: #5f6f87;
 }
 
+.academic-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgba(15, 23, 42, 0.42);
+  backdrop-filter: blur(4px);
+}
+
+.academic-modal {
+  width: min(100%, 460px);
+  padding: 24px;
+  border: 1px solid #dbe7f5;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 28px 60px rgba(15, 23, 42, 0.16);
+}
+
+.academic-modal h4 {
+  margin: 0;
+  color: #17233b;
+  font-size: 1.08rem;
+  font-weight: 800;
+}
+
+.academic-modal p {
+  margin: 0.9rem 0 0;
+  color: #52637d;
+  line-height: 1.65;
+}
+
+.academic-modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+}
+
 @media (max-width: 1080px) {
   .academic-filter-grid,
   .academic-filter-grid.compact,
@@ -556,5 +597,10 @@
 
   .academic-sticky-bar {
     position: static;
+  }
+
+  .academic-modal-actions {
+    flex-direction: column-reverse;
+    align-items: stretch;
   }
 }

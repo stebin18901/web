@@ -11,6 +11,7 @@ const ExamSetupPanel = ({
   onMaxMarksChange,
   onAddSubject,
   onRemoveSubject,
+  onSaveSubjects,
   subjectDraft = "",
   onSubjectDraftChange,
   canManageSubjects = true,
@@ -74,6 +75,9 @@ const ExamSetupPanel = ({
             <button type="button" className="academic-btn-secondary" onClick={onAddSubject}>
               <Plus size={16} />
               Add Subject
+            </button>
+            <button type="button" className="academic-btn" onClick={onSaveSubjects}>
+              Save Subjects
             </button>
           </div>
         ) : null}

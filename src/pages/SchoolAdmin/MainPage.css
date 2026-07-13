@@ -31,6 +31,134 @@
   transition: all 0.3s ease;
 }
 
+.school-admin-section-shell {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.school-admin-section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  padding: 20px 22px;
+  border-radius: 18px;
+  background: linear-gradient(135deg, rgba(255, 255, 255, 0.92), rgba(240, 249, 255, 0.88));
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  box-shadow: 0 12px 32px rgba(15, 23, 42, 0.08);
+}
+
+.school-admin-section-kicker {
+  margin: 0 0 8px;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #2563eb;
+}
+
+.school-admin-section-head h1 {
+  margin: 0;
+  font-size: clamp(1.7rem, 2.6vw, 2.3rem);
+  line-height: 1.1;
+  color: #0f172a;
+}
+
+.school-admin-section-head p:last-child {
+  margin: 10px 0 0;
+  max-width: 680px;
+  color: #475569;
+  font-size: 0.98rem;
+  line-height: 1.6;
+}
+
+.school-admin-top-tabs {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  margin: 4px 0 8px;
+  padding: 6px 8px;
+  scrollbar-width: none;
+  position: relative;
+  scroll-behavior: smooth;
+}
+
+.school-admin-top-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.school-admin-top-tab {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #eef2ff, #ede9fe);
+  color: #4338ca;
+  font-weight: 500;
+  font-size: 15px;
+  border: none;
+  border-top-left-radius: 14px;
+  border-top-right-radius: 14px;
+  padding: 10px 18px 9px;
+  text-decoration: none;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  z-index: 1;
+  clip-path: polygon(0 0, 92% 0, 100% 100%, 0% 100%);
+  box-shadow: 0 2px 4px rgba(79, 70, 229, 0.06);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.school-admin-top-tab::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(to top right, rgba(255, 255, 255, 0.5), rgba(255, 255, 255, 0));
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.school-admin-top-tab:hover {
+  background: linear-gradient(135deg, #c7d2fe, #ddd6fe);
+  color: #312e81;
+  transform: translateY(-1px);
+}
+
+.school-admin-top-tab:hover::before {
+  opacity: 1;
+}
+
+.school-admin-top-tab.active {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #ffffff;
+  box-shadow: 0 4px 18px rgba(118, 75, 162, 0.4);
+  z-index: 2;
+  transform: translateY(-2px);
+  text-shadow: 0 0 3px rgba(255, 255, 255, 0.3);
+}
+
+.school-admin-top-tab.active::after {
+  content: "";
+  position: absolute;
+  bottom: -3px;
+  left: 0;
+  width: 100%;
+  height: 8px;
+  background: radial-gradient(ellipse at bottom center, rgba(0, 0, 0, 0.25), transparent 70%);
+  opacity: 0.25;
+  border-bottom-left-radius: 14px;
+  border-bottom-right-radius: 14px;
+  pointer-events: none;
+}
+
+.school-admin-section-content {
+  min-width: 0;
+}
+
 /* === Adjust for large tablets === */
 @media (max-width: 1024px) {
   .content-area {
@@ -48,5 +176,22 @@
     padding: 16px;
     border-radius: 10px;
     box-shadow: none;
+  }
+
+  .school-admin-section-head {
+    padding: 18px 16px;
+    border-radius: 14px;
+  }
+
+  .school-admin-top-tabs {
+    padding: 4px 0 6px;
+    gap: 6px;
+  }
+
+  .school-admin-top-tab {
+    border-radius: 12px;
+    clip-path: none;
+    padding: 8px 14px;
+    font-size: 14px;
   }
 }
