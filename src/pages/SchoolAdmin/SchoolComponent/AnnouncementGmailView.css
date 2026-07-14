@@ -146,6 +146,171 @@
   resize: vertical;
 }
 
+.ann-target-panel {
+  border: 1px solid #dbe4ee;
+  border-radius: 14px;
+  padding: 14px;
+  background: linear-gradient(180deg, #ffffff, #f8fbff);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ann-target-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.ann-target-head label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.ann-target-head span {
+  font-size: 12px;
+  color: #475569;
+  font-weight: 600;
+}
+
+.ann-target-tabs {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.ann-target-tab {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #d7deea;
+  background: #ffffff;
+  color: #334155;
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  transition: all 0.2s ease;
+}
+
+.ann-target-tab:hover {
+  border-color: #a5b4fc;
+  background: #f8faff;
+}
+
+.ann-target-tab.active {
+  border-color: #4f46e5;
+  background: #eef2ff;
+  color: #3730a3;
+  box-shadow: 0 0 0 1px rgba(79, 70, 229, 0.08);
+}
+
+.ann-target-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #dbe4ee;
+  background: #ffffff;
+}
+
+.ann-target-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.ann-target-card-head label {
+  font-size: 13px;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.ann-target-card-head small {
+  font-size: 11px;
+  color: #64748b;
+}
+
+.ann-target-actions-inline {
+  display: inline-flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.ann-target-helper {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #475569;
+}
+
+.ann-target-empty {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #64748b;
+  font-size: 12px;
+  min-height: 36px;
+}
+
+.ann-student-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 10px;
+}
+
+.ann-student-card {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  border: 1px solid #dbe4ee;
+  background: #f8fafc;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.ann-student-card:hover {
+  border-color: #a5b4fc;
+  background: #f8faff;
+}
+
+.ann-student-card.selected {
+  border-color: #4f46e5;
+  background: #eef2ff;
+}
+
+.ann-student-card strong {
+  display: block;
+  font-size: 13px;
+  color: #0f172a;
+}
+
+.ann-student-card span {
+  display: block;
+  margin-top: 3px;
+  font-size: 11px;
+  color: #64748b;
+}
+
+.ann-student-card input {
+  width: 16px;
+  height: 16px;
+  accent-color: #4f46e5;
+}
+
 /* Buttons - Isolated Styles */
 .ann-btn-primary,
 .ann-btn-outline,

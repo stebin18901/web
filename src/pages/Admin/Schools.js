@@ -9,6 +9,12 @@ import {
 } from "../../config/defaultSchool";
 import "./Schools.css";
 
+const resolvePaidSchoolStatus = (school = {}) => {
+  if (school.isPaidSchool === true || school.isPaid === true) return true;
+  const rawStatus = String(school.paymentStatus || school.status || "").trim().toLowerCase();
+  return ["paid", "active", "true", "yes"].includes(rawStatus);
+};
+
 const Schools = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("manage");
@@ -48,6 +54,13 @@ const Schools = () => {
     querySnapshot.forEach((entry) => {
       schoolsList.push({ id: entry.id, ...entry.data() });
     });
+    schoolsList.sort((left, right) =>
+      String(left.schoolName || left.schoolId || left.id || "").localeCompare(
+        String(right.schoolName || right.schoolId || right.id || ""),
+        undefined,
+        { sensitivity: "base", numeric: true }
+      )
+    );
     setSchools(schoolsList);
 
     const defaultSnap = await getDoc(doc(db, DEFAULT_SCHOOL_SETTINGS_COLLECTION, DEFAULT_SCHOOL_SETTINGS_DOC));
@@ -125,20 +138,41 @@ const Schools = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
+      const normalizedId = normalizeSchoolId(schoolId);
+      const trimmedName = String(schoolName || "").trim();
+      const trimmedPassword = String(password || "").trim();
+
+      if (!trimmedName || !normalizedId || !trimmedPassword) {
+        alert("School name, school ID, and password are required.");
+        return;
+      }
+
+      const duplicateSchool = schools.find(
+        (school) => normalizeSchoolId(school.schoolId || school.id) === normalizedId && school.id !== editSchoolId
+      );
+      if (duplicateSchool) {
+        alert("A school with this School ID already exists.");
+        return;
+      }
+
       if (editSchoolId) {
+        if (normalizeSchoolId(editSchoolId) !== normalizedId) {
+          alert("School ID cannot be changed from edit mode because it is linked to existing data. Create a new school if a different ID is required.");
+          return;
+        }
         await updateDoc(doc(db, "schools", editSchoolId), {
-          schoolName,
-          schoolId,
-          password,
+          schoolName: trimmedName,
+          schoolId: normalizedId,
+          password: trimmedPassword,
           isPaidSchool,
         });
         alert("School updated successfully!");
         setEditSchoolId(null);
       } else {
-        await setDoc(doc(db, "schools", schoolId), {
-          schoolName,
-          schoolId,
-          password,
+        await setDoc(doc(db, "schools", normalizedId), {
+          schoolName: trimmedName,
+          schoolId: normalizedId,
+          password: trimmedPassword,
           isPaidSchool,
         });
         alert("School added successfully!");
@@ -155,6 +189,8 @@ const Schools = () => {
 
   const handleDelete = async (id) => {
     try {
+      const school = schools.find((entry) => entry.id === id);
+      if (!window.confirm(`Delete ${school?.schoolName || "this school"}?`)) return;
       await deleteDoc(doc(db, "schools", id));
       alert("School deleted successfully!");
       fetchSchools();
@@ -165,10 +201,10 @@ const Schools = () => {
 
   const handleEdit = (school) => {
     setSchoolName(school.schoolName);
-    setSchoolId(school.schoolId);
+    setSchoolId(normalizeSchoolId(school.schoolId || school.id));
     setEditSchoolId(school.id);
     setPassword(school.password || "");
-    setIsPaidSchool(Boolean(school.isPaidSchool));
+    setIsPaidSchool(resolvePaidSchoolStatus(school));
   };
 
   const handleStudentAuth = (school) => {
@@ -270,8 +306,8 @@ const Schools = () => {
 
   const filteredSchools = schools.filter(
     (school) =>
-      school.schoolName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      school.schoolId.toLowerCase().includes(searchQuery.toLowerCase())
+      String(school.schoolName || "").toLowerCase().includes(searchQuery.toLowerCase()) ||
+      String(school.schoolId || school.id || "").toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const openSchoolDetails = (school) => {
@@ -460,16 +496,16 @@ const Schools = () => {
                           {defaultSchoolId === normalizeSchoolId(school.schoolId) && (
                             <span className="default-school-badge">Default</span>
                           )}
-                          <span className={`school-payment-badge ${school.isPaidSchool ? "is-paid" : "is-unpaid"}`}>
-                            {school.isPaidSchool ? "Paid" : "Unpaid"}
+                          <span className={`school-payment-badge ${resolvePaidSchoolStatus(school) ? "is-paid" : "is-unpaid"}`}>
+                            {resolvePaidSchoolStatus(school) ? "Paid" : "Unpaid"}
                           </span>
                         </div>
-                        <span className="school-item-id">ID: {school.schoolId}</span>
+                        <span className="school-item-id">ID: {school.schoolId || school.id}</span>
                       </button>
                       <div className="school-item-mini-stats">
-                        <span>Registrations: {schoolStats[normalizeSchoolId(school.schoolId)]?.totalRegistrations || 0}</span>
-                        <span>Plans: {schoolStats[normalizeSchoolId(school.schoolId)]?.totalPlanEnrollments || 0}</span>
-                        <span>Paid: {schoolStats[normalizeSchoolId(school.schoolId)]?.activePaidStudents || 0}</span>
+                        <span>Registrations: {schoolStats[normalizeSchoolId(school.schoolId || school.id)]?.totalRegistrations || 0}</span>
+                        <span>Plans: {schoolStats[normalizeSchoolId(school.schoolId || school.id)]?.totalPlanEnrollments || 0}</span>
+                        <span>Paid: {schoolStats[normalizeSchoolId(school.schoolId || school.id)]?.activePaidStudents || 0}</span>
                       </div>
                     </div>
                     <div className="school-link-box">
@@ -478,10 +514,10 @@ const Schools = () => {
                     </div>
                     <div className="actions">
                       <button type="button" className="btn-default" onClick={() => handleSetDefaultSchool(school)}>
-                        {defaultSchoolId === normalizeSchoolId(school.schoolId) ? "Default School" : "Set Default"}
+                        {defaultSchoolId === normalizeSchoolId(school.schoolId || school.id) ? "Default School" : "Set Default"}
                       </button>
                       <button type="button" className="btn-auth" onClick={() => handleStudentAuth(school)}>
-                        {normalizeSchoolId(activeStudentSchoolId) === normalizeSchoolId(school.schoolId) ? "Unauthenticate" : "Auth"}
+                        {normalizeSchoolId(activeStudentSchoolId) === normalizeSchoolId(school.schoolId || school.id) ? "Unauthenticate" : "Auth"}
                       </button>
                       <button type="button" className="btn-link" onClick={() => handleGenerateAuthLink(school)}>Generate Link</button>
                       <button type="button" className="btn-edit" onClick={() => handleEdit(school)}>Edit</button>
@@ -543,14 +579,14 @@ const Schools = () => {
                   {filteredSchools.length > 0 ? (
                     filteredSchools.map((school) => {
                       const details =
-                        schoolStats[normalizeSchoolId(school.schoolId)] || {};
+                        schoolStats[normalizeSchoolId(school.schoolId || school.id)] || {};
                       return (
                         <tr key={school.id} className="schools-details-row" onClick={() => openSchoolDetails(school)}>
                           <td>{school.schoolName}</td>
-                          <td>{school.schoolId}</td>
+                          <td>{school.schoolId || school.id}</td>
                           <td>
-                            <span className={`school-payment-badge ${school.isPaidSchool ? "is-paid" : "is-unpaid"}`}>
-                              {school.isPaidSchool ? "Paid" : "Unpaid"}
+                            <span className={`school-payment-badge ${resolvePaidSchoolStatus(school) ? "is-paid" : "is-unpaid"}`}>
+                              {resolvePaidSchoolStatus(school) ? "Paid" : "Unpaid"}
                             </span>
                           </td>
                           <td className="schools-link-cell">

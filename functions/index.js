@@ -2,6 +2,7 @@ const functions = require("firebase-functions");
 const Razorpay = require("razorpay");
 const admin = require("firebase-admin");
 const crypto = require("crypto");
+const https = require("https");
 const cors = require("cors")({ origin: true });
 
 admin.initializeApp();
@@ -50,6 +51,166 @@ const getRazorpayClient = () => {
 
 const normalizePhone = (value) =>
   String(value || "").replace(/\D/g, "").slice(-10);
+const normalizeValue = (value) => String(value || "").trim();
+const normalizeSchoolId = (value) => normalizeValue(value).toLowerCase();
+const normalizeClassName = (value) => normalizeValue(value).toUpperCase();
+const normalizeSection = (value) => normalizeValue(value).toUpperCase();
+
+const splitClassAndDivision = (value) => {
+  const normalized = normalizeClassName(value);
+  const grade = (normalized.match(/^\d+/)?.[0] || "").trim();
+  const division = normalized.slice(grade.length).trim().toUpperCase();
+  return { grade, division, combined: normalized };
+};
+
+const classesEquivalent = (leftClass, rightClass, leftSection = "", rightSection = "") => {
+  const left = splitClassAndDivision(leftClass);
+  const right = splitClassAndDivision(rightClass);
+
+  if (left.combined && right.combined && left.combined === right.combined) return true;
+  if (left.grade && right.grade && left.grade === right.grade) {
+    const resolvedLeftSection = normalizeSection(leftSection || left.division);
+    const resolvedRightSection = normalizeSection(rightSection || right.division);
+    if (!resolvedLeftSection || !resolvedRightSection || resolvedLeftSection === resolvedRightSection) {
+      return true;
+    }
+  }
+
+  return false;
+};
+
+const postJson = (url, body) =>
+  new Promise((resolve, reject) => {
+    const payload = JSON.stringify(body);
+    const request = https.request(
+      url,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Content-Length": Buffer.byteLength(payload),
+        },
+      },
+      (response) => {
+        let raw = "";
+        response.on("data", (chunk) => {
+          raw += chunk;
+        });
+        response.on("end", () => {
+          try {
+            resolve(raw ? JSON.parse(raw) : {});
+          } catch {
+            resolve({});
+          }
+        });
+      }
+    );
+
+    request.on("error", reject);
+    request.write(payload);
+    request.end();
+  });
+
+const chunkArray = (items = [], size = 100) => {
+  const chunks = [];
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size));
+  }
+  return chunks;
+};
+
+const matchesAnnouncementForDevice = (announcement = {}, device = {}) => {
+  const audience = normalizeValue(announcement.audience).toLowerCase();
+  const targetMode =
+    normalizeValue(announcement.targetMode).toLowerCase() ||
+    (audience === "class" ? "class" : audience === "parents" ? "parents" : audience === "teachers" ? "teachers" : "all");
+
+  if (targetMode === "teachers" || audience === "teachers") return false;
+
+  const targetClassName = normalizeClassName(announcement.targetClassName || announcement.className);
+  const targetSection = normalizeSection(announcement.targetSection || announcement.section);
+  const deviceClassName = normalizeClassName(device.className);
+  const deviceSection = normalizeSection(device.section);
+  const matchesClassTarget = !targetClassName
+    ? true
+    : classesEquivalent(deviceClassName, targetClassName, deviceSection, targetSection);
+
+  if (targetMode === "parents") {
+    const targetStudentIds = Array.isArray(announcement.targetStudentIds)
+      ? announcement.targetStudentIds.map((entry) => normalizeValue(entry))
+      : [];
+
+    if (targetStudentIds.length) {
+      return targetStudentIds.includes(normalizeValue(device.studentId));
+    }
+
+    return matchesClassTarget;
+  }
+
+  if (targetMode === "class") return matchesClassTarget;
+  if (audience === "parents") return matchesClassTarget;
+
+  return true;
+};
+
+const sendExpoPushNotifications = async (messages = []) => {
+  const validMessages = messages.filter((item) => normalizeValue(item?.to).startsWith("ExponentPushToken["));
+  if (!validMessages.length) return [];
+
+  const tickets = [];
+  const chunks = chunkArray(validMessages, 100);
+  for (const chunk of chunks) {
+    const response = await postJson("https://exp.host/--/api/v2/push/send", chunk);
+    if (Array.isArray(response?.data)) {
+      tickets.push(...response.data);
+    }
+  }
+  return tickets;
+};
+
+const pushToParentDevices = async ({
+  schoolId,
+  title,
+  body,
+  data = {},
+  matcher = () => true,
+}) => {
+  const normalizedSchool = normalizeSchoolId(schoolId);
+  if (!normalizedSchool) return 0;
+
+  const snap = await admin
+    .firestore()
+    .collection("parentDeviceTokens")
+    .where("schoolId", "==", normalizedSchool)
+    .get();
+
+  const devices = snap.docs
+    .map((entry) => ({ id: entry.id, ...entry.data() }))
+    .filter((item) => item.active !== false)
+    .filter((item) => normalizeValue(item.token))
+    .filter(matcher);
+
+  const uniqueByToken = new Map();
+  devices.forEach((item) => {
+    uniqueByToken.set(normalizeValue(item.token), item);
+  });
+
+  const messages = Array.from(uniqueByToken.values()).map((device) => ({
+    to: normalizeValue(device.token),
+    sound: "default",
+    title: normalizeValue(title) || "School update",
+    body: normalizeValue(body) || "A new school update is available.",
+    data: {
+      ...data,
+      schoolId: normalizedSchool,
+      studentId: normalizeValue(device.studentId),
+      type: normalizeValue(data.type || "announcement"),
+    },
+  }));
+
+  await sendExpoPushNotifications(messages);
+  return messages.length;
+};
 
 const getSubscriptionCycleCount = (planId) => {
   switch (planId) {
@@ -1278,6 +1439,50 @@ exports.verifyPayment = functions.https.onRequest(async (req, res) => {
     return res.status(500).send("Webhook handler error");
   }
 });
+
+exports.pushParentAnnouncementOnCreate = functions.firestore
+  .document("announcements/{announcementId}")
+  .onCreate(async (snapshot, context) => {
+    const announcement = snapshot.data() || {};
+    const audience = normalizeValue(announcement.audience).toLowerCase();
+    const targetMode = normalizeValue(announcement.targetMode).toLowerCase();
+
+    if (audience === "teachers" || targetMode === "teachers") return null;
+
+    const delivered = await pushToParentDevices({
+      schoolId: announcement.schoolId,
+      title: announcement.title || "School announcement",
+      body: announcement.message || announcement.summary || "A new school announcement is available.",
+      data: {
+        type: "announcement",
+        announcementId: context.params.announcementId,
+      },
+      matcher: (device) => matchesAnnouncementForDevice(announcement, device),
+    });
+
+    console.log("pushParentAnnouncementOnCreate delivered:", delivered);
+    return null;
+  });
+
+exports.pushParentAdminNotificationOnCreate = functions.firestore
+  .document("adminNotifications/{notificationId}")
+  .onCreate(async (snapshot, context) => {
+    const notification = snapshot.data() || {};
+    if (notification.active === false) return null;
+
+    const delivered = await pushToParentDevices({
+      schoolId: notification.schoolId,
+      title: notification.title || "School update",
+      body: notification.summary || notification.message || "A new school update is available.",
+      data: {
+        type: "adminNotification",
+        notificationId: context.params.notificationId,
+      },
+    });
+
+    console.log("pushParentAdminNotificationOnCreate delivered:", delivered);
+    return null;
+  });
 
 // ===========================================================================
 // ENDPOINT: testFunction

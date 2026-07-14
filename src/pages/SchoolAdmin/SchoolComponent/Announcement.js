@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   collection,
   addDoc,
@@ -22,10 +22,68 @@ import {
   Loader2,
   X,
   ImagePlus,
+  GraduationCap,
+  UserRound,
 } from "lucide-react";
+import {
+  loadStudentsForClass,
+  normalizeClassName,
+  normalizeSection,
+  resolveSchoolClasses,
+} from "./academicUtils";
 import "./AnnouncementGmailView.css";
 
-export default function AnnouncementGmailView({ schoolId, teacher }) {
+const TARGET_TABS = [
+  { key: "all", label: "Whole School", icon: Users },
+  { key: "teachers", label: "Teachers", icon: GraduationCap },
+  { key: "class", label: "Single Class", icon: Users },
+  { key: "parents", label: "Parents", icon: UserRound },
+];
+
+const buildClassKey = (className, section) =>
+  `${normalizeClassName(className)}__${normalizeSection(section || "")}`;
+
+const parseClassKey = (value) => {
+  const [className = "", section = ""] = String(value || "").split("__");
+  return {
+    className: normalizeClassName(className),
+    section: normalizeSection(section),
+  };
+};
+
+const formatClassLabel = (className, section) => {
+  const normalizedClass = normalizeClassName(className);
+  const normalizedSection = normalizeSection(section);
+  if (!normalizedClass) return "Unknown class";
+  if (!normalizedSection) return normalizedClass;
+  if (normalizedClass.endsWith(normalizedSection)) return normalizedClass;
+  return `${normalizedClass} - ${normalizedSection}`;
+};
+
+const getModeFromAnnouncement = (item = {}) => {
+  const explicitMode = String(item.targetMode || "").trim().toLowerCase();
+  if (explicitMode) return explicitMode;
+
+  const audience = String(item.audience || "all").trim().toLowerCase();
+  if (audience === "teachers") return "teachers";
+  if (audience === "parents") return "parents";
+  if (audience === "class") return "class";
+  return "all";
+};
+
+const buildTargetLabel = ({ targetMode, className, section, selectedStudents = [] }) => {
+  if (targetMode === "teachers") return "Teachers";
+  if (targetMode === "class") return `Class ${formatClassLabel(className, section)}`;
+  if (targetMode === "parents") {
+    const classLabel = formatClassLabel(className, section);
+    if (!selectedStudents.length) return `Parents - ${classLabel}`;
+    if (selectedStudents.length === 1) return `Parent - ${selectedStudents[0].fullName || selectedStudents[0].studentId}`;
+    return `${selectedStudents.length} Parents - ${classLabel}`;
+  }
+  return "Whole School";
+};
+
+export default function AnnouncementGmailView({ schoolId }) {
   const [announcements, setAnnouncements] = useState([]);
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -33,11 +91,24 @@ export default function AnnouncementGmailView({ schoolId, teacher }) {
 
   const [title, setTitle] = useState("");
   const [message, setMessage] = useState("");
-  const [audience, setAudience] = useState("all");
+  const [targetMode, setTargetMode] = useState("all");
+  const [classOptions, setClassOptions] = useState([]);
+  const [classesLoading, setClassesLoading] = useState(false);
+  const [selectedClassKey, setSelectedClassKey] = useState("");
+  const [classStudents, setClassStudents] = useState([]);
+  const [studentsLoading, setStudentsLoading] = useState(false);
+  const [selectedStudentIds, setSelectedStudentIds] = useState([]);
   const [attachments, setAttachments] = useState([]);
   const [uploading, setUploading] = useState(false);
 
   const fileInputRef = useRef(null);
+
+  const selectedClassMeta = useMemo(() => parseClassKey(selectedClassKey), [selectedClassKey]);
+  const selectedStudents = useMemo(
+    () => classStudents.filter((student) => selectedStudentIds.includes(student.studentId)),
+    [classStudents, selectedStudentIds]
+  );
+  const allParentsSelected = Boolean(classStudents.length) && selectedStudentIds.length === classStudents.length;
 
   const isImageAttachment = (attachment) => {
     const type = String(attachment?.type || "").toLowerCase();
@@ -48,7 +119,34 @@ export default function AnnouncementGmailView({ schoolId, teacher }) {
   const imageAttachments = attachments.filter(isImageAttachment);
   const fileAttachments = attachments.filter((attachment) => !isImageAttachment(attachment));
 
-  // Load announcements
+  useEffect(() => {
+    let alive = true;
+
+    const loadClasses = async () => {
+      setClassesLoading(true);
+      try {
+        const data = await resolveSchoolClasses(schoolId);
+        if (!alive) return;
+        setClassOptions(
+          data.map((entry) => ({
+            ...entry,
+            key: buildClassKey(entry.className, entry.section),
+            label: formatClassLabel(entry.className, entry.section),
+          }))
+        );
+      } catch (error) {
+        console.error("Failed to load classes for announcements", error);
+      } finally {
+        if (alive) setClassesLoading(false);
+      }
+    };
+
+    if (schoolId) loadClasses();
+    return () => {
+      alive = false;
+    };
+  }, [schoolId]);
+
   useEffect(() => {
     const q = query(
       collection(db, "announcements"),
@@ -63,33 +161,91 @@ export default function AnnouncementGmailView({ schoolId, teacher }) {
     return () => unsub();
   }, [schoolId]);
 
+  useEffect(() => {
+    let alive = true;
+
+    const loadStudents = async () => {
+      if (!schoolId || !selectedClassMeta.className || !["class", "parents"].includes(targetMode)) {
+        setClassStudents([]);
+        if (targetMode !== "parents") setSelectedStudentIds([]);
+        return;
+      }
+
+      setStudentsLoading(true);
+      try {
+        const rows = await loadStudentsForClass({
+          schoolId,
+          className: selectedClassMeta.className,
+          section: selectedClassMeta.section,
+        });
+        if (!alive) return;
+        setClassStudents(rows);
+        setSelectedStudentIds((prev) => prev.filter((id) => rows.some((student) => student.studentId === id)));
+      } catch (error) {
+        console.error("Failed to load class students for announcement", error);
+        if (alive) {
+          setClassStudents([]);
+          setSelectedStudentIds([]);
+        }
+      } finally {
+        if (alive) setStudentsLoading(false);
+      }
+    };
+
+    loadStudents();
+    return () => {
+      alive = false;
+    };
+  }, [schoolId, selectedClassMeta.className, selectedClassMeta.section, targetMode]);
+
   const resetForm = () => {
     setTitle("");
     setMessage("");
-    setAudience("all");
+    setTargetMode("all");
+    setSelectedClassKey("");
+    setClassStudents([]);
+    setSelectedStudentIds([]);
     setAttachments([]);
     setSelected(null);
     setCreating(true);
   };
 
-  const handleSelect = (a) => {
-    setSelected(a);
-    setTitle(a.title);
-    setMessage(a.message);
-    setAudience(a.audience);
-    setAttachments(a.attachments || []);
+  const handleTargetModeChange = (nextMode) => {
+    setTargetMode(nextMode);
+    if (!["class", "parents"].includes(nextMode)) {
+      setSelectedClassKey("");
+      setClassStudents([]);
+      setSelectedStudentIds([]);
+    } else if (nextMode === "class") {
+      setSelectedStudentIds([]);
+    }
+  };
+
+  const handleSelect = (announcement) => {
+    const mode = getModeFromAnnouncement(announcement);
+    setSelected(announcement);
+    setTitle(announcement.title || "");
+    setMessage(announcement.message || "");
+    setTargetMode(mode);
+    setSelectedClassKey(
+      announcement.targetClassName
+        ? buildClassKey(announcement.targetClassName, announcement.targetSection)
+        : ""
+    );
+    setSelectedStudentIds(Array.isArray(announcement.targetStudentIds) ? announcement.targetStudentIds : []);
+    setAttachments(announcement.attachments || []);
     setCreating(false);
   };
 
   const handleFileChange = (e) => {
-    const files = Array.from(e.target.files);
+    const files = Array.from(e.target.files || []);
     if (files.length) {
-      const newFiles = files.map((f) => ({
-        name: f.name,
-        size: f.size,
-        type: f.type || "",
-        file: f,
-        previewUrl: URL.createObjectURL(f),
+      const newFiles = files.map((file) => ({
+        name: file.name,
+        size: file.size,
+        type: file.type || "",
+        file,
+        previewUrl: URL.createObjectURL(file),
       }));
       setAttachments((prev) => [...prev, ...newFiles]);
     }
@@ -97,6 +253,12 @@ export default function AnnouncementGmailView({ schoolId, teacher }) {
 
   const handleRemoveAttachment = (indexToRemove) => {
     setAttachments((prev) => prev.filter((_, index) => index !== indexToRemove));
+  };
+
+  const toggleStudentSelection = (studentId) => {
+    setSelectedStudentIds((prev) =>
+      prev.includes(studentId) ? prev.filter((id) => id !== studentId) : [...prev, studentId]
+    );
   };
 
   const uploadAttachment = async (attachment) => {
@@ -133,11 +295,29 @@ export default function AnnouncementGmailView({ schoolId, teacher }) {
       alert("Please fill in title and message.");
       return;
     }
+
+    if (targetMode === "class" && !selectedClassMeta.className) {
+      alert("Please choose a class for this announcement.");
+      return;
+    }
+
+    if (targetMode === "parents") {
+      if (!selectedClassMeta.className) {
+        alert("Please choose a class before selecting parents.");
+        return;
+      }
+      if (!selectedStudentIds.length) {
+        alert("Please select at least one student to notify that parent.");
+        return;
+      }
+    }
+
     setUploading(true);
     try {
       const uploadedAttachments = await Promise.all(
         attachments.map((attachment) => uploadAttachment(attachment))
       );
+
       const firstImage =
         uploadedAttachments.find((attachment) =>
           String(attachment.type || "").toLowerCase().startsWith("image/")
@@ -147,15 +327,44 @@ export default function AnnouncementGmailView({ schoolId, teacher }) {
         ) ||
         null;
 
+      const targetStudentsPayload = selectedStudents.map((student) => ({
+        studentId: student.studentId,
+        fullName: student.fullName,
+        rollNumber: student.rollNumber,
+        className: student.className || selectedClassMeta.className,
+        section: student.section || selectedClassMeta.section,
+      }));
+
+      const targetLabel = buildTargetLabel({
+        targetMode,
+        className: selectedClassMeta.className,
+        section: selectedClassMeta.section,
+        selectedStudents: targetStudentsPayload,
+      });
+
       const data = {
-        title,
-        message,
-        audience,
+        title: title.trim(),
+        message: message.trim(),
+        audience:
+          targetMode === "teachers"
+            ? "teachers"
+            : targetMode === "parents"
+              ? "parents"
+              : targetMode === "class"
+                ? "class"
+                : "all",
+        targetMode,
+        targetLabel,
+        targetClassName: ["class", "parents"].includes(targetMode) ? selectedClassMeta.className : "",
+        targetSection: ["class", "parents"].includes(targetMode) ? selectedClassMeta.section : "",
+        targetStudentIds: targetMode === "parents" ? selectedStudentIds : [],
+        targetStudents: targetMode === "parents" ? targetStudentsPayload : [],
         attachments: uploadedAttachments.filter((attachment) => attachment.url),
         imageUrl: firstImage?.url || "",
         schoolId,
         updatedAt: serverTimestamp(),
       };
+
       if (selected) {
         await updateDoc(doc(db, "announcements", selected.id), data);
       } else {
@@ -164,6 +373,7 @@ export default function AnnouncementGmailView({ schoolId, teacher }) {
           createdAt: serverTimestamp(),
         });
       }
+
       resetForm();
     } catch (error) {
       console.error("Failed to save announcement", error);
@@ -181,19 +391,25 @@ export default function AnnouncementGmailView({ schoolId, teacher }) {
 
   const formatDate = (ts) => {
     if (!ts) return "";
-    const d = ts.toDate ? ts.toDate() : new Date(ts);
-    return d.toLocaleString("en-IN", {
+    const date = ts.toDate ? ts.toDate() : new Date(ts);
+    return date.toLocaleString("en-IN", {
       dateStyle: "medium",
       timeStyle: "short",
     });
   };
 
+  const previewTargetLabel = buildTargetLabel({
+    targetMode,
+    className: selectedClassMeta.className,
+    section: selectedClassMeta.section,
+    selectedStudents,
+  });
+
   return (
     <div className="ann-view-container">
-      {/* LEFT SIDE */}
       <aside className="ann-sidebar">
         <div className="ann-sidebar-header">
-          <h2>📢 Announcements</h2>
+          <h2>Announcements</h2>
           <button className="ann-btn-primary" onClick={resetForm}>
             + New
           </button>
@@ -207,34 +423,31 @@ export default function AnnouncementGmailView({ schoolId, teacher }) {
           <div className="ann-empty">No announcements yet</div>
         ) : (
           <div className="ann-list">
-            {announcements.map((a) => (
+            {announcements.map((announcement) => (
               <div
-                key={a.id}
-                className={`ann-item ${
-                  selected?.id === a.id ? "active" : ""
-                }`}
-                onClick={() => handleSelect(a)}
+                key={announcement.id}
+                className={`ann-item ${selected?.id === announcement.id ? "active" : ""}`}
+                onClick={() => handleSelect(announcement)}
               >
                 <div className="ann-item-top">
-                  <h4 className="ann-item-title">{a.title}</h4>
-                  <span className="aud-tag">{a.audience}</span>
+                  <h4 className="ann-item-title">{announcement.title}</h4>
+                  <span className="aud-tag">
+                    {announcement.targetLabel || announcement.audience || "all"}
+                  </span>
                 </div>
                 <p className="ann-item-msg">
-                  {a.message.length > 70
-                    ? a.message.slice(0, 70) + "..."
-                    : a.message}
+                  {announcement.message?.length > 70
+                    ? `${announcement.message.slice(0, 70)}...`
+                    : announcement.message}
                 </p>
-                <small className="ann-item-time">
-                  {formatDate(a.createdAt)}
-                </small>
+                <small className="ann-item-time">{formatDate(announcement.createdAt)}</small>
               </div>
             ))}
           </div>
         )}
       </aside>
 
-      {/* RIGHT SIDE */}
-      <section1 className="ann-detail">
+      <section className="ann-detail">
         {!selected && !creating && (
           <div className="ann-placeholder">
             <Users size={42} />
@@ -270,18 +483,119 @@ export default function AnnouncementGmailView({ schoolId, teacher }) {
               onChange={(e) => setMessage(e.target.value)}
             />
 
-            <div className="ann-field-row">
-              <label>Send to:</label>
-              <select
-                className="ann-select"
-                value={audience}
-                onChange={(e) => setAudience(e.target.value)}
-              >
-                <option value="all">All</option>
-                <option value="parents">Parents</option>
-                <option value="teachers">Teachers</option>
-                <option value="both">Parents & Teachers</option>
-              </select>
+            <div className="ann-target-panel">
+              <div className="ann-target-head">
+                <label>Send to</label>
+                <span>{previewTargetLabel}</span>
+              </div>
+
+              <div className="ann-target-tabs">
+                {TARGET_TABS.map((tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.key}
+                      type="button"
+                      className={`ann-target-tab ${targetMode === tab.key ? "active" : ""}`}
+                      onClick={() => handleTargetModeChange(tab.key)}
+                    >
+                      <Icon size={15} />
+                      <span>{tab.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {["class", "parents"].includes(targetMode) && (
+                <div className="ann-target-card">
+                  <div className="ann-target-card-head">
+                    <label htmlFor="announcement-class-target">Choose class</label>
+                    {classesLoading ? <small>Loading classes...</small> : null}
+                  </div>
+                  <select
+                    id="announcement-class-target"
+                    className="ann-select"
+                    value={selectedClassKey}
+                    onChange={(e) => {
+                      setSelectedClassKey(e.target.value);
+                      setSelectedStudentIds([]);
+                    }}
+                  >
+                    <option value="">Select class</option>
+                    {classOptions.map((entry) => (
+                      <option key={entry.key} value={entry.key}>
+                        {entry.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              {targetMode === "parents" && selectedClassKey && (
+                <div className="ann-target-card">
+                  <div className="ann-target-card-head">
+                    <label>Select parents by student</label>
+                    <div className="ann-target-actions-inline">
+                      <button
+                        type="button"
+                        className="ann-chip-btn"
+                        onClick={() => setSelectedStudentIds(classStudents.map((student) => student.studentId))}
+                        disabled={!classStudents.length}
+                      >
+                        Select all
+                      </button>
+                      <button
+                        type="button"
+                        className="ann-chip-btn"
+                        onClick={() => setSelectedStudentIds([])}
+                        disabled={!selectedStudentIds.length}
+                      >
+                        Clear
+                      </button>
+                    </div>
+                  </div>
+
+                  {studentsLoading ? (
+                    <div className="ann-target-empty">
+                      <Loader2 className="spin" size={16} /> Loading students...
+                    </div>
+                  ) : !classStudents.length ? (
+                    <div className="ann-target-empty">
+                      No students found in this class yet.
+                    </div>
+                  ) : (
+                    <>
+                      <p className="ann-target-helper">
+                        {allParentsSelected
+                          ? `All parents in ${formatClassLabel(
+                              selectedClassMeta.className,
+                              selectedClassMeta.section
+                            )} will receive this announcement.`
+                          : "Choose one or more students. Their linked parent accounts will receive this announcement."}
+                      </p>
+                      <div className="ann-student-grid">
+                        {classStudents.map((student) => {
+                          const isChecked = selectedStudentIds.includes(student.studentId);
+                          return (
+                            <button
+                              key={student.studentId}
+                              type="button"
+                              className={`ann-student-card ${isChecked ? "selected" : ""}`}
+                              onClick={() => toggleStudentSelection(student.studentId)}
+                            >
+                              <div>
+                                <strong>{student.fullName || "Student"}</strong>
+                                <span>Roll {student.rollNumber || "-"}</span>
+                              </div>
+                              <input type="checkbox" readOnly checked={isChecked} />
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="ann-attachments">
@@ -297,7 +611,7 @@ export default function AnnouncementGmailView({ schoolId, teacher }) {
               />
               <button
                 className="ann-btn-outline"
-                onClick={() => fileInputRef.current.click()}
+                onClick={() => fileInputRef.current?.click()}
               >
                 <Upload size={15} /> Add Files
               </button>
@@ -308,7 +622,9 @@ export default function AnnouncementGmailView({ schoolId, teacher }) {
                     <span>
                       <ImagePlus size={15} /> Inline images in body
                     </span>
-                    <small>{imageAttachments.length} image{imageAttachments.length > 1 ? "s" : ""}</small>
+                    <small>
+                      {imageAttachments.length} image{imageAttachments.length > 1 ? "s" : ""}
+                    </small>
                   </div>
                   <div className="ann-inline-media-grid">
                     {attachments.map((file, index) =>
@@ -367,13 +683,13 @@ export default function AnnouncementGmailView({ schoolId, teacher }) {
                   <p className="ann-preview-label">Message Preview</p>
                   <h4>{title || "Untitled announcement"}</h4>
                 </div>
-                <span className="aud-tag">{audience}</span>
+                <span className="aud-tag">{previewTargetLabel}</span>
               </div>
 
               <div className="ann-mail-preview-body">
                 {(message || "Your message will appear here.")
                   .split("\n")
-                  .filter((line, index, arr) => line.trim() || arr.length === 1)
+                  .filter((line, index, lines) => line.trim() || lines.length === 1)
                   .map((line, index) => (
                     <p key={`${line}-${index}`}>{line || "\u00A0"}</p>
                   ))}
@@ -423,7 +739,7 @@ export default function AnnouncementGmailView({ schoolId, teacher }) {
             </div>
           </div>
         )}
-      </section1>
+      </section>
     </div>
   );
 }

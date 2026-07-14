@@ -167,13 +167,52 @@
 
 .upload-students-sheet-toolbar {
   display: grid;
-  grid-template-columns: minmax(0, 1.2fr) auto auto;
+  grid-template-columns: minmax(0, 1.1fr) minmax(320px, 1fr) auto auto;
   gap: 0.9rem;
   align-items: end;
   padding: 0.95rem 1rem;
   border: 1px solid #dbe4f0;
   border-radius: 18px;
   background: #ffffff;
+}
+
+.upload-students-inline-note {
+  margin-top: -0.15rem;
+  padding: 0 0.2rem;
+  color: #5f6f87;
+  font-size: 0.85rem;
+  line-height: 1.55;
+}
+
+.upload-students-sheet-progress {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.upload-students-sheet-progress-copy {
+  display: grid;
+  gap: 0.28rem;
+  padding: 0.95rem 1rem;
+  border: 1px solid #dbe4f0;
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.upload-students-sheet-progress-copy strong,
+.upload-students-sheet-footer-copy strong {
+  color: #17233b;
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.upload-students-sheet-progress-copy span,
+.upload-students-sheet-footer-copy span {
+  color: #5f6f87;
+  font-size: 0.88rem;
+  line-height: 1.55;
 }
 
 .upload-students-sheet-toolbar-copy {
@@ -190,6 +229,36 @@
   color: #5f6f87;
   font-size: 0.86rem;
   line-height: 1.5;
+}
+
+.upload-students-batch-controls {
+  display: grid;
+  grid-template-columns: minmax(150px, 1.15fr) minmax(110px, 0.7fr) auto;
+  gap: 0.75rem;
+  align-items: end;
+}
+
+.upload-students-batch-field {
+  display: grid;
+  gap: 0.38rem;
+}
+
+.upload-students-batch-field span {
+  color: #475569;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.upload-students-batch-field input,
+.upload-students-batch-field select {
+  min-height: 46px;
+  padding: 0.76rem 0.9rem;
+  border: 1px solid #dbe4f0;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #17233b;
 }
 
 .upload-students-pin-toggle {
@@ -212,6 +281,7 @@
 .upload-students-shared-pin {
   display: grid;
   gap: 0.4rem;
+  min-width: 200px;
 }
 
 .upload-students-shared-pin span {
@@ -316,6 +386,26 @@
   gap: 0.75rem;
 }
 
+.upload-students-sheet-footer {
+  align-items: center;
+  padding: 1rem 1.1rem;
+  border: 1px solid #dbe4f0;
+  border-radius: 18px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.upload-students-sheet-footer-copy {
+  display: grid;
+  gap: 0.28rem;
+}
+
+.upload-students-sheet-footer-actions {
+  display: inline-flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .upload-students-primary-btn,
 .upload-students-secondary-btn {
   border: none;
@@ -354,6 +444,13 @@
   gap: 1rem;
 }
 
+.upload-students-preview-actions {
+  display: inline-flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .upload-students-sheet-wrap {
   overflow-x: auto;
   border: 1px solid #dbe4f0;
@@ -363,6 +460,22 @@
 
 .upload-students-sheet-wrap.full-size {
   min-height: 420px;
+}
+
+.upload-students-sheet-empty {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 420px;
+  padding: 1.4rem;
+  text-align: center;
+  color: #64748b;
+  line-height: 1.7;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+.upload-students-sheet-empty strong {
+  color: #17233b;
 }
 
 .upload-students-sheet {
@@ -406,6 +519,29 @@
   background: #f8fbff;
 }
 
+.upload-students-sheet-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0.45rem;
+  padding: 0.72rem 0.85rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.upload-students-sheet-badge.existing {
+  border: 1px solid #bfdbfe;
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.upload-students-sheet-badge.saved {
+  border: 1px solid #bbf7d0;
+  background: #ecfdf5;
+  color: #15803d;
+}
+
 .upload-students-sheet-remove {
   margin: 0.45rem;
   border: none;
@@ -444,6 +580,23 @@
 .upload-students-preview-item span {
   color: #5f6f87;
   font-size: 0.89rem;
+}
+
+.upload-students-preview-remove {
+  margin-top: 0.4rem;
+  align-self: flex-start;
+  border: none;
+  border-radius: 12px;
+  padding: 0.68rem 0.9rem;
+  background: #fee2e2;
+  color: #b91c1c;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease-out;
+}
+
+.upload-students-preview-remove:hover {
+  background: #fecaca;
 }
 
 .upload-students-empty {
@@ -524,6 +677,18 @@
     grid-template-columns: 1fr;
     align-items: stretch;
   }
+
+  .upload-students-inline-note {
+    margin-top: 0;
+  }
+
+  .upload-students-sheet-progress {
+    grid-template-columns: 1fr;
+  }
+
+  .upload-students-batch-controls {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 @media (max-width: 720px) {
@@ -557,6 +722,15 @@
     flex-direction: column;
   }
 
+  .upload-students-sheet-footer {
+    align-items: stretch;
+  }
+
+  .upload-students-sheet-footer-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
   .upload-students-tabs {
     width: 100%;
     display: grid;
@@ -565,5 +739,14 @@
 
   .upload-students-modal-actions {
     flex-direction: column-reverse;
+  }
+
+  .upload-students-batch-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .upload-students-preview-actions {
+    display: grid;
+    grid-template-columns: 1fr;
   }
 }

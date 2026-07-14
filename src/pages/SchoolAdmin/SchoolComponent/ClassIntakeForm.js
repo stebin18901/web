@@ -52,7 +52,6 @@ export default function ClassIntakeForm() {
   const [studentForm, setStudentForm] = useState({
     fullName: "",
     className: "",
-    rollNumber: "",
     phone: "",
     pin: "",
   });
@@ -347,8 +346,8 @@ export default function ClassIntakeForm() {
     const studentIsPaid = schoolIsPaid;
     const feeStatus = schoolIsPaid ? "pending" : "not_applicable";
 
-    if (!studentForm.fullName || !selectedClassName || !studentForm.rollNumber || !cleanPin || !cleanPhone) {
-      setStatus("Please fill name, class, roll number, PIN, and phone number.");
+    if (!studentForm.fullName || !selectedClassName || !cleanPin || !cleanPhone) {
+      setStatus("Please fill name, class, PIN, and phone number.");
       return;
     }
 
@@ -391,20 +390,26 @@ export default function ClassIntakeForm() {
       }
 
       const classId = await ensureClassExists(selectedClassName, { allowCreate: false });
-      const roll = normalize(studentForm.rollNumber);
-      const enrollmentId = `${normalizedSchoolId}_${selectedClassName}_${roll}`;
       const fullName = normalize(studentForm.fullName);
+
+      const studentQuery = query(
+        collection(db, "studentAccounts"),
+        where("schoolId", "==", normalizedSchoolId)
+      );
+      const studentSnap = await getDocs(studentQuery);
+      const classStudents = studentSnap.docs
+        .map((entry) => ({ id: entry.id, ...entry.data() }))
+        .filter((entry) => normalize(entry.className).toUpperCase() === selectedClassName);
+      const nextRoll = classStudents.reduce((maxRoll, entry) => {
+        const rollValue = Number(normalize(entry.rollNumber));
+        return Number.isFinite(rollValue) ? Math.max(maxRoll, rollValue) : maxRoll;
+      }, 0) + 1;
+      const roll = String(nextRoll);
+      const enrollmentId = `${normalizedSchoolId}_${selectedClassName}_${roll}`;
       const currentLinkedAccount = linkedAccounts.find((entry) => entry.id === enrollmentId);
-      const existingStudentSnap = await getDoc(doc(db, "studentAccounts", enrollmentId));
-      const existingStudent = existingStudentSnap.exists() ? existingStudentSnap.data() : null;
 
       if (!currentLinkedAccount && linkedAccounts.length >= MAX_PARENT_ACCOUNTS_PER_PHONE) {
         setStatus(`A single parent phone number can be linked to a maximum of ${MAX_PARENT_ACCOUNTS_PER_PHONE} child accounts.`);
-        return;
-      }
-
-      if (existingStudent && normalize(existingStudent.parentPhone || existingStudent.phone) !== cleanPhone) {
-        setStatus(`Roll number ${roll} is already assigned in ${selectedClassName}. Use a different roll number.`);
         return;
       }
 
@@ -503,15 +508,14 @@ export default function ClassIntakeForm() {
 
       setStatus(
         schoolIsPaid
-          ? `Details saved for ${selectedClassName}. This school is already paid, so the student can log in directly.`
-          : `Details saved for ${selectedClassName}. Continue to choose a plan.`
+          ? `Details saved for ${selectedClassName}. Roll number ${roll} was assigned automatically and the student can log in directly.`
+          : `Details saved for ${selectedClassName}. Roll number ${roll} was assigned automatically. Continue to choose a plan.`
       );
       setStudentForm({
         fullName: "",
         className: studentClassOptions.includes(normalizedClassName)
           ? normalizedClassName
           : studentClassOptions[0] || "",
-        rollNumber: "",
         phone: "",
         pin: "",
       });
@@ -663,11 +667,7 @@ export default function ClassIntakeForm() {
             {!studentClassOptions.length ? (
               <p className="helper-note">No active classes found yet. Please ask the school admin to create classes first.</p>
             ) : null}
-            <input
-              value={studentForm.rollNumber}
-              onChange={(e) => setStudentForm((p) => ({ ...p, rollNumber: e.target.value }))}
-              placeholder="Roll Number"
-            />
+            <p className="helper-note">Roll number will be assigned automatically based on the next available number in the selected class.</p>
             <input
               value={studentForm.pin}
               onChange={(e) => {

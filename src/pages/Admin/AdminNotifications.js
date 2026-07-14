@@ -141,6 +141,10 @@ export default function AdminNotifications() {
         updatedAt: serverTimestamp(),
       });
       await loadNotifications();
+      setStatus(item.active === false ? "Notification activated." : "Notification paused.");
+    } catch (error) {
+      console.error("Failed to toggle notification status:", error);
+      setStatus("Could not update notification status.");
     } finally {
       setBusy(false);
     }
@@ -154,6 +158,9 @@ export default function AdminNotifications() {
       await loadNotifications();
       if (editingId === id) resetDraft();
       setStatus("Notification deleted.");
+    } catch (error) {
+      console.error("Failed to delete notification:", error);
+      setStatus("Could not delete notification.");
     } finally {
       setBusy(false);
     }
