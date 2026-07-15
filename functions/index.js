@@ -1,4 +1,5 @@
 const functions = require("firebase-functions");
+const functionsV1 = require("firebase-functions/v1");
 const Razorpay = require("razorpay");
 const admin = require("firebase-admin");
 const crypto = require("crypto");
@@ -61,6 +62,59 @@ const splitClassAndDivision = (value) => {
   const grade = (normalized.match(/^\d+/)?.[0] || "").trim();
   const division = normalized.slice(grade.length).trim().toUpperCase();
   return { grade, division, combined: normalized };
+};
+
+const buildStudentIdCandidates = ({ studentId = "", schoolId = "", className = "", section = "", rollNumber = "" } = {}) => {
+  const normalizedStudentId = normalizeValue(studentId).toLowerCase();
+  const normalizedSchool = normalizeSchoolId(schoolId);
+  const normalizedClass = normalizeClassName(className);
+  const normalizedSection = normalizeSection(section);
+  const normalizedRoll = normalizeValue(rollNumber);
+  const candidates = new Set();
+
+  if (normalizedStudentId) candidates.add(normalizedStudentId);
+  if (normalizedRoll) candidates.add(normalizedRoll.toLowerCase());
+  if (normalizedSchool && normalizedClass && normalizedRoll) {
+    candidates.add(`${normalizedSchool}_${normalizedClass}_${normalizedRoll}`.toLowerCase());
+  }
+
+  const classParts = splitClassAndDivision(normalizedClass);
+  if (normalizedSchool && classParts.grade && normalizedRoll) {
+    candidates.add(`${normalizedSchool}_${classParts.grade}_${normalizedRoll}`.toLowerCase());
+    if (normalizedSection) {
+      candidates.add(`${normalizedSchool}_${classParts.grade}${normalizedSection}_${normalizedRoll}`.toLowerCase());
+      candidates.add(`${normalizedSchool}_${classParts.grade}_${normalizedSection}_${normalizedRoll}`.toLowerCase());
+    }
+    if (classParts.division) {
+      candidates.add(`${normalizedSchool}_${classParts.grade}${classParts.division}_${normalizedRoll}`.toLowerCase());
+      candidates.add(`${normalizedSchool}_${classParts.grade}_${classParts.division}_${normalizedRoll}`.toLowerCase());
+    }
+  }
+
+  return candidates;
+};
+
+const deviceMatchesStudentTarget = (device = {}, target = {}) => {
+  const deviceCandidates = buildStudentIdCandidates({
+    studentId: device.studentId,
+    schoolId: device.schoolId,
+    className: device.className,
+    section: device.section,
+    rollNumber: device.rollNumber,
+  });
+  const targetCandidates = buildStudentIdCandidates({
+    studentId: target.studentId,
+    schoolId: target.schoolId || device.schoolId,
+    className: target.className,
+    section: target.section,
+    rollNumber: target.rollNumber,
+  });
+
+  for (const candidate of targetCandidates) {
+    if (deviceCandidates.has(candidate)) return true;
+  }
+
+  return false;
 };
 
 const classesEquivalent = (leftClass, rightClass, leftSection = "", rightSection = "") => {
@@ -141,7 +195,14 @@ const matchesAnnouncementForDevice = (announcement = {}, device = {}) => {
       : [];
 
     if (targetStudentIds.length) {
-      return targetStudentIds.includes(normalizeValue(device.studentId));
+      return targetStudentIds.some((entry) =>
+        deviceMatchesStudentTarget(device, {
+          studentId: entry,
+          schoolId: announcement.schoolId,
+          className: announcement.targetClassName || announcement.className,
+          section: announcement.targetSection || announcement.section,
+        })
+      );
     }
 
     return matchesClassTarget;
@@ -210,6 +271,135 @@ const pushToParentDevices = async ({
 
   await sendExpoPushNotifications(messages);
   return messages.length;
+};
+
+const normalizeNumericString = (value) => {
+  const numericValue = Number(value);
+  return Number.isFinite(numericValue) ? String(numericValue) : "";
+};
+
+const matchesParentNotificationForDevice = (notification = {}, device = {}) => {
+  const targetStudentId = normalizeValue(notification.studentId);
+  if (targetStudentId) {
+    return deviceMatchesStudentTarget(device, {
+      studentId: targetStudentId,
+      schoolId: notification.schoolId,
+      className: notification.className,
+      section: notification.section,
+      rollNumber: notification.rollNumber,
+    });
+  }
+
+  const targetRollNumber = normalizeValue(notification.rollNumber);
+  const deviceRollNumber = normalizeValue(device.rollNumber);
+  if (targetRollNumber && deviceRollNumber && targetRollNumber !== deviceRollNumber) {
+    return false;
+  }
+
+  return classesEquivalent(
+    device.className,
+    notification.className,
+    device.section,
+    notification.section
+  );
+};
+
+const parentNotificationSignature = (notification = {}) =>
+  JSON.stringify({
+    active: notification.active !== false,
+    schoolId: normalizeSchoolId(notification.schoolId),
+    studentId: normalizeValue(notification.studentId),
+    rollNumber: normalizeValue(notification.rollNumber),
+    className: normalizeClassName(notification.className),
+    section: normalizeSection(notification.section),
+    type: normalizeValue(notification.type).toLowerCase(),
+    title: normalizeValue(notification.title),
+    summary: normalizeValue(notification.summary),
+    message: normalizeValue(notification.message),
+    tone: normalizeValue(notification.tone),
+    status: normalizeValue(notification.status).toLowerCase(),
+    note: normalizeValue(notification.note),
+    relatedDate: normalizeValue(notification.relatedDate),
+    examId: normalizeValue(notification.examId),
+    examName: normalizeValue(notification.examName),
+    academicYear: normalizeValue(notification.academicYear),
+    percentage: normalizeNumericString(notification.percentage),
+    total: normalizeNumericString(notification.total),
+    grade: normalizeValue(notification.grade),
+  });
+
+const hasParentNotificationChanged = (before = {}, after = {}) =>
+  parentNotificationSignature(before) !== parentNotificationSignature(after);
+
+const announcementSignature = (announcement = {}) =>
+  JSON.stringify({
+    active: announcement.active !== false,
+    schoolId: normalizeSchoolId(announcement.schoolId),
+    title: normalizeValue(announcement.title),
+    summary: normalizeValue(announcement.summary),
+    message: normalizeValue(announcement.message),
+    audience: normalizeValue(announcement.audience).toLowerCase(),
+    targetMode: normalizeValue(announcement.targetMode).toLowerCase(),
+    className: normalizeClassName(announcement.targetClassName || announcement.className),
+    section: normalizeSection(announcement.targetSection || announcement.section),
+    targetStudentIds: Array.isArray(announcement.targetStudentIds)
+      ? announcement.targetStudentIds.map((entry) => normalizeValue(entry).toLowerCase()).sort()
+      : [],
+  });
+
+const hasAnnouncementChanged = (before = {}, after = {}) =>
+  announcementSignature(before) !== announcementSignature(after);
+
+const adminNotificationSignature = (notification = {}) =>
+  JSON.stringify({
+    active: notification.active !== false,
+    schoolId: normalizeSchoolId(notification.schoolId),
+    title: normalizeValue(notification.title),
+    summary: normalizeValue(notification.summary),
+    message: normalizeValue(notification.message),
+    tone: normalizeValue(notification.tone).toLowerCase(),
+  });
+
+const hasAdminNotificationChanged = (before = {}, after = {}) =>
+  adminNotificationSignature(before) !== adminNotificationSignature(after);
+
+const feeNotificationSignature = (record = {}) =>
+  JSON.stringify({
+    schoolId: normalizeSchoolId(record.schoolId),
+    studentId: normalizeValue(record.studentId),
+    fullName: normalizeValue(record.fullName || record.name),
+    className: normalizeClassName(record.className),
+    section: normalizeSection(record.section),
+    rollNumber: normalizeValue(record.rollNumber),
+    feeStatus: normalizeValue(record.feeStatus).toLowerCase(),
+    feeAmount: normalizeNumericString(record.feeAmount),
+    feePaidAmount: normalizeNumericString(record.feePaidAmount),
+    feePendingAmount: normalizeNumericString(record.feePendingAmount),
+    feeCollectionCycle: normalizeValue(record.feeCollectionCycle).toLowerCase(),
+  });
+
+const hasFeeNotificationChanged = (before = {}, after = {}) =>
+  feeNotificationSignature(before) !== feeNotificationSignature(after);
+
+const buildFeeUpdateBody = (student = {}) => {
+  const studentName = normalizeValue(student.fullName || student.name || "Student");
+  const feeStatus = normalizeValue(student.feeStatus).toLowerCase();
+  const pendingAmount = Number(student.feePendingAmount || 0);
+  const paidAmount = Number(student.feePaidAmount || 0);
+  const totalAmount = Number(student.feeAmount || 0);
+  const cycle = normalizeValue(student.feeCollectionCycle);
+  const cycleText = cycle ? `${cycle} fee` : "fee";
+
+  if (feeStatus === "paid") {
+    return `${studentName}'s ${cycleText} is marked paid. Total paid: Rs ${paidAmount || totalAmount || 0}.`;
+  }
+  if (feeStatus === "partial") {
+    return `${studentName}'s ${cycleText} was updated. Paid Rs ${paidAmount || 0}, pending Rs ${pendingAmount || 0}.`;
+  }
+  if (pendingAmount > 0) {
+    return `${studentName}'s ${cycleText} is pending. Amount due: Rs ${pendingAmount}.`;
+  }
+  return `${studentName}'s fee details were updated.`;
 };
 
 const getSubscriptionCycleCount = (planId) => {
@@ -1440,10 +1630,14 @@ exports.verifyPayment = functions.https.onRequest(async (req, res) => {
   }
 });
 
-exports.pushParentAnnouncementOnCreate = functions.firestore
+exports.pushParentAnnouncementOnWrite = functionsV1.firestore
   .document("announcements/{announcementId}")
-  .onCreate(async (snapshot, context) => {
-    const announcement = snapshot.data() || {};
+  .onWrite(async (change, context) => {
+    const before = change.before.exists ? change.before.data() || {} : null;
+    const announcement = change.after.exists ? change.after.data() || {} : null;
+    if (!announcement || announcement.active === false) return null;
+    if (before && !hasAnnouncementChanged(before, announcement)) return null;
+
     const audience = normalizeValue(announcement.audience).toLowerCase();
     const targetMode = normalizeValue(announcement.targetMode).toLowerCase();
 
@@ -1460,14 +1654,18 @@ exports.pushParentAnnouncementOnCreate = functions.firestore
       matcher: (device) => matchesAnnouncementForDevice(announcement, device),
     });
 
-    console.log("pushParentAnnouncementOnCreate delivered:", delivered);
+    console.log("pushParentAnnouncementOnWrite delivered:", delivered);
     return null;
   });
 
-exports.pushParentAdminNotificationOnCreate = functions.firestore
+exports.pushParentAdminNotificationOnWrite = functionsV1.firestore
   .document("adminNotifications/{notificationId}")
-  .onCreate(async (snapshot, context) => {
-    const notification = snapshot.data() || {};
+  .onWrite(async (change, context) => {
+    const before = change.before.exists ? change.before.data() || {} : null;
+    const notification = change.after.exists ? change.after.data() || {} : null;
+    if (!notification || notification.active === false) return null;
+    if (before && !hasAdminNotificationChanged(before, notification)) return null;
+
     if (notification.active === false) return null;
 
     const delivered = await pushToParentDevices({
@@ -1480,7 +1678,64 @@ exports.pushParentAdminNotificationOnCreate = functions.firestore
       },
     });
 
-    console.log("pushParentAdminNotificationOnCreate delivered:", delivered);
+    console.log("pushParentAdminNotificationOnWrite delivered:", delivered);
+    return null;
+  });
+
+exports.pushParentNotificationOnWrite = functionsV1.firestore
+  .document("parentNotifications/{notificationId}")
+  .onWrite(async (change, context) => {
+    const before = change.before.exists ? change.before.data() || {} : null;
+    const after = change.after.exists ? change.after.data() || {} : null;
+
+    if (!after || after.active === false) return null;
+    if (before && !hasParentNotificationChanged(before, after)) return null;
+
+    const notificationType = normalizeValue(after.type).toLowerCase() || "parentNotification";
+    const delivered = await pushToParentDevices({
+      schoolId: after.schoolId,
+      title: after.title || "Student update",
+      body: after.message || after.summary || "A new update is available for your child.",
+      data: {
+        type: notificationType,
+        notificationId: context.params.notificationId,
+      },
+      matcher: (device) => matchesParentNotificationForDevice(after, device),
+    });
+
+    console.log("pushParentNotificationOnWrite delivered:", delivered, context.params.notificationId);
+    return null;
+  });
+
+exports.pushParentFeeNotificationOnUpdate = functionsV1.firestore
+  .document("studentAccounts/{studentId}")
+  .onUpdate(async (change, context) => {
+    const before = change.before.data() || {};
+    const after = change.after.data() || {};
+
+    if (!normalizeSchoolId(after.schoolId)) return null;
+    if (!hasFeeNotificationChanged(before, after)) return null;
+
+    const studentName = normalizeValue(after.fullName || after.name || "Student");
+    const delivered = await pushToParentDevices({
+      schoolId: after.schoolId,
+      title: `Fee update: ${studentName}`,
+      body: buildFeeUpdateBody(after),
+      data: {
+        type: "fees",
+        studentId: context.params.studentId,
+      },
+      matcher: (device) =>
+        deviceMatchesStudentTarget(device, {
+          studentId: context.params.studentId,
+          schoolId: after.schoolId,
+          className: after.className,
+          section: after.section,
+          rollNumber: after.rollNumber,
+        }),
+    });
+
+    console.log("pushParentFeeNotificationOnUpdate delivered:", delivered, context.params.studentId);
     return null;
   });
 

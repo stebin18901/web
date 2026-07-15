@@ -43,12 +43,12 @@ export const syncAttendanceNotifications = async ({ schoolId, className, section
       normalizedSection || "general",
       studentKey
     );
-    const isActionable = String(row.status || "present").toLowerCase() !== "present" || Boolean(normalize(row.note));
+    const normalizedStatus = String(row.status || "present").toLowerCase();
 
     batch.set(
       doc(db, "parentNotifications", notificationId),
       {
-        active: isActionable,
+        active: true,
         schoolId: normalizedSchoolId,
         studentId:
           buildStudentAccountId({
@@ -63,18 +63,18 @@ export const syncAttendanceNotifications = async ({ schoolId, className, section
         section: normalizedSection,
         type: "attendance",
         title: `Attendance update: ${normalize(row.fullName || "Student")}`,
-        summary: `${normalize(row.fullName || "Student")} was marked ${String(row.status || "present").replace("_", " ")}.`,
+        summary: `${normalize(row.fullName || "Student")} was marked ${normalizedStatus.replace("_", " ")}.`,
         message:
-          String(row.status || "present").toLowerCase() === "present"
+          normalizedStatus === "present"
             ? `${normalize(row.fullName || "Student")} is marked present for ${date}.`
-            : `${normalize(row.fullName || "Student")} was marked ${String(row.status || "present").replace("_", " ")} on ${date}${normalize(row.note) ? ` (${normalize(row.note)})` : ""}.`,
+            : `${normalize(row.fullName || "Student")} was marked ${normalizedStatus.replace("_", " ")} on ${date}${normalize(row.note) ? ` (${normalize(row.note)})` : ""}.`,
         tone:
-          String(row.status || "present").toLowerCase() === "absent"
+          normalizedStatus === "absent"
             ? "danger"
-            : String(row.status || "present").toLowerCase() === "late"
+            : normalizedStatus === "late"
               ? "warning"
               : "general",
-        status: String(row.status || "present").toLowerCase(),
+        status: normalizedStatus,
         note: normalize(row.note),
         relatedDate: date,
         audience: "parent",

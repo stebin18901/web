@@ -11,6 +11,7 @@ import Sidebar from "./SchoolComponent/Sidebar";
 import AttendancePage from "./SchoolComponent/AttendancePage";
 import ExamMarksPage from "./SchoolComponent/ExamMarksPage";
 import AcademicReportsPage from "./SchoolComponent/AcademicReportsPage";
+import StudentReportPage from "./SchoolComponent/StudentReportPage";
 import FeeManagement from "./SchoolComponent/FeeManagement";
 import {
   LayoutDashboard,
@@ -156,12 +157,12 @@ const MainPage = ({ school, onLogout }) => {
                   description="Manage student uploads and review student records from one shared workspace."
                   tabs={[
                     ...(isPaidSchool ? [{ label: "Upload Students", to: "upload" }] : []),
-                    { label: "Student Details", to: "details" },
+                    { label: "Student Report", to: "student-report" },
                   ]}
                 />
               }
             >
-              <Route index element={<Navigate to={isPaidSchool ? "upload" : "details"} replace />} />
+              <Route index element={<Navigate to={isPaidSchool ? "upload" : "student-report"} replace />} />
               {isPaidSchool ? (
                 <Route
                   path="upload"
@@ -169,6 +170,8 @@ const MainPage = ({ school, onLogout }) => {
                 />
               ) : null}
               <Route path="details" element={<StudentDetails schoolId={currentSchool.schoolId} />} />
+              <Route path="student-report" element={<StudentReportPage schoolId={currentSchool.schoolId} />} />
+              <Route path="student-report/:studentId" element={<StudentReportPage schoolId={currentSchool.schoolId} />} />
             </Route>
             <Route
               path="fees"
@@ -210,7 +213,8 @@ const MainPage = ({ school, onLogout }) => {
               <Route path="reports" element={<AcademicReportsPage schoolId={currentSchool.schoolId} />} />
               <Route path="analytics" element={<QuizAnalytics schoolId={currentSchool.schoolId} />} />
             </Route>
-            <Route path="upload" element={<Navigate to={isPaidSchool ? "/school-admin/students/upload" : "/school-admin/students/details"} replace />} />
+            <Route path="upload" element={<Navigate to={isPaidSchool ? "/school-admin/students/upload" : "/school-admin/students/student-report"} replace />} />
+            <Route path="student-report" element={<Navigate to="/school-admin/students/student-report" replace />} />
             <Route path="exam-marks" element={<Navigate to="/school-admin/academics/exam-marks" replace />} />
             <Route path="academic-reports" element={<Navigate to="/school-admin/academics/reports" replace />} />
             <Route path="analytics" element={<Navigate to="/school-admin/academics/analytics" replace />} />
