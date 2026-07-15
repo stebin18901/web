@@ -2,6 +2,7 @@ import { doc, serverTimestamp, setDoc, writeBatch } from "firebase/firestore";
 import { db } from "../../../firebase/firebaseConfig";
 
 const normalize = (value) => String(value || "").trim();
+const normalizePhone = (value) => normalize(value).replace(/\D/g, "").slice(-10);
 const normalizeSchoolId = (value) => normalize(value).toLowerCase();
 const normalizeClassName = (value) => normalize(value).toUpperCase();
 const normalizeSection = (value) => normalize(value).toUpperCase();
@@ -59,6 +60,7 @@ export const syncAttendanceNotifications = async ({ schoolId, className, section
           }) || row.studentId || "",
         rollNumber: normalize(row.rollNumber),
         fullName: normalize(row.fullName),
+        parentPhone: normalizePhone(row.phone),
         className: normalizedClassName,
         section: normalizedSection,
         type: "attendance",
@@ -125,6 +127,7 @@ export const syncExamNotifications = async ({
           }) || record.studentId || "",
         rollNumber: normalize(record.rollNumber),
         fullName: normalize(record.fullName),
+        parentPhone: normalizePhone(record.phone),
         className: normalizedClassName,
         section: normalizedSection,
         type: "marks",

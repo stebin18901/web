@@ -173,6 +173,86 @@ const chunkArray = (items = [], size = 100) => {
   return chunks;
 };
 
+exports.registerParentDeviceToken = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Authentication required.");
+  }
+
+  const payload = data && typeof data === "object" ? data : {};
+  const stage = normalizeValue(payload.stage);
+  const status = normalizeValue(payload.status);
+  const token = normalizeValue(payload.token);
+  const studentId = normalizeValue(payload.studentId);
+  const schoolId = normalizeSchoolId(payload.schoolId);
+  const className = normalizeClassName(payload.className);
+  const section = normalizeSection(payload.section);
+  const rollNumber = normalizeValue(payload.rollNumber);
+  const fullName = normalizeValue(payload.fullName);
+  const parentPhone = normalizePhone(payload.parentPhone);
+  const platform = normalizeValue(payload.platform).toLowerCase() || "unknown";
+  const app = normalizeValue(payload.app).toLowerCase() || "parent";
+  const appOwnership = normalizeValue(payload.appOwnership);
+  const executionEnvironment = normalizeValue(payload.executionEnvironment);
+  const error = normalizeValue(payload.error);
+  const isDevice = payload.isDevice === true;
+
+  if (!studentId || !schoolId) {
+    throw new functions.https.HttpsError("invalid-argument", "studentId and schoolId are required.");
+  }
+
+  await admin.firestore().collection("parentPushDebug").add({
+    studentId,
+    schoolId,
+    className,
+    section,
+    rollNumber,
+    fullName,
+    parentPhone,
+    stage,
+    status,
+    error,
+    tokenPreview: token.slice(0, 32),
+    appOwnership,
+    executionEnvironment,
+    platform,
+    isDevice,
+    app,
+    authUid: context.auth.uid,
+    createdAt: new Date().toISOString(),
+  });
+
+  if (token) {
+    const tokenDocId = `${studentId.replace(/[^a-zA-Z0-9_-]/g, "_")}__${token
+      .replace(/[^a-zA-Z0-9]/g, "")
+      .slice(-48) || "device"}`;
+
+    await admin
+      .firestore()
+      .collection("parentDeviceTokens")
+      .doc(tokenDocId)
+      .set(
+        {
+          token,
+          studentId,
+          schoolId,
+          className,
+          section,
+          rollNumber,
+          fullName,
+          parentPhone,
+          platform,
+          app,
+          authUid: context.auth.uid,
+          active: true,
+          updatedAt: new Date().toISOString(),
+        },
+        { merge: true }
+      );
+  }
+
+  return { ok: true, registered: Boolean(token) };
+});
+
 const matchesAnnouncementForDevice = (announcement = {}, device = {}) => {
   const audience = normalizeValue(announcement.audience).toLowerCase();
   const targetMode =
@@ -279,6 +359,12 @@ const normalizeNumericString = (value) => {
 };
 
 const matchesParentNotificationForDevice = (notification = {}, device = {}) => {
+  const targetParentPhone = normalizePhone(notification.parentPhone);
+  const deviceParentPhone = normalizePhone(device.parentPhone);
+  if (targetParentPhone && deviceParentPhone && targetParentPhone === deviceParentPhone) {
+    return true;
+  }
+
   const targetStudentId = normalizeValue(notification.studentId);
   if (targetStudentId) {
     return deviceMatchesStudentTarget(device, {
@@ -310,6 +396,7 @@ const parentNotificationSignature = (notification = {}) =>
     schoolId: normalizeSchoolId(notification.schoolId),
     studentId: normalizeValue(notification.studentId),
     rollNumber: normalizeValue(notification.rollNumber),
+    parentPhone: normalizePhone(notification.parentPhone),
     className: normalizeClassName(notification.className),
     section: normalizeSection(notification.section),
     type: normalizeValue(notification.type).toLowerCase(),
@@ -1726,6 +1813,8 @@ exports.pushParentFeeNotificationOnUpdate = functionsV1.firestore
         studentId: context.params.studentId,
       },
       matcher: (device) =>
+        (normalizePhone(after.parentPhone || after.phone) &&
+          normalizePhone(device.parentPhone) === normalizePhone(after.parentPhone || after.phone)) ||
         deviceMatchesStudentTarget(device, {
           studentId: context.params.studentId,
           schoolId: after.schoolId,
