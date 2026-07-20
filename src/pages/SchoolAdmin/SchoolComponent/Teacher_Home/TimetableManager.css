@@ -618,3 +618,55 @@
     flex-direction: column-reverse;
   }
 }
+
+@media (max-width: 480px) {
+  .timetable-shell {
+    gap: 12px;
+  }
+
+  .timetable-hero,
+  .tt-card,
+  .timetable-toolbar,
+  .tt-empty-state,
+  .tt-status,
+  .tt-modal {
+    border-radius: 14px;
+  }
+
+  .timetable-hero,
+  .tt-card,
+  .timetable-toolbar,
+  .tt-modal {
+    padding: 12px;
+  }
+
+  .timetable-hero h2 {
+    font-size: 1.16rem;
+  }
+
+  .timetable-hero p,
+  .tt-card-head span,
+  .tt-grid-meta,
+  .tt-warning-list li,
+  .tt-modal p,
+  .tt-modal-note,
+  .tt-field select,
+  .tt-select {
+    font-size: 0.79rem;
+    line-height: 1.45;
+  }
+
+  .tt-kicker,
+  .tt-field span,
+  .tt-mini-stats span,
+  .tt-target-pill span {
+    font-size: 0.66rem;
+  }
+
+  .tt-primary-btn,
+  .tt-secondary-btn,
+  .tt-day-pill {
+    min-height: 40px;
+    font-size: 0.8rem;
+  }
+}

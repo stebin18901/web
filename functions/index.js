@@ -11,6 +11,12 @@ admin.initializeApp();
 const readEnv = (name, fallback = "") =>
   String(process.env[name] || fallback).trim();
 
+const getTwilioConfig = () => ({
+  accountSid: readEnv("TWILIO_ACCOUNT_SID"),
+  authToken: readEnv("TWILIO_AUTH_TOKEN"),
+  fromNumber: readEnv("TWILIO_FROM_NUMBER"),
+});
+
 // ---------------------------------------------------------------------------
 // Razorpay plan IDs (created in your Razorpay dashboard)
 // ---------------------------------------------------------------------------
@@ -44,6 +50,11 @@ const getRazorpayClient = () => {
     throw err;
   }
   return new Razorpay({ key_id: keyId, key_secret: keySecret });
+};
+
+const isTwilioConfigured = () => {
+  const { accountSid, authToken, fromNumber } = getTwilioConfig();
+  return Boolean(accountSid && authToken && fromNumber);
 };
 
 // ---------------------------------------------------------------------------
@@ -165,12 +176,115 @@ const postJson = (url, body) =>
     request.end();
   });
 
+const postForm = (url, body, headers = {}) =>
+  new Promise((resolve, reject) => {
+    const payload = new URLSearchParams(body).toString();
+    const request = https.request(
+      url,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Content-Length": Buffer.byteLength(payload),
+          ...headers,
+        },
+      },
+      (response) => {
+        let raw = "";
+        response.on("data", (chunk) => {
+          raw += chunk;
+        });
+        response.on("end", () => {
+          if (response.statusCode >= 200 && response.statusCode < 300) {
+            try {
+              resolve(raw ? JSON.parse(raw) : {});
+            } catch {
+              resolve({});
+            }
+            return;
+          }
+
+          reject(
+            new Error(
+              `HTTP ${response.statusCode}: ${raw || "Unknown form request failure"}`
+            )
+          );
+        });
+      }
+    );
+
+    request.on("error", reject);
+    request.write(payload);
+    request.end();
+  });
+
 const chunkArray = (items = [], size = 100) => {
   const chunks = [];
   for (let index = 0; index < items.length; index += size) {
     chunks.push(items.slice(index, index + size));
   }
   return chunks;
+};
+
+const formatPhoneForSms = (value) => {
+  const clean = normalizePhone(value);
+  return clean ? `+91${clean}` : "";
+};
+
+const sendTwilioSms = async ({ to, body }) => {
+  const { accountSid, authToken, fromNumber } = getTwilioConfig();
+  if (!accountSid || !authToken || !fromNumber || !to || !body) return null;
+
+  const basicAuth = Buffer.from(`${accountSid}:${authToken}`).toString("base64");
+  return postForm(
+    `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`,
+    {
+      To: to,
+      From: fromNumber,
+      Body: body,
+    },
+    {
+      Authorization: `Basic ${basicAuth}`,
+    }
+  );
+};
+
+const sendSmsToParentDevices = async ({
+  schoolId,
+  body,
+  matcher = () => true,
+}) => {
+  if (!isTwilioConfigured()) return 0;
+
+  const normalizedSchool = normalizeSchoolId(schoolId);
+  if (!normalizedSchool || !normalizeValue(body)) return 0;
+
+  const snap = await admin
+    .firestore()
+    .collection("parentDeviceTokens")
+    .where("schoolId", "==", normalizedSchool)
+    .get();
+
+  const uniquePhones = new Set(
+    snap.docs
+      .map((entry) => ({ id: entry.id, ...entry.data() }))
+      .filter((item) => item.active !== false)
+      .filter(matcher)
+      .map((item) => formatPhoneForSms(item.parentPhone))
+      .filter(Boolean)
+  );
+
+  let delivered = 0;
+  for (const phone of uniquePhones) {
+    try {
+      await sendTwilioSms({ to: phone, body });
+      delivered += 1;
+    } catch (smsError) {
+      console.error("Twilio SMS failed:", phone, smsError.message || smsError);
+    }
+  }
+
+  return delivered;
 };
 
 exports.registerParentDeviceToken = functions.https.onCall(async (data, context) => {
@@ -604,6 +718,16 @@ const verifyWebhookSignature = (rawBody, signature, secret) => {
   }
 };
 
+const PLAN_NAME_MAP = {
+  weekly_test: "Test",
+  quarterly: "Quarterly",
+  half_yearly: "Half-Yearly",
+  yearly: "Yearly",
+};
+
+const getPlanDisplayName = (planId) =>
+  PLAN_NAME_MAP[String(planId || "").trim().toLowerCase()] || String(planId || "Plan");
+
 /**
  * Writes a paid + active state to both the enrollment doc and
  * the subscription doc in a single batch to keep them in sync.
@@ -621,6 +745,7 @@ const activateSubscription = async ({
   amount,
 }) => {
   const batch = admin.firestore().batch();
+  const planName = getPlanDisplayName(planId);
 
   // subscriptions/{subscriptionId}
   const subRef = admin
@@ -634,7 +759,7 @@ const activateSubscription = async ({
       status: "active",
       razorpayStatus,
       planId,
-      planName: planId,
+      planName,
       startDate: startDate.toISOString(),
       expiryDate: expiryDate.toISOString(),
       updatedAt: new Date().toISOString(),
@@ -654,7 +779,14 @@ const activateSubscription = async ({
       {
         isPaid: true,
         planId,
-        planName: planId,
+        planName,
+        ...(amount !== undefined ? { planAmount: amount } : {}),
+        pendingPlanId: admin.firestore.FieldValue.delete(),
+        pendingPlanName: admin.firestore.FieldValue.delete(),
+        pendingPlanAmount: admin.firestore.FieldValue.delete(),
+        checkoutUrl: admin.firestore.FieldValue.delete(),
+        subscriptionStage: "active",
+        paymentStatus: "paid",
         razorpaySubscriptionId: subscriptionId,
         updatedAt: new Date().toISOString(),
       },
@@ -759,6 +891,7 @@ exports.createRazorpaySubscription = functions.https.onRequest((req, res) => {
 
       const pricing = await getSubscriptionPricing(schoolId);
       const amount = pricing[planId];
+      const planName = getPlanDisplayName(planId);
       if (!Number.isFinite(amount) || amount < 1) {
         return res.status(400).json({ error: "Invalid subscription amount" });
       }
@@ -880,7 +1013,7 @@ exports.createRazorpaySubscription = functions.https.onRequest((req, res) => {
           studentId: targetStudentId,
           razorpaySubscriptionId: subscription.id,
           planId,
-          planName: planId,
+          planName,
           amount,
           schoolId: schoolId || "default",
           startDate: startDate.toISOString(),
@@ -901,8 +1034,11 @@ exports.createRazorpaySubscription = functions.https.onRequest((req, res) => {
         .set(
           {
             razorpaySubscriptionId: subscription.id,
-            planId,
-            planName: planId,
+            pendingPlanId: planId,
+            pendingPlanName: planName,
+            pendingPlanAmount: amount,
+            paymentStatus: "initiated",
+            subscriptionStage: "checkout_created",
             updatedAt: new Date().toISOString(),
           },
           { merge: true }
@@ -1741,6 +1877,23 @@ exports.pushParentAnnouncementOnWrite = functionsV1.firestore
       matcher: (device) => matchesAnnouncementForDevice(announcement, device),
     });
 
+    const announcementTone = normalizeValue(announcement.tone).toLowerCase();
+    const shouldSendSms =
+      announcementTone === "urgent" ||
+      announcementTone === "danger" ||
+      normalizeValue(announcement.priority).toLowerCase() === "urgent";
+
+    if (shouldSendSms) {
+      const smsDelivered = await sendSmsToParentDevices({
+        schoolId: announcement.schoolId,
+        body: `${announcement.title || "School announcement"}: ${
+          announcement.message || announcement.summary || "A new urgent school announcement is available."
+        }`,
+        matcher: (device) => matchesAnnouncementForDevice(announcement, device),
+      });
+      console.log("pushParentAnnouncementOnWrite sms delivered:", smsDelivered);
+    }
+
     console.log("pushParentAnnouncementOnWrite delivered:", delivered);
     return null;
   });
@@ -1764,6 +1917,22 @@ exports.pushParentAdminNotificationOnWrite = functionsV1.firestore
         notificationId: context.params.notificationId,
       },
     });
+
+    const notificationTone = normalizeValue(notification.tone).toLowerCase();
+    const shouldSendSms =
+      notificationTone === "urgent" ||
+      notificationTone === "danger" ||
+      normalizeValue(notification.priority).toLowerCase() === "urgent";
+
+    if (shouldSendSms) {
+      const smsDelivered = await sendSmsToParentDevices({
+        schoolId: notification.schoolId,
+        body: `${notification.title || "School update"}: ${
+          notification.summary || notification.message || "An urgent school update is available."
+        }`,
+      });
+      console.log("pushParentAdminNotificationOnWrite sms delivered:", smsDelivered);
+    }
 
     console.log("pushParentAdminNotificationOnWrite delivered:", delivered);
     return null;
@@ -1789,6 +1958,19 @@ exports.pushParentNotificationOnWrite = functionsV1.firestore
       },
       matcher: (device) => matchesParentNotificationForDevice(after, device),
     });
+
+    const shouldSendSms =
+      (notificationType === "attendance" && ["absent", "late"].includes(normalizeValue(after.status).toLowerCase())) ||
+      (notificationType === "marks" && Number(after.percentage || 0) < 40);
+
+    if (shouldSendSms) {
+      const smsDelivered = await sendSmsToParentDevices({
+        schoolId: after.schoolId,
+        body: after.message || after.summary || "An important update is available for your child.",
+        matcher: (device) => matchesParentNotificationForDevice(after, device),
+      });
+      console.log("pushParentNotificationOnWrite sms delivered:", smsDelivered, context.params.notificationId);
+    }
 
     console.log("pushParentNotificationOnWrite delivered:", delivered, context.params.notificationId);
     return null;

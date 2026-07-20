@@ -10,6 +10,7 @@ import {
   resolveSchoolClasses,
   splitClassAndDivision,
 } from "./academicUtils";
+import { normalizeAcademicYear } from "./schoolYearUtils";
 import "./StudentReportPage.css";
 
 const safeText = (value, fallback = "N/A") => {
@@ -65,7 +66,7 @@ const loadClassStudentMeta = async ({ schoolId, className, section, rollNumber }
   return {};
 };
 
-const StudentReportPage = ({ schoolId }) => {
+const StudentReportPage = ({ schoolId, academicYear = "" }) => {
   const navigate = useNavigate();
   const { studentId } = useParams();
   const [classes, setClasses] = useState([]);
@@ -80,12 +81,13 @@ const StudentReportPage = ({ schoolId }) => {
   const [marksHistory, setMarksHistory] = useState([]);
   const [quizReports, setQuizReports] = useState([]);
   const [submissions, setSubmissions] = useState([]);
+  const normalizedAcademicYear = useMemo(() => normalizeAcademicYear(academicYear), [academicYear]);
 
   useEffect(() => {
     const loadClasses = async () => {
       setLoadingList(true);
       try {
-        const schoolClasses = await resolveSchoolClasses(schoolId);
+        const schoolClasses = await resolveSchoolClasses(schoolId, normalizedAcademicYear);
         const uniqueClasses = schoolClasses.filter(
           (entry, index, list) => index === list.findIndex((item) => item.className === entry.className)
         );
@@ -99,7 +101,7 @@ const StudentReportPage = ({ schoolId }) => {
     if (schoolId) {
       loadClasses();
     }
-  }, [schoolId]);
+  }, [normalizedAcademicYear, schoolId]);
 
   useEffect(() => {
     const loadStudents = async () => {
@@ -116,6 +118,7 @@ const StudentReportPage = ({ schoolId }) => {
           schoolId,
           className: selectedClass,
           section: classEntry?.section || "",
+          academicYear: normalizedAcademicYear,
         });
         setStudents(nextStudents);
       } finally {
@@ -124,7 +127,7 @@ const StudentReportPage = ({ schoolId }) => {
     };
 
     loadStudents();
-  }, [classes, schoolId, selectedClass]);
+  }, [classes, normalizedAcademicYear, schoolId, selectedClass]);
 
   useEffect(() => {
     const loadStudentReport = async () => {
@@ -149,7 +152,10 @@ const StudentReportPage = ({ schoolId }) => {
             const data = entry.data() || {};
             const candidateId = String(entry.id || "").trim().toLowerCase();
             const candidateRoll = String(data.rollNumber || "").trim().toLowerCase();
-            return candidateId === String(studentId).trim().toLowerCase() || candidateRoll === String(studentId).trim().toLowerCase();
+            return (
+              (!normalizedAcademicYear || normalizeAcademicYear(data.academicYear) === normalizedAcademicYear) &&
+              (candidateId === String(studentId).trim().toLowerCase() || candidateRoll === String(studentId).trim().toLowerCase())
+            );
           });
           if (matchedDoc) {
             studentSnap = matchedDoc;
@@ -162,6 +168,10 @@ const StudentReportPage = ({ schoolId }) => {
         }
 
         const studentData = { id: studentSnap.id, ...studentSnap.data() };
+        if (normalizedAcademicYear && normalizeAcademicYear(studentData.academicYear) !== normalizedAcademicYear) {
+          setStudentDetail(null);
+          return;
+        }
         setStudentDetail(studentData);
 
         const normalizedSchool = normalizeSchoolId(studentData.schoolId || schoolId);
@@ -182,6 +192,7 @@ const StudentReportPage = ({ schoolId }) => {
 
         const attendanceRows = attendanceSnap.docs
           .map((entry) => ({ id: entry.id, ...entry.data() }))
+          .filter((entry) => !normalizedAcademicYear || normalizeAcademicYear(entry.academicYear) === normalizedAcademicYear)
           .flatMap((entry) =>
             (entry.records || [])
               .filter((record) => matchesStudentRecord(record, studentData))
@@ -196,6 +207,7 @@ const StudentReportPage = ({ schoolId }) => {
 
         const marksRows = marksSnap.docs
           .map((entry) => ({ id: entry.id, ...entry.data() }))
+          .filter((entry) => !normalizedAcademicYear || normalizeAcademicYear(entry.academicYear) === normalizedAcademicYear)
           .flatMap((entry) =>
             (entry.records || [])
               .filter((record) => matchesStudentRecord(record, studentData))
@@ -243,7 +255,7 @@ const StudentReportPage = ({ schoolId }) => {
     };
 
     loadStudentReport();
-  }, [schoolId, studentId]);
+  }, [normalizedAcademicYear, schoolId, studentId]);
 
   const filteredStudents = useMemo(() => {
     const searchValue = searchTerm.trim().toLowerCase();
@@ -288,9 +300,7 @@ const StudentReportPage = ({ schoolId }) => {
       <div className="student-report-page">
         <section className="student-report-hero">
           <div>
-            <p className="student-report-kicker">Academic Layer</p>
             <h1>Student Report</h1>
-            <p>Choose a class, review the full student roster, and open a complete academic profile for any student.</p>
           </div>
           <div className="student-report-chip">{filteredStudents.length} students</div>
         </section>
@@ -382,7 +392,6 @@ const StudentReportPage = ({ schoolId }) => {
         <>
           <section className="student-profile-hero">
             <div>
-              <p className="student-report-kicker">Student Detail</p>
               <h1>{safeText(studentDetail.fullName || studentDetail.name)}</h1>
               <p>
                 {safeText(studentDetail.className)} {safeText(studentDetail.section || studentDetail.classSection, "")}

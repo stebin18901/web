@@ -497,6 +497,33 @@
 }
 
 @media (max-width: 720px) {
+  .ctm-container {
+    padding: 12px;
+    border-radius: 12px;
+  }
+
+  .ctm-header,
+  .tabs1,
+  .grade-inline-actions,
+  .grade-creator-actions,
+  .modal-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tab,
+  .grade-creator-primary,
+  .modal-cancel,
+  .modal-confirm {
+    width: 100%;
+  }
+
+  .class-flow-note,
+  .grade-creator-head strong,
+  .assigned-info .teacher-name {
+    font-size: 0.82rem;
+  }
+
   .grade-row {
     flex-direction: column;
   }
@@ -513,5 +540,28 @@
   .class-box,
   .grade-add-trigger {
     width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .ctm-container {
+    padding: 10px;
+  }
+
+  .gradient-text {
+    font-size: 1rem;
+  }
+
+  .tab,
+  .grade-add-trigger,
+  .grade-creator-grid select,
+  .grade-creator-grid input,
+  .add-division input,
+  .add-division-btn {
+    font-size: 0.78rem;
+  }
+
+  .class-box {
+    min-height: 54px;
   }
 }

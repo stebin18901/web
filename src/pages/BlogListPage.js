@@ -5,7 +5,7 @@ import { db } from "../firebase/firebaseConfig";
 import "./BlogPages.css";
 import { BLOG_COLLECTION, formatBlogDate, normalizeBlog } from "../utils/blogs";
 
-const HEPSY_LOGO = `${process.env.PUBLIC_URL || ""}/images/logo.png`;
+const HEPSY_LOGO = `${process.env.PUBLIC_URL || ""}/images/logo.webp`;
 
 export default function BlogListPage() {
   const [blogs, setBlogs] = useState([]);

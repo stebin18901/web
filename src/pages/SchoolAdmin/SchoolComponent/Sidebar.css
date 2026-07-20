@@ -246,11 +246,65 @@
   display: none;
 }
 @media (max-width: 768px) {
-  .sa-sidebar { transform: translateX(-100%); }
+  .sa-sidebar {
+    width: min(82vw, 280px);
+    transform: translateX(-100%);
+    box-shadow: 14px 0 34px rgba(15, 23, 42, 0.16);
+  }
   .sa-sidebar.open { transform: translateX(0); }
-  .sa-sidebar-toggle { display: block; }
+  .sa-sidebar-toggle {
+    display: block;
+    top: 12px;
+    left: 12px;
+    padding: 7px;
+    border-radius: 10px;
+  }
   .sa-collapse-floating { display: none; }
   .sa-floating-tooltip { display: none; }
+  .sa-sidebar-logo {
+    padding: 14px;
+  }
+  .sa-sidebar-nav {
+    padding: 8px 6px;
+  }
+  .sa-sidebar-link {
+    min-height: 40px;
+    padding: 7px 10px;
+    margin: 4px 2px;
+    border-radius: 9px;
+    font-size: 0.88rem;
+  }
+  .sa-icon-wrap {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+  }
+  .sa-sidebar-icon {
+    width: 18px;
+    height: 18px;
+  }
+  .sa-sidebar-footer {
+    padding: 10px;
+  }
+}
+
+@media (max-width: 480px) {
+  .sa-sidebar {
+    width: min(86vw, 260px);
+  }
+
+  .sa-logo-icon,
+  .sa-logo-image {
+    width: 38px;
+    height: 38px;
+  }
+
+  .sa-form-link-head span,
+  .sa-common-link-preview,
+  .sa-common-link-status {
+    font-size: 0.72rem;
+  }
 }
 
 /* === Scrollbar styling (optional) === */

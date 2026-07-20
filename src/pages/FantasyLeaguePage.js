@@ -49,33 +49,6 @@ export default function FantasyLeaguePage() {
       <div className="fantasy-page-orb fantasy-page-orb-one" aria-hidden="true" />
       <div className="fantasy-page-orb fantasy-page-orb-two" aria-hidden="true" />
       <div className="fantasy-league-shell">
-        <div className="fantasy-league-topbar">
-          <div className="fantasy-league-topbar-copy">
-            <span>hepsy fantasy league</span>
-            <h1>{session?.schoolName || "School"} Fantasy Arena</h1>
-            <p>Pick your five, lock the vice captain, and play the full fantasy league on a dedicated screen.</p>
-            <div className="fantasy-league-topbar-badges" aria-label="Fantasy league highlights">
-              <span>Captain auto locked</span>
-              <span>Responsive live lineup</span>
-              <span>Practice driven scoring</span>
-            </div>
-          </div>
-
-          <div className="fantasy-league-topbar-actions">
-            <div className="fantasy-league-status-card">
-              <small>Live Format</small>
-              <strong>5 Student Fantasy Draft</strong>
-            </div>
-            <button
-              type="button"
-              className="fantasy-league-back"
-              onClick={() => navigate("/dashboard")}
-            >
-              Back To Dashboard
-            </button>
-          </div>
-        </div>
-
         <LeagueSimulator session={session} />
       </div>
     </div>

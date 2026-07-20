@@ -1159,6 +1159,9 @@ const Login = () => {
           <Link to="/pricing" className="login-link-button primary">
             View Pricing Plans
           </Link>
+          <Link to="/creator-login" className="login-link-button creator">
+            Creator Access
+          </Link>
           <Link to="/contact" className="login-link-button">
             Contact Support
           </Link>

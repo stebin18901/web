@@ -8,7 +8,6 @@ import {
   ChevronRight,
   GraduationCap,
   LogOut,
-  Link2,
 } from "lucide-react";
 import "./Sidebar.css";
 
@@ -17,14 +16,11 @@ export default function Sidebar({
   sidebarTitle = "School Admin",
   sidebarLogo = null,
   links = [],
-  commonFormLink = "",
-  teacherFormLink = "",
   onCollapseChange,
 }) {
   const [isOpen, setIsOpen] = useState(false);
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed, setCollapsed] = useState(true);
   const [tooltip, setTooltip] = useState({ text: "", x: 0, y: 0, visible: false });
-  const [copyMessage, setCopyMessage] = useState("");
 
   const showTooltip = (e, text) => {
     const rect = e.currentTarget.getBoundingClientRect();
@@ -37,20 +33,6 @@ export default function Sidebar({
   };
 
   const hideTooltip = () => setTooltip({ ...tooltip, visible: false });
-
-  const handleCopyLink = async (value, label) => {
-    if (!value) return;
-
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopyMessage(`${label} copied`);
-      setTimeout(() => setCopyMessage(""), 2000);
-      setIsOpen(false);
-    } catch {
-      setCopyMessage("Unable to copy link");
-      setTimeout(() => setCopyMessage(""), 2000);
-    }
-  };
 
   useEffect(() => {
     if (typeof onCollapseChange === "function") {
@@ -116,74 +98,6 @@ export default function Sidebar({
 
         {/* === Footer === */}
         <div className="sa-sidebar-footer">
-          {(teacherFormLink || commonFormLink) && (
-            <>
-              {teacherFormLink ? (
-                <div className="sa-form-link-block">
-                  <div className="sa-form-link-head">
-                    <span>Teacher Form</span>
-                  </div>
-                  <button
-                    className="sa-sidebar-link sa-share-link"
-                    onClick={() => handleCopyLink(teacherFormLink, "Teacher form link")}
-                    onMouseEnter={(e) => showTooltip(e, "Copy teacher form link")}
-                    onMouseLeave={hideTooltip}
-                  >
-                    <div className="sa-icon-wrap">
-                      <Link2 size={20} strokeWidth={2} />
-                    </div>
-                    <span className="sa-link-text">Copy Teacher Link</span>
-                  </button>
-
-                  {!collapsed && (
-                    <a
-                      href={teacherFormLink}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="sa-common-link-preview"
-                    >
-                      Open teacher form
-                    </a>
-                  )}
-                </div>
-              ) : null}
-
-              {commonFormLink ? (
-                <div className="sa-form-link-block">
-                  <div className="sa-form-link-head">
-                    <span>Student Form</span>
-                  </div>
-                  <button
-                    className="sa-sidebar-link sa-share-link"
-                    onClick={() => handleCopyLink(commonFormLink, "Student form link")}
-                    onMouseEnter={(e) => showTooltip(e, "Copy student form link")}
-                    onMouseLeave={hideTooltip}
-                  >
-                    <div className="sa-icon-wrap">
-                      <Link2 size={20} strokeWidth={2} />
-                    </div>
-                    <span className="sa-link-text">Copy Student Link</span>
-                  </button>
-
-                  {!collapsed && (
-                    <a
-                      href={commonFormLink}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="sa-common-link-preview"
-                    >
-                      Open student form
-                    </a>
-                  )}
-                </div>
-              ) : null}
-
-              {!collapsed && copyMessage && (
-                <p className="sa-common-link-status">{copyMessage}</p>
-              )}
-            </>
-          )}
-
           <button
             className="sa-sidebar-link logout"
             onClick={onLogout}

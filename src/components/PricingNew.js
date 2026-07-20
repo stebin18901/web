@@ -176,7 +176,7 @@ export default function Pricing() {
           "INR subscription pricing",
         ]}
         canonicalUrl={absoluteUrl("/pricing")}
-        image={absoluteUrl("/images/logo.png")}
+        image={absoluteUrl("/images/logo.webp")}
         schemas={[buildOrganizationSchema(), buildWebsiteSchema(), ...pricingSchemas]}
       />
       <div className="pricing-page">

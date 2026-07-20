@@ -13,6 +13,8 @@ import {
   calculateMarksRecord,
   getMarksSummary,
   getRoleLabel,
+  getWorkflowStatusMeta,
+  isWorkflowLocked,
   loadStudentsForClass,
   normalizeClassName,
   normalizeSchoolId,
@@ -21,6 +23,7 @@ import {
   resolveTeacherAcademicScope,
   splitClassAndDivision,
 } from "./academicUtils";
+import { normalizeAcademicYear } from "./schoolYearUtils";
 
 const buildSubjectPreferenceKey = ({ schoolId, className, section }) =>
   `hepsy_exam_subject_pref:${normalizeSchoolId(schoolId)}:${normalizeClassName(className)}:${normalizeSection(section || "general")}`;
@@ -51,7 +54,8 @@ const writeSubjectPreference = (key, value) => {
   }
 };
 
-const ExamMarksPage = ({ schoolId, mode = "school_admin", teacher = null, actorName = "School Admin" }) => {
+const ExamMarksPage = ({ schoolId, academicYear = "", mode = "school_admin", teacher = null, actorName = "School Admin" }) => {
+  const normalizedAcademicYear = useMemo(() => normalizeAcademicYear(academicYear), [academicYear]);
   const [classes, setClasses] = useState([]);
   const [students, setStudents] = useState([]);
   const [savedExams, setSavedExams] = useState([]);
@@ -62,8 +66,9 @@ const ExamMarksPage = ({ schoolId, mode = "school_admin", teacher = null, actorN
   const [saving, setSaving] = useState(false);
   const [hydrating, setHydrating] = useState(false);
   const [toast, setToast] = useState(null);
+  const [workflowStatus, setWorkflowStatus] = useState("draft");
   const [form, setForm] = useState({
-    academicYear: `${new Date().getFullYear()}-${String(new Date().getFullYear() + 1).slice(-2)}`,
+    academicYear: normalizeAcademicYear(academicYear) || String(new Date().getFullYear()),
     examType: "Unit Test",
     examName: "",
     className: "",
@@ -82,7 +87,7 @@ const ExamMarksPage = ({ schoolId, mode = "school_admin", teacher = null, actorN
       setLoading(true);
       try {
         if (mode === "teacher" && teacher) {
-          const scope = await resolveTeacherAcademicScope(teacher);
+          const scope = await resolveTeacherAcademicScope({ ...teacher, academicYear: normalizedAcademicYear });
           setClasses(scope.classes);
           setForm((prev) => ({
             ...prev,
@@ -94,7 +99,7 @@ const ExamMarksPage = ({ schoolId, mode = "school_admin", teacher = null, actorN
             setAvailableSubjects(scope.subjects);
           }
         } else {
-          const schoolClasses = await resolveSchoolClasses(schoolId);
+          const schoolClasses = await resolveSchoolClasses(schoolId, normalizedAcademicYear);
           setClasses(schoolClasses);
           setForm((prev) => ({
             ...prev,
@@ -109,7 +114,12 @@ const ExamMarksPage = ({ schoolId, mode = "school_admin", teacher = null, actorN
       }
     };
     loadScope();
-  }, [mode, schoolId, teacher]);
+  }, [mode, normalizedAcademicYear, schoolId, teacher]);
+
+  useEffect(() => {
+    if (!normalizedAcademicYear) return;
+    setForm((prev) => (prev.academicYear === normalizedAcademicYear ? prev : { ...prev, academicYear: normalizedAcademicYear }));
+  }, [normalizedAcademicYear]);
 
   useEffect(() => {
     if (!form.className) {
@@ -192,7 +202,12 @@ const ExamMarksPage = ({ schoolId, mode = "school_admin", teacher = null, actorN
       }
       setLoading(true);
       try {
-        const nextStudents = await loadStudentsForClass({ schoolId, className: form.className, section: form.section });
+        const nextStudents = await loadStudentsForClass({
+          schoolId,
+          className: form.className,
+          section: form.section,
+          academicYear: normalizedAcademicYear,
+        });
         const classParts = splitClassAndDivision(form.className);
         const resolvedClassKey =
           normalizeSection(form.section) && classParts.grade && classParts.division !== normalizeSection(form.section)
@@ -225,16 +240,20 @@ const ExamMarksPage = ({ schoolId, mode = "school_admin", teacher = null, actorN
       }
     };
     loadStudents();
-  }, [form.className, form.section, form.subjects, form.maxMarks, schoolId]);
+  }, [form.className, form.section, form.subjects, form.maxMarks, normalizedAcademicYear, schoolId]);
 
   useEffect(() => {
     const loadSavedExams = async () => {
       if (!schoolId) return;
       const snap = await getDocs(collection(db, "schools", normalizeSchoolId(schoolId), "examMarks"));
-      setSavedExams(snap.docs.map((entry) => ({ id: entry.id, ...entry.data() })));
+      setSavedExams(
+        snap.docs
+          .map((entry) => ({ id: entry.id, ...entry.data() }))
+          .filter((entry) => !normalizedAcademicYear || normalizeAcademicYear(entry.academicYear) === normalizedAcademicYear)
+      );
     };
     loadSavedExams();
-  }, [schoolId, saving]);
+  }, [normalizedAcademicYear, schoolId, saving]);
 
   useEffect(() => {
     if (!toast) return undefined;
@@ -266,6 +285,7 @@ const ExamMarksPage = ({ schoolId, mode = "school_admin", teacher = null, actorN
         if (!snap.exists()) return;
 
         const saved = snap.data() || {};
+        setWorkflowStatus(String(saved.workflowStatus || "draft").toLowerCase());
         const savedSubjects = Array.isArray(saved.subjects) && saved.subjects.length ? saved.subjects : selectedSubjects;
         const savedMaxMarks = saved.maxMarks || selectedMaxMarks;
         setAvailableSubjects((prev) =>
@@ -289,6 +309,8 @@ const ExamMarksPage = ({ schoolId, mode = "school_admin", teacher = null, actorN
   }, [form.academicYear, form.className, form.examName, form.examType, form.section, maxMarksKey, schoolId, selectedMaxMarks, selectedSubjects, subjectKey]);
 
   const summary = useMemo(() => getMarksSummary(records, form.subjects, form.maxMarks), [records, form.maxMarks, form.subjects]);
+  const workflowMeta = useMemo(() => getWorkflowStatusMeta(workflowStatus), [workflowStatus]);
+  const lockedForEditing = useMemo(() => isWorkflowLocked(workflowStatus), [workflowStatus]);
 
   const updateForm = (field, value) => setForm((prev) => ({ ...prev, [field]: value }));
 
@@ -375,6 +397,7 @@ const ExamMarksPage = ({ schoolId, mode = "school_admin", teacher = null, actorN
   };
 
   const updateRecord = (studentId, field, value, isRemark = false) => {
+    if (lockedForEditing) return;
     setRecords((prev) =>
       prev.map((record) => {
         if (record.studentId !== studentId) return record;
@@ -393,6 +416,7 @@ const ExamMarksPage = ({ schoolId, mode = "school_admin", teacher = null, actorN
   };
 
   const applyBulkRows = (rows) => {
+    if (lockedForEditing) return;
     setRecords((prev) =>
       prev.map((record) => {
         const matchedRow = rows.find((row) => String(row[0] || "").trim() === String(record.rollNumber || "").trim());
@@ -413,7 +437,7 @@ const ExamMarksPage = ({ schoolId, mode = "school_admin", teacher = null, actorN
     );
   };
 
-  const handleSave = async () => {
+  const handleSave = async (nextWorkflowStatus = workflowStatus) => {
     if (!form.className || !form.subjects.length) {
       setToast({ type: "error", message: "Select class and at least one subject before saving." });
       return;
@@ -434,6 +458,7 @@ const ExamMarksPage = ({ schoolId, mode = "school_admin", teacher = null, actorN
       });
       const payload = {
         schoolId: normalizeSchoolId(schoolId),
+        activeAcademicYear: normalizedAcademicYear,
         examName,
         examType: form.examType,
         academicYear: form.academicYear,
@@ -443,10 +468,15 @@ const ExamMarksPage = ({ schoolId, mode = "school_admin", teacher = null, actorN
         maxMarks: form.maxMarks,
         records,
         summary,
+        workflowStatus: String(nextWorkflowStatus || "draft").toLowerCase(),
         createdBy: actorName,
         createdByRole: getRoleLabel(mode === "teacher" ? teacher?.role : "school_admin"),
         updatedAt: serverTimestamp(),
       };
+      if (String(nextWorkflowStatus || "").toLowerCase() === "finalized") {
+        payload.finalizedAt = serverTimestamp();
+        payload.finalizedBy = actorName;
+      }
       await setDoc(doc(db, "schools", normalizeSchoolId(schoolId), "examMarks", examId), payload, { merge: true });
       await syncExamNotifications({
         schoolId,
@@ -457,7 +487,14 @@ const ExamMarksPage = ({ schoolId, mode = "school_admin", teacher = null, actorN
         section: form.section,
         records,
       });
-      setToast({ type: "success", message: "Exam marks saved successfully." });
+      setWorkflowStatus(String(nextWorkflowStatus || "draft").toLowerCase());
+      setToast({
+        type: "success",
+        message:
+          String(nextWorkflowStatus || "").toLowerCase() === "finalized"
+            ? "Exam marks finalized and locked."
+            : "Exam marks saved successfully.",
+      });
     } catch (error) {
       setToast({ type: "error", message: error.message || "Unable to save exam marks." });
     } finally {
@@ -467,18 +504,6 @@ const ExamMarksPage = ({ schoolId, mode = "school_admin", teacher = null, actorN
 
   return (
     <div className="academic-page">
-      <section className="academic-hero">
-        <div>
-          <p className="academic-kicker">Academic Layer</p>
-          <h1>Exam Marks</h1>
-          <p>Enter, review, and update school exam marks in a simple spreadsheet-friendly workflow.</p>
-        </div>
-        <div className="academic-hero-badge">
-          <span>Access</span>
-          <strong>{mode === "teacher" ? getRoleLabel(teacher?.role) : "School Admin"}</strong>
-        </div>
-      </section>
-
       <ExamSetupPanel
         classes={classes}
         availableSubjects={availableSubjects}
@@ -527,7 +552,6 @@ const ExamMarksPage = ({ schoolId, mode = "school_admin", teacher = null, actorN
         <div className="academic-card-head">
           <div>
             <h3>Saved Exams</h3>
-            <p>Saved records are edit-ready because the same class/year/exam combination reuses the same exam document.</p>
           </div>
         </div>
         <div className="academic-table-wrap">
@@ -566,12 +590,31 @@ const ExamMarksPage = ({ schoolId, mode = "school_admin", teacher = null, actorN
 
       <div className="academic-sticky-bar">
         <div>
-          <strong>{records.length} student records ready</strong>
-          <p>Inline validation prevents marks above max marks before saving.</p>
+          <div className="academic-workflow-line">
+            <strong>{records.length} student records ready</strong>
+            <span className={`academic-workflow-pill tone-${workflowMeta.tone}`}>{workflowMeta.label}</span>
+          </div>
+          <p>
+            Inline validation prevents marks above max marks before saving.
+            {lockedForEditing ? " This exam has been finalized and is locked for editing." : ""}
+          </p>
         </div>
-        <button type="button" className="academic-btn" onClick={handleSave} disabled={saving || !records.length}>
-          {saving ? "Saving..." : "Save Exam Marks"}
-        </button>
+        <div className="academic-actions">
+          {lockedForEditing ? (
+            <button type="button" className="academic-btn-secondary" onClick={() => handleSave("draft")} disabled={saving || !records.length}>
+              {saving ? "Reopening..." : "Reopen Exam"}
+            </button>
+          ) : (
+            <>
+              <button type="button" className="academic-btn-secondary" onClick={() => handleSave("draft")} disabled={saving || !records.length}>
+                {saving ? "Saving..." : "Save Draft"}
+              </button>
+              <button type="button" className="academic-btn" onClick={() => handleSave("finalized")} disabled={saving || !records.length}>
+                {saving ? "Finalizing..." : "Finalize Marks"}
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {subjectRemovalTarget ? (

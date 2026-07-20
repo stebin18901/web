@@ -73,7 +73,7 @@
   background:
     linear-gradient(90deg, rgba(37, 99, 235, 0.28), rgba(255, 255, 255, 0.04)),
     linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(2, 6, 23, 0.08)),
-    url("../../public/images/subwall.png");
+    url("../../public/images/banner.webp");
   background-size: cover;
   background-position: center center;
 }
@@ -274,6 +274,12 @@
   color: #ffffff;
   background: linear-gradient(135deg, #2563eb 0%, #0f5cff 100%);
   border-color: transparent;
+}
+
+.login-link-button.creator {
+  color: #0f766e;
+  background: linear-gradient(135deg, #ecfeff 0%, #dcfce7 100%);
+  border-color: #a7f3d0;
 }
 
 .login-trust-links {

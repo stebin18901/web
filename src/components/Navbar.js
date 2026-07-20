@@ -13,7 +13,7 @@ import {
 import "./Navbar.css";
 
 const SIDEBAR_STORAGE_KEY = "hepsy_sidebar_collapsed";
-const HEPSY_LOGO = `${process.env.PUBLIC_URL || ""}/images/logo.png`;
+const HEPSY_LOGO = `${process.env.PUBLIC_URL || ""}/images/logo.webp`;
 
 const Navbar = () => {
   const { user, logout } = useAuth();

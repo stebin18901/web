@@ -4,8 +4,10 @@ import {
   doc,
   getDoc,
   getDocs,
+  query,
   serverTimestamp,
   setDoc,
+  where,
 } from "firebase/firestore";
 import { db } from "../../../firebase/firebaseConfig";
 import "./AcademicManagement.css";
@@ -21,6 +23,8 @@ import {
   formatMonthInput,
   getAttendanceSummary,
   getRoleLabel,
+  getWorkflowStatusMeta,
+  isWorkflowLocked,
   loadStudentsForClass,
   normalizeClassName,
   normalizeSchoolId,
@@ -29,8 +33,11 @@ import {
   resolveSchoolClasses,
   resolveTeacherAcademicScope,
 } from "./academicUtils";
+import { normalizeAcademicYear } from "./schoolYearUtils";
 
-const AttendancePage = ({ schoolId, mode = "school_admin", teacher = null, actorName = "School Admin" }) => {
+const normalize = (value) => String(value || "").trim();
+
+const AttendancePage = ({ schoolId, academicYear = "", mode = "school_admin", teacher = null, actorName = "School Admin" }) => {
   const [classes, setClasses] = useState([]);
   const [students, setStudents] = useState([]);
   const [rows, setRows] = useState([]);
@@ -46,24 +53,34 @@ const AttendancePage = ({ schoolId, mode = "school_admin", teacher = null, actor
   const [dirty, setDirty] = useState(false);
   const [toast, setToast] = useState(null);
   const [confirmBulkAction, setConfirmBulkAction] = useState(null);
+  const [workflowStatus, setWorkflowStatus] = useState("draft");
+  const normalizedAcademicYear = useMemo(() => normalizeAcademicYear(academicYear), [academicYear]);
 
   useEffect(() => {
     const loadScope = async () => {
       setLoading(true);
       try {
         if (mode === "teacher" && teacher) {
-          const scope = await resolveTeacherAcademicScope(teacher);
+          const scope = await resolveTeacherAcademicScope({ ...teacher, academicYear: normalizedAcademicYear });
           if (!scope.canTakeAttendance) {
             setClasses([]);
             setToast({ type: "error", message: "Only class teachers can manage attendance." });
           } else {
-            setClasses(scope.classes);
-            setSelectedClass(scope.classes[0]?.className || "");
+            const uniqueClasses = scope.classes.filter(
+              (entry, index, list) =>
+                index === list.findIndex((item) => normalizeClassName(item.className) === normalizeClassName(entry.className))
+            );
+            setClasses(uniqueClasses);
+            setSelectedClass(uniqueClasses[0]?.className || "");
           }
         } else {
-          const schoolClasses = await resolveSchoolClasses(schoolId);
-          setClasses(schoolClasses);
-          setSelectedClass(schoolClasses[0]?.className || "");
+          const schoolClasses = await resolveSchoolClasses(schoolId, normalizedAcademicYear);
+          const uniqueClasses = schoolClasses.filter(
+            (entry, index, list) =>
+              index === list.findIndex((item) => normalizeClassName(item.className) === normalizeClassName(entry.className))
+          );
+          setClasses(uniqueClasses);
+          setSelectedClass(uniqueClasses[0]?.className || "");
         }
       } catch (error) {
         setToast({ type: "error", message: error.message || "Failed to load attendance scope." });
@@ -72,7 +89,7 @@ const AttendancePage = ({ schoolId, mode = "school_admin", teacher = null, actor
       }
     };
     loadScope();
-  }, [mode, schoolId, teacher]);
+  }, [mode, normalizedAcademicYear, schoolId, teacher]);
 
   const selectedSection = useMemo(() => {
     if (!selectedClass) return "";
@@ -90,21 +107,99 @@ const AttendancePage = ({ schoolId, mode = "school_admin", teacher = null, actor
       }
       setLoading(true);
       try {
-        const nextStudents = await loadStudentsForClass({
+        let nextStudents = await loadStudentsForClass({
           schoolId,
           className: selectedClass,
           section: selectedSection,
+          academicYear: normalizedAcademicYear,
         });
+
+        if (!nextStudents.length && selectedSection) {
+          nextStudents = await loadStudentsForClass({
+            schoolId,
+            className: selectedClass,
+            section: "",
+            academicYear: normalizedAcademicYear,
+          });
+        }
+
+        if (!nextStudents.length) {
+          const classParts = splitClassAndDivision(selectedClass);
+          const alternateClassName = classParts?.grade || selectedClass;
+          if (alternateClassName && normalizeClassName(alternateClassName) !== normalizeClassName(selectedClass)) {
+            nextStudents = await loadStudentsForClass({
+              schoolId,
+              className: alternateClassName,
+              section: selectedSection,
+              academicYear: normalizedAcademicYear,
+            });
+          }
+        }
+
+        if (!nextStudents.length) {
+          const candidateSchoolIds = Array.from(
+            new Set([normalizeSchoolId(schoolId), normalize(schoolId)].filter(Boolean).map((value) => normalizeSchoolId(value)))
+          );
+          const requestedClass = normalizeClassName(selectedClass);
+          const requestedSection = normalizeSection(selectedSection);
+          const requestedParts = splitClassAndDivision(requestedClass);
+          const snapshots = await Promise.all(
+            candidateSchoolIds.map((candidate) =>
+              getDocs(query(collection(db, "studentAccounts"), where("schoolId", "==", candidate)))
+            )
+          );
+          const fallbackMap = new Map();
+
+          snapshots.forEach((snapshot) => {
+            snapshot.docs.forEach((entry) => {
+              const data = entry.data() || {};
+              const entryYear = normalizeAcademicYear(data.academicYear);
+              if (normalizedAcademicYear && entryYear && entryYear !== normalizedAcademicYear) return;
+
+              const entryClass = normalizeClassName(data.className || data.class || data.grade);
+              const entrySection = normalizeSection(data.section || data.classSection || data.division);
+              const entryParts = splitClassAndDivision(entryClass);
+
+              const classMatches =
+                entryClass === requestedClass ||
+                (requestedParts.grade && entryParts.grade === requestedParts.grade) ||
+                entryParts.combined === requestedClass;
+              const sectionMatches =
+                !requestedSection ||
+                entrySection === requestedSection ||
+                entryParts.division === requestedSection ||
+                entryClass === requestedClass;
+
+              if (!classMatches || !sectionMatches) return;
+
+              fallbackMap.set(entry.id, {
+                studentId: entry.id,
+                fullName: normalize(data.fullName || data.name),
+                rollNumber: normalize(data.rollNumber || data.studentId),
+                className: normalizeClassName(data.className || selectedClass),
+                section: normalizeSection(data.section || data.classSection || data.division || selectedSection),
+                phone: normalize(data.phone || data.parentPhone),
+                email: normalize(data.email).toLowerCase(),
+              });
+            });
+          });
+
+          nextStudents = Array.from(fallbackMap.values()).sort((left, right) =>
+            String(left.rollNumber || "").localeCompare(String(right.rollNumber || ""), undefined, { numeric: true })
+          );
+        }
+
         setStudents(nextStudents);
 
-        const docId = buildAttendanceDocId({
+        const docId = `${normalizeAcademicYear(normalizedAcademicYear || "general")}_${buildAttendanceDocId({
           date: selectedDate,
           className: selectedClass,
           section: selectedSection,
-        });
+        })}`;
         const attendanceRef = doc(db, "schools", normalizeSchoolId(schoolId), "attendance", docId);
         const snap = await getDoc(attendanceRef);
         const existingRecords = snap.exists() ? snap.data().records || [] : [];
+        setWorkflowStatus(String(snap.data()?.workflowStatus || "draft").toLowerCase());
 
         const mappedRows = nextStudents.map((student) => {
           const existing = existingRecords.find(
@@ -128,21 +223,23 @@ const AttendancePage = ({ schoolId, mode = "school_admin", teacher = null, actor
       }
     };
     loadStudents();
-  }, [schoolId, selectedClass, selectedDate, selectedSection]);
+  }, [normalizedAcademicYear, schoolId, selectedClass, selectedDate, selectedSection]);
 
   useEffect(() => {
     const loadDocs = async () => {
       if (!schoolId) return;
       try {
         const snap = await getDocs(collection(db, "schools", normalizeSchoolId(schoolId), "attendance"));
-        const docs = snap.docs.map((entry) => ({ id: entry.id, ...entry.data() }));
+        const docs = snap.docs
+          .map((entry) => ({ id: entry.id, ...entry.data() }))
+          .filter((entry) => !normalizedAcademicYear || normalizeAcademicYear(entry.academicYear) === normalizedAcademicYear);
         setAttendanceDocs(docs);
       } catch (error) {
         setToast({ type: "error", message: error.message || "Unable to load attendance records." });
       }
     };
     loadDocs();
-  }, [schoolId, saving]);
+  }, [normalizedAcademicYear, schoolId, saving]);
 
   useEffect(() => {
     const handleBeforeUnload = (event) => {
@@ -162,6 +259,8 @@ const AttendancePage = ({ schoolId, mode = "school_admin", teacher = null, actor
   }, [toast]);
 
   const summary = useMemo(() => getAttendanceSummary(rows), [rows]);
+  const workflowMeta = useMemo(() => getWorkflowStatusMeta(workflowStatus), [workflowStatus]);
+  const lockedForEditing = useMemo(() => isWorkflowLocked(workflowStatus), [workflowStatus]);
 
   const filteredRows = useMemo(() => {
     const lower = searchTerm.trim().toLowerCase();
@@ -202,16 +301,19 @@ const AttendancePage = ({ schoolId, mode = "school_admin", teacher = null, actor
   );
 
   const updateRow = (studentId, patch) => {
+    if (lockedForEditing) return;
     setRows((prev) => prev.map((row) => (row.studentId === studentId ? { ...row, ...patch } : row)));
     setDirty(true);
   };
 
   const applyBulkStatus = (status) => {
+    if (lockedForEditing) return;
     setRows((prev) => prev.map((row) => ({ ...row, status, note: status === "present" ? "" : row.note })));
     setDirty(true);
   };
 
   const handleReset = () => {
+    if (lockedForEditing) return;
     setRows((prev) => prev.map((row) => ({ ...row, status: "present", note: "" })));
     setDirty(true);
   };
@@ -244,7 +346,7 @@ const AttendancePage = ({ schoolId, mode = "school_admin", teacher = null, actor
     setConfirmBulkAction(config);
   };
 
-  const handleSave = async () => {
+  const handleSave = async (nextWorkflowStatus = workflowStatus) => {
     if (!selectedClass || !selectedDate) {
       setToast({ type: "error", message: "Select class and date before saving attendance." });
       return;
@@ -257,11 +359,12 @@ const AttendancePage = ({ schoolId, mode = "school_admin", teacher = null, actor
         normalizeSection(selectedSection) && classParts.grade && classParts.division !== normalizeSection(selectedSection)
           ? `${classParts.grade}${normalizeSection(selectedSection)}`
           : normalizeClassName(selectedClass);
-      const docId = buildAttendanceDocId({ date: selectedDate, className: selectedClass, section: selectedSection });
+      const docId = `${normalizeAcademicYear(normalizedAcademicYear || "general")}_${buildAttendanceDocId({ date: selectedDate, className: selectedClass, section: selectedSection })}`;
       const attendanceRef = doc(db, "schools", normalizedId, "attendance", docId);
       const existingSnap = await getDoc(attendanceRef);
       const payload = {
         schoolId: normalizedId,
+        academicYear: normalizedAcademicYear,
         className: normalizeClassName(selectedClass),
         section: normalizeSection(selectedSection),
         date: selectedDate,
@@ -277,23 +380,40 @@ const AttendancePage = ({ schoolId, mode = "school_admin", teacher = null, actor
           note: row.note || "",
         })),
         summary,
+        workflowStatus: String(nextWorkflowStatus || "draft").toLowerCase(),
         createdBy: actorName,
         createdByRole: getRoleLabel(mode === "teacher" ? teacher?.role : "school_admin"),
         updatedAt: serverTimestamp(),
       };
+      if (String(nextWorkflowStatus || "").toLowerCase() === "finalized") {
+        payload.finalizedAt = serverTimestamp();
+        payload.finalizedBy = actorName;
+      }
+      if (String(nextWorkflowStatus || "").toLowerCase() === "locked") {
+        payload.lockedAt = serverTimestamp();
+        payload.lockedBy = actorName;
+      }
       if (!existingSnap.exists()) {
         payload.createdAt = serverTimestamp();
       }
       await setDoc(attendanceRef, payload, { merge: true });
       await syncAttendanceNotifications({
         schoolId: normalizedId,
+        academicYear: normalizedAcademicYear,
         className: selectedClass,
         section: selectedSection,
         date: selectedDate,
         rows,
       });
+      setWorkflowStatus(String(nextWorkflowStatus || "draft").toLowerCase());
       setDirty(false);
-      setToast({ type: "success", message: "Attendance saved successfully." });
+      setToast({
+        type: "success",
+        message:
+          String(nextWorkflowStatus || "").toLowerCase() === "finalized"
+            ? "Attendance finalized and locked."
+            : "Attendance saved successfully.",
+      });
     } catch (error) {
       setToast({ type: "error", message: error.message || "Unable to save attendance." });
     } finally {
@@ -319,18 +439,6 @@ const AttendancePage = ({ schoolId, mode = "school_admin", teacher = null, actor
 
   return (
     <div className="academic-page">
-      <section className="academic-hero">
-        <div>
-          <p className="academic-kicker">Academic Layer</p>
-          <h1>Attendance Management</h1>
-          <p>Fast daily attendance, simple monthly review, and student-wise history built for real school staff.</p>
-        </div>
-        <div className="academic-hero-badge">
-          <span>Access</span>
-          <strong>{mode === "teacher" ? getRoleLabel(teacher?.role) : "School Admin"}</strong>
-        </div>
-      </section>
-
       <div className="academic-tabs">
         <button type="button" className={activeTab === "marking" ? "active" : ""} onClick={() => setActiveTab("marking")}>
           Mark Attendance
@@ -373,12 +481,31 @@ const AttendancePage = ({ schoolId, mode = "school_admin", teacher = null, actor
           )}
           <div className="academic-sticky-bar">
             <div>
-              <strong>{dirty ? "Unsaved changes" : "All changes saved"}</strong>
-              <p>{summary.totalStudents} students loaded for {selectedClass || "the selected class roster"}.</p>
+              <div className="academic-workflow-line">
+                <strong>{dirty ? "Unsaved changes" : "All changes saved"}</strong>
+                <span className={`academic-workflow-pill tone-${workflowMeta.tone}`}>{workflowMeta.label}</span>
+              </div>
+              <p>
+                {summary.totalStudents} students loaded for {selectedClass || "the selected class roster"}.
+                {lockedForEditing ? " This sheet is locked for editing." : ""}
+              </p>
             </div>
-            <button type="button" className="academic-btn" onClick={handleSave} disabled={saving || !rows.length}>
-              {saving ? "Saving..." : "Save Attendance"}
-            </button>
+            <div className="academic-actions">
+              {lockedForEditing ? (
+                <button type="button" className="academic-btn-secondary" onClick={() => handleSave("draft")} disabled={saving || !rows.length}>
+                  {saving ? "Reopening..." : "Reopen Sheet"}
+                </button>
+              ) : (
+                <>
+                  <button type="button" className="academic-btn-secondary" onClick={() => handleSave("draft")} disabled={saving || !rows.length}>
+                    {saving ? "Saving..." : "Save Draft"}
+                  </button>
+                  <button type="button" className="academic-btn" onClick={() => handleSave("finalized")} disabled={saving || !rows.length}>
+                    {saving ? "Finalizing..." : "Finalize Attendance"}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </>
       ) : activeTab === "monthly" ? (

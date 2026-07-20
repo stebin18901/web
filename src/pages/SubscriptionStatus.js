@@ -11,6 +11,13 @@ import {
 } from "../config/subscriptionConfig";
 import "./SubscriptionStatus.css";
 
+const SUPPORT_EMAIL = "support@hepsy.in";
+const formatDisplayDate = (value) => {
+  if (!value) return "Not available";
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? "Not available" : parsed.toLocaleDateString();
+};
+
 const SubscriptionStatus = () => {
   const navigate = useNavigate();
   const [subscription, setSubscription] = useState(null);
@@ -26,7 +33,7 @@ const SubscriptionStatus = () => {
       try {
         const user = auth.currentUser;
         if (!user) {
-          navigate("/login");
+          navigate("/login", { replace: true });
           return;
         }
 
@@ -202,7 +209,7 @@ const SubscriptionStatus = () => {
         <div className="no-subscription">
           <h2>No Active Subscription</h2>
           <p>You don't have an active subscription yet.</p>
-          <button className="btn-subscribe" onClick={() => navigate("/subscribe")}>
+          <button className="btn-subscribe" onClick={() => navigate("/pricing")}>
             Get Started
           </button>
         </div>
@@ -255,7 +262,11 @@ const SubscriptionStatus = () => {
             </div>
             <div className="detail-row">
               <span className="label">Amount:</span>
-              <span className="value">₹{subscription.amount}</span>
+              <span className="value">
+                {Number.isFinite(Number(subscription.amount))
+                  ? `Rs ${Number(subscription.amount)}`
+                  : "Not available"}
+              </span>
             </div>
             <div className="detail-row">
               <span className="label">Auto-Renewal:</span>
@@ -270,15 +281,11 @@ const SubscriptionStatus = () => {
             <h3>📅 Timeline</h3>
             <div className="detail-row">
               <span className="label">Started:</span>
-              <span className="value">
-                {new Date(subscription.startDate).toLocaleDateString()}
-              </span>
+              <span className="value">{formatDisplayDate(subscription.startDate)}</span>
             </div>
             <div className="detail-row">
               <span className="label">Expires:</span>
-              <span className="value">
-                {new Date(subscription.expiryDate).toLocaleDateString()}
-              </span>
+              <span className="value">{formatDisplayDate(subscription.expiryDate)}</span>
             </div>
             <div className="detail-row">
               <span className="label">Days Left:</span>
@@ -289,9 +296,7 @@ const SubscriptionStatus = () => {
             {subscription.lastPaymentDate && (
               <div className="detail-row">
                 <span className="label">Last Payment:</span>
-                <span className="value">
-                  {new Date(subscription.lastPaymentDate).toLocaleDateString()}
-                </span>
+                <span className="value">{formatDisplayDate(subscription.lastPaymentDate)}</span>
               </div>
             )}
           </div>
@@ -371,7 +376,7 @@ const SubscriptionStatus = () => {
             </div>
             <div className="faq-item">
               <h4>How do I contact support?</h4>
-              <p>Email us at support@mintplatform.com or use the in-app chat support.</p>
+              <p>Email us at {SUPPORT_EMAIL} or use the in-app chat support.</p>
             </div>
           </div>
         </div>

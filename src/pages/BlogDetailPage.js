@@ -7,7 +7,7 @@ import { BLOG_COLLECTION, formatBlogDate, normalizeBlog } from "../utils/blogs";
 import SeoHelmet from "../components/SeoHelmet";
 import { absoluteUrl, buildArticleSchema } from "../utils/schema";
 
-const HEPSY_LOGO = `${process.env.PUBLIC_URL || ""}/images/logo.png`;
+const HEPSY_LOGO = `${process.env.PUBLIC_URL || ""}/images/logo.webp`;
 
 export default function BlogDetailPage() {
   const { slug } = useParams();

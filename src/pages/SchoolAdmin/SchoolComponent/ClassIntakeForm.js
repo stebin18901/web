@@ -8,6 +8,12 @@ import {
   getUniqueClasses,
 } from "../../../config/defaultSchool";
 import { fetchDemoContent } from "../../../utils/demoContent";
+import {
+  buildYearScopedClassId,
+  buildYearScopedStudentId,
+  getDefaultAcademicYear,
+  normalizeAcademicYear,
+} from "./schoolYearUtils";
 import "./ClassIntakeForm.css";
 
 const normalize = (v) => String(v || "").trim();
@@ -30,6 +36,7 @@ export default function ClassIntakeForm() {
   const [schoolMeta, setSchoolMeta] = useState({});
   const [paymentLinkToShow, setPaymentLinkToShow] = useState("");
   const [availableClassOptions, setAvailableClassOptions] = useState([]);
+  const [schoolAcademicYear, setSchoolAcademicYear] = useState("");
   const [otpCode, setOtpCode] = useState("");
   const [otpSent, setOtpSent] = useState(false);
   const [otpVerified, setOtpVerified] = useState(false);
@@ -83,12 +90,33 @@ export default function ClassIntakeForm() {
           setSchoolName("School");
         }
 
+        let resolvedAcademicYear = normalizeAcademicYear(schoolSnap?.data()?.activeAcademicYear);
+        try {
+          const yearsSnap = await getDocs(
+            collection(db, "schools", schoolSnap?.id || schoolIdValue || normalizedSchoolId, "academicYears")
+          );
+          const years = yearsSnap.docs
+            .map((entry) => ({ id: entry.id, ...entry.data() }))
+            .sort((left, right) => String(right.id).localeCompare(String(left.id), undefined, { numeric: true }));
+          if (!resolvedAcademicYear) {
+            resolvedAcademicYear =
+              normalizeAcademicYear(years.find((entry) => entry.isDefault)?.id) ||
+              normalizeAcademicYear(years[0]?.id) ||
+              getDefaultAcademicYear();
+          }
+        } catch {
+          resolvedAcademicYear = resolvedAcademicYear || getDefaultAcademicYear();
+        }
+        setSchoolAcademicYear(resolvedAcademicYear);
+
         const classesSnap = await getDocs(collection(db, "classes"));
         const discoveredClasses = classesSnap.docs
           .map((entry) => ({ id: entry.id, ...entry.data() }))
           .filter((entry) => {
             const entrySchoolId = String(entry.schoolId || entry.schoolIdRaw || "").trim().toLowerCase();
-            return entrySchoolId === normalizedSchoolId;
+            const entryYear = normalizeAcademicYear(entry.academicYear);
+            const yearMatches = !resolvedAcademicYear || !entryYear || entryYear === resolvedAcademicYear;
+            return entrySchoolId === normalizedSchoolId && yearMatches;
           })
           .map((entry) => String(entry.className || "").toUpperCase())
           .filter(Boolean)
@@ -280,7 +308,13 @@ export default function ClassIntakeForm() {
   const ensureClassExists = async (selectedClassName, options = {}) => {
     const { allowCreate = true } = options;
     const resolvedClassName = normalize(selectedClassName || normalizedClassName).toUpperCase();
-    const classId = `${schoolIdValue || normalizedSchoolId}_${resolvedClassName}`;
+    const classId = schoolAcademicYear
+      ? buildYearScopedClassId({
+          schoolId: schoolIdValue || normalizedSchoolId,
+          academicYear: schoolAcademicYear,
+          className: resolvedClassName,
+        })
+      : `${schoolIdValue || normalizedSchoolId}_${resolvedClassName}`;
     const classRef = doc(db, "classes", classId);
     const classSnap = await getDoc(classRef);
 
@@ -292,6 +326,7 @@ export default function ClassIntakeForm() {
       await setDoc(classRef, {
         schoolId: schoolIdValue || normalizedSchoolId,
         className: resolvedClassName,
+        academicYear: schoolAcademicYear || "",
         grade,
         division: resolvedClassName.replace(/^\d+/, "") || "A",
         createdAt: new Date(),
@@ -399,13 +434,27 @@ export default function ClassIntakeForm() {
       const studentSnap = await getDocs(studentQuery);
       const classStudents = studentSnap.docs
         .map((entry) => ({ id: entry.id, ...entry.data() }))
-        .filter((entry) => normalize(entry.className).toUpperCase() === selectedClassName);
+        .filter((entry) => {
+          const classMatches = normalize(entry.className).toUpperCase() === selectedClassName;
+          const yearMatches =
+            !schoolAcademicYear ||
+            !normalizeAcademicYear(entry.academicYear) ||
+            normalizeAcademicYear(entry.academicYear) === schoolAcademicYear;
+          return classMatches && yearMatches;
+        });
       const nextRoll = classStudents.reduce((maxRoll, entry) => {
         const rollValue = Number(normalize(entry.rollNumber));
         return Number.isFinite(rollValue) ? Math.max(maxRoll, rollValue) : maxRoll;
       }, 0) + 1;
       const roll = String(nextRoll);
-      const enrollmentId = `${normalizedSchoolId}_${selectedClassName}_${roll}`;
+      const enrollmentId = schoolAcademicYear
+        ? buildYearScopedStudentId({
+            schoolId: normalizedSchoolId,
+            academicYear: schoolAcademicYear,
+            className: selectedClassName,
+            rollNumber: roll,
+          })
+        : `${normalizedSchoolId}_${selectedClassName}_${roll}`;
       const currentLinkedAccount = linkedAccounts.find((entry) => entry.id === enrollmentId);
 
       if (!currentLinkedAccount && linkedAccounts.length >= MAX_PARENT_ACCOUNTS_PER_PHONE) {
@@ -424,6 +473,7 @@ export default function ClassIntakeForm() {
         schoolId: normalizedSchoolId,
         schoolIdRaw: schoolIdValue || normalizedSchoolId,
         schoolName,
+        academicYear: schoolAcademicYear || "",
         selectedPlanId,
         selectedPlanName,
         planAmount,
@@ -450,6 +500,7 @@ export default function ClassIntakeForm() {
           name: fullName,
           schoolId: normalizedSchoolId,
           schoolName,
+          academicYear: schoolAcademicYear || "",
           className: selectedClassName,
           accessMode: "school-plan",
           selectedClasses: [selectedClassName],
@@ -479,6 +530,7 @@ export default function ClassIntakeForm() {
           phone: cleanPhone,
           parentPhone: cleanPhone,
           className: selectedClassName,
+          academicYear: schoolAcademicYear || "",
           createdAt: new Date(),
           source: "class_form",
           pin: cleanPin,
@@ -628,14 +680,6 @@ export default function ClassIntakeForm() {
               <span className="meta-label">Plan Selection</span>
               <strong>{hasPaidSchoolAccess(schoolMeta) ? "Handled by school" : "Choose after form submission"}</strong>
             </div>
-            <div>
-              <span className="meta-label">What happens next</span>
-              <strong>
-                {hasPaidSchoolAccess(schoolMeta)
-                  ? "OTP, details saved, direct activation"
-                  : "OTP, details saved, plan choice, payment"}
-              </strong>
-            </div>
           </div>
         )}
 
@@ -664,10 +708,6 @@ export default function ClassIntakeForm() {
                 </option>
               ))}
             </select>
-            {!studentClassOptions.length ? (
-              <p className="helper-note">No active classes found yet. Please ask the school admin to create classes first.</p>
-            ) : null}
-            <p className="helper-note">Roll number will be assigned automatically based on the next available number in the selected class.</p>
             <input
               value={studentForm.pin}
               onChange={(e) => {
@@ -724,7 +764,6 @@ export default function ClassIntakeForm() {
           </form>
         ) : (
           <form onSubmit={submitTeacher} className="intake-form">
-            <p className="helper-note">Create the teacher account first. Class and subject assignment can be managed later from the school admin dashboard.</p>
             <input
               value={teacherForm.name}
               onChange={(e) => setTeacherForm((p) => ({ ...p, name: e.target.value }))}

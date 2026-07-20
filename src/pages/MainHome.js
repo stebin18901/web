@@ -14,7 +14,7 @@ import {
 } from "../utils/schema";
 
 const heroTitleWords = ["Modern", "school", "routine."];
-const HEPSY_LOGO = `${process.env.PUBLIC_URL || ""}/images/logo.png`;
+const HEPSY_LOGO = `${process.env.PUBLIC_URL || ""}/images/logo.webp`;
 
 const stats = [
   { value: "Classes 6-10", label: "Structured coverage for core school years" },
@@ -40,6 +40,17 @@ const steps = [
   {
     title: "Level Up",
     text: "Reports and insights show what to improve next, making progress easier to sustain.",
+  },
+];
+
+const programmes = [
+  {
+    slug: "creator",
+    title: "Be a creator and contribute to the community.",
+    description:
+      "Build chapters, concept explainers, quizzes, interactive sessions, and full learning journeys that other students can actually use.",
+    meta: ["Creator Studio", "Community-first", "Concept to journey"],
+    image: "/images/career.webp",
   },
 ];
 
@@ -91,13 +102,24 @@ export default function MainHome() {
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return undefined;
+    if (typeof window === "undefined") return undefined;
+
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)")?.matches;
+    const isCompactViewport = window.innerWidth < 900;
+    if (reduceMotion || isCompactViewport) {
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+      }
+      return undefined;
+    }
 
     const ctx = canvas.getContext("2d");
     let width = 0;
     let height = 0;
     let frame = 0;
     let particles = [];
-    const particleCount = 60;
+    const particleCount = window.innerWidth > 1440 ? 44 : 28;
 
     const resize = () => {
       width = canvas.width = window.innerWidth;
@@ -156,6 +178,7 @@ export default function MainHome() {
 
   useEffect(() => {
     let active = true;
+    let idleHandle = null;
 
     const loadBlogs = async () => {
       const snap = await getDocs(collection(db, BLOG_COLLECTION));
@@ -168,9 +191,27 @@ export default function MainHome() {
       setBlogs(items);
     };
 
-    loadBlogs();
+    const scheduleLoad =
+      typeof window !== "undefined" && "requestIdleCallback" in window
+        ? window.requestIdleCallback
+        : (callback) => window.setTimeout(callback, 300);
+
+    const cancelLoad =
+      typeof window !== "undefined" && "cancelIdleCallback" in window
+        ? window.cancelIdleCallback
+        : window.clearTimeout;
+
+    idleHandle = scheduleLoad(() => {
+      loadBlogs().catch((error) => {
+        console.error("Failed to load home blogs:", error);
+      });
+    });
+
     return () => {
       active = false;
+      if (idleHandle !== null) {
+        cancelLoad(idleHandle);
+      }
     };
   }, []);
 
@@ -206,7 +247,7 @@ export default function MainHome() {
           "classes 6 to 10",
         ]}
         canonicalUrl={absoluteUrl("/")}
-        image={absoluteUrl("/images/banner.png")}
+        image={absoluteUrl("/images/banner.webp")}
         schemas={homeSchemas}
       />
       <div className="home-shell">
@@ -219,7 +260,14 @@ export default function MainHome() {
         <header className="nav">
           <div className="container1 nav-bar">
             <a className="brand" href="#top" aria-label="Hepsy Home">
-              <img className="logo logo-image" src={HEPSY_LOGO} alt="Hepsy logo" />
+              <img
+                className="logo logo-image"
+                src={HEPSY_LOGO}
+                alt="Hepsy logo"
+                loading="eager"
+                fetchPriority="high"
+                decoding="async"
+              />
               <span className="brand-copy">
                 <strong>HEPSY</strong>
                 <small>LEARNING</small>
@@ -245,7 +293,7 @@ export default function MainHome() {
               <div
                 className="hero-stage-backdrop"
                 style={{
-                  backgroundImage: `linear-gradient(90deg, rgba(5, 9, 20, 0.96) 0%, rgba(7, 12, 28, 0.8) 40%, rgba(5, 9, 20, 0.4) 70%, rgba(5, 9, 20, 0.95) 100%), linear-gradient(180deg, rgba(5, 9, 20, 0) 50%, rgba(5, 9, 20, 1) 100%), url(${process.env.PUBLIC_URL}/images/banner.png)`,
+                  backgroundImage: `linear-gradient(90deg, rgba(5, 9, 20, 0.96) 0%, rgba(7, 12, 28, 0.8) 40%, rgba(5, 9, 20, 0.4) 70%, rgba(5, 9, 20, 0.95) 100%), linear-gradient(180deg, rgba(5, 9, 20, 0) 50%, rgba(5, 9, 20, 1) 100%), url(${process.env.PUBLIC_URL}/images/banner.webp)`,
                 }}
               />
               <div className="container1 hero-stage-content">
@@ -328,7 +376,13 @@ export default function MainHome() {
               <div className="snapshot-visual">
                 <div className="visual-card visual-image-card">
                   <div className="visual-scanline" />
-                  <img src="/images/self.png" alt="Hepsy space overview" className="crm-img" />
+                  <img
+                    src="/images/self.png"
+                    alt="Hepsy space overview"
+                    className="crm-img"
+                    loading="lazy"
+                    decoding="async"
+                  />
                   <div className="visual-floating-note">
                     <span>LEARNING LOUNGE</span>
                     <strong>Your revision space, all in one place.</strong>
@@ -354,6 +408,46 @@ export default function MainHome() {
           </section>
 
           <section className="container1 platform-section" id="platform">
+            <div className="section-heading reveal motion-ready blog-section-head">
+              <span className="section-tag motion-text" style={{ "--motion-delay": 0 }}>PROGRAMMES</span>
+              <h2 className="section-title motion-text" style={{ "--motion-delay": 1 }}>Choose focused programmes built for learning, contribution, and long-term momentum.</h2>
+              <p className="section-subtitle motion-text" style={{ "--motion-delay": 2 }}>
+                These programme tracks open specialized experiences inside Hepsy. Start with creator mode and turn your academic ideas into structured assets for the wider community.
+              </p>
+            </div>
+
+            <div className="feature-grid programme-grid">
+              {programmes.map((programme) => (
+                <Link
+                  to={programme.slug === "creator" ? "/creator" : `/programmes/${programme.slug}`}
+                  className="feature reveal programme-card"
+                  key={programme.slug}
+                >
+                  <div
+                    className="programme-card-visual"
+                    style={{
+                      backgroundImage: `linear-gradient(180deg, rgba(7, 12, 24, 0.06) 0%, rgba(7, 12, 24, 0.3) 100%), url(${programme.image})`,
+                    }}
+                  />
+                  <div className="programme-card-copy">
+                    <div className="feature-topline">
+                      <span className="feature-icon">CR</span>
+                      <span className="card-cue" aria-hidden="true">+</span>
+                    </div>
+                    <h3 className="card-title-shift">{programme.title}</h3>
+                    <p>{programme.description}</p>
+                    <div className="programme-card-meta">
+                      {programme.meta.map((item) => (
+                        <span key={item}>{item}</span>
+                      ))}
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+
+            <div className="section-divider" />
+
             <div className="section-heading reveal motion-ready blog-section-head">
               <span className="section-tag motion-text" style={{ "--motion-delay": 0 }}>HEPSY BLOG DESK</span>
               <h2 className="section-title motion-text" style={{ "--motion-delay": 1 }}>Stories, study ideas, and product updates in a six-card editorial wall.</h2>
@@ -472,7 +566,7 @@ export default function MainHome() {
               </div>
 
               <div className="school-preview reveal motion-ready">
-                <div className="school-preview-image" style={{ backgroundImage: "url('/images/Teacher.png')" }}>
+                <div className="school-preview-image" style={{ backgroundImage: "url('/images/Teacher.webp')" }}>
                   <div className="school-preview-overlay">
                     <span className="card-cue card-cue-overlay" aria-hidden="true">+</span>
                     <span className="preview-badge motion-text" style={{ "--motion-delay": 0 }}>ADMIN PORTAL</span>

@@ -14,6 +14,7 @@ import { db } from "../../../../firebase/firebaseConfig";
 import "./ClassTeacherManager.css";
 import ClassDetailView from "./ClassTeacherManager/ClassDetailView";
 import TeacherList from "./ClassTeacherManager/TeacherList";
+import { buildYearScopedClassId, matchesAcademicYearScope, normalizeAcademicYear } from "../schoolYearUtils";
 
 // =========================================
 // CONFIG
@@ -54,9 +55,9 @@ const generateDivisions = (format, count, customPrefix) => {
 // =========================================
 // HELPER: Auto-create Roll Setup
 // =========================================
-const createDefaultRollSetup = async (schoolId, className) => {
+const createDefaultRollSetup = async (schoolId, academicYear, className) => {
   try {
-    const classId = `${schoolId}_${className}`;
+    const classId = buildYearScopedClassId({ schoolId, academicYear, className });
     const rollSetupRef = doc(db, "classes", classId, "meta", "rollSetup");
 
     const grade = parseInt(className.match(/^\d+/)?.[0] || "0", 10);
@@ -82,7 +83,7 @@ const createDefaultRollSetup = async (schoolId, className) => {
 // =========================================
 // MAIN COMPONENT
 // =========================================
-const ClassTeacherManager = ({ schoolId, school }) => {
+const ClassTeacherManager = ({ schoolId, school, academicYear = "" }) => {
   const [sections] = useState(DEFAULT_SECTIONS);
   const [activeSectionId, setActiveSectionId] = useState(DEFAULT_SECTIONS[0].id);
   const [classesMap, setClassesMap] = useState({});
@@ -102,6 +103,7 @@ const ClassTeacherManager = ({ schoolId, school }) => {
   const [customPrefixByGrade, setCustomPrefixByGrade] = useState({});
   const [confirmModal, setConfirmModal] = useState(null);
   const [activeClassDetail, setActiveClassDetail] = useState(null);
+  const normalizedAcademicYear = normalizeAcademicYear(academicYear);
 
   // Realtime Teachers
   useEffect(() => {
@@ -110,12 +112,13 @@ const ClassTeacherManager = ({ schoolId, school }) => {
     const unsub = onSnapshot(q, (snap) => {
       const list = snap.docs
         .map((d) => ({ id: d.id, ...d.data() }))
-        .filter((t) => ["teacher", "class_teacher"].includes(t.role));
+        .filter((t) => ["teacher", "class_teacher"].includes(t.role))
+        .filter((t) => matchesAcademicYearScope(t, normalizedAcademicYear));
       setTeachers(list);
       setFilteredTeachers(list);
     });
     return () => unsub();
-  }, [schoolId]);
+  }, [normalizedAcademicYear, schoolId]);
 
   // Realtime Classes
   useEffect(() => {
@@ -123,11 +126,15 @@ const ClassTeacherManager = ({ schoolId, school }) => {
     const q = query(collection(db, "classes"), where("schoolId", "==", schoolId));
     const unsub = onSnapshot(q, (snap) => {
       const map = {};
-      snap.docs.forEach((d) => (map[d.data().className] = { id: d.id, ...d.data() }));
+      snap.docs.forEach((d) => {
+        const data = d.data() || {};
+        if (normalizedAcademicYear && normalizeAcademicYear(data.academicYear) !== normalizedAcademicYear) return;
+        map[data.className] = { id: d.id, ...data };
+      });
       setClassesMap(map);
     });
     return () => unsub();
-  }, [schoolId]);
+  }, [normalizedAcademicYear, schoolId]);
 
   // Search Filter
   useEffect(() => {
@@ -143,7 +150,7 @@ const ClassTeacherManager = ({ schoolId, school }) => {
     );
   }, [searchTerm, teachers]);
 
-  const classDocId = (className) => `${schoolId}_${className}`;
+  const classDocId = (className) => buildYearScopedClassId({ schoolId, academicYear: normalizedAcademicYear, className });
   const activeSection = useMemo(
     () => sections.find((s) => s.id === activeSectionId),
     [sections, activeSectionId]
@@ -186,6 +193,7 @@ const ClassTeacherManager = ({ schoolId, school }) => {
       } else {
         await setDoc(ref, {
           schoolId,
+          academicYear: normalizedAcademicYear,
           className,
           grade,
           division,
@@ -220,6 +228,7 @@ const ClassTeacherManager = ({ schoolId, school }) => {
 
         await setDoc(ref, {
           schoolId,
+          academicYear: normalizedAcademicYear,
           className,
           grade,
           division,
@@ -258,6 +267,7 @@ const ClassTeacherManager = ({ schoolId, school }) => {
       if (!classSnap.exists()) {
         await setDoc(classRef, {
           schoolId,
+          academicYear: normalizedAcademicYear,
           className,
           grade: parseInt(className.match(/^\d+/)?.[0] || "0", 10),
           division: className.replace(/^\d+/, ""),
@@ -300,7 +310,7 @@ const ClassTeacherManager = ({ schoolId, school }) => {
         updatedAt: new Date(),
       });
 
-      await createDefaultRollSetup(schoolId, className);
+      await createDefaultRollSetup(schoolId, normalizedAcademicYear, className);
     } catch (err) {
       console.error("Assignment failed:", err);
     } finally {
@@ -590,6 +600,7 @@ const ClassTeacherManager = ({ schoolId, school }) => {
               className={activeClassDetail}
               schoolId={schoolId}
               school={school}
+              academicYear={normalizedAcademicYear}
               teachers={teachers}
               draggedTeacher={draggedTeacher}
               setDraggedTeacher={setDraggedTeacher}

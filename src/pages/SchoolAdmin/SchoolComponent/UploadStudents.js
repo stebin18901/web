@@ -2,6 +2,9 @@ import React, { useEffect, useMemo, useState } from "react";
 import Papa from "papaparse";
 import { db } from "../../../firebase/firebaseConfig";
 import { collection, doc, getDoc, getDocs, limit, query, where, writeBatch } from "firebase/firestore";
+import { Eye, EyeOff, Info, Pencil, Plus, Trash2, Upload, Users } from "lucide-react";
+import { buildYearScopedStudentId, normalizeAcademicYear } from "./schoolYearUtils";
+import { loadStudentsForClass, resolveSchoolClasses, splitClassAndDivision } from "./academicUtils";
 import "./UploadStudents.css";
 
 const normalize = (value) => String(value || "").trim();
@@ -33,7 +36,57 @@ const hasPaidSchoolAccess = (schoolData) => {
   return explicitPaid || ["paid", "active", "true", "yes"].includes(paymentStatus) || ["paid", "active", "true", "yes"].includes(status);
 };
 
-const UploadStudents = ({ school, schoolId, forcePaidAccess = false }) => {
+const DEFAULT_SHEET_COLUMNS = [
+  { key: "fullName", label: "Full Name", locked: true, required: true },
+  { key: "className", label: "Class", locked: true, required: true },
+  { key: "section", label: "Section", locked: true, required: false },
+  { key: "rollNumber", label: "Roll No", locked: true, required: true },
+  { key: "pin", label: "PIN", locked: true, required: true },
+  { key: "phone", label: "Phone", locked: true, required: false },
+  { key: "email", label: "Email", locked: true, required: false },
+];
+
+const buildCustomColumnKey = (label, fallbackIndex = 0) => {
+  const base = normalize(label)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  return base || `custom_field_${fallbackIndex}`;
+};
+
+const buildClassLookupKey = (value) => {
+  const normalizedValue = normalize(value).toUpperCase();
+  if (!normalizedValue) return "";
+  const { combined } = splitClassAndDivision(normalizedValue);
+  return combined || normalizedValue.replace(/\s+/g, "");
+};
+
+const InfoTooltip = ({ label, text }) => {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <span className="upload-students-tooltip">
+      <button
+        type="button"
+        className="upload-students-tooltip-trigger"
+        aria-label={label}
+        aria-expanded={open}
+        onMouseEnter={() => setOpen(true)}
+        onMouseLeave={() => setOpen(false)}
+        onFocus={() => setOpen(true)}
+        onBlur={() => setOpen(false)}
+        onClick={() => setOpen((current) => !current)}
+      >
+        <Info size={13} />
+      </button>
+      <span className={`upload-students-tooltip-panel ${open ? "visible" : ""}`} role="tooltip">
+        {text}
+      </span>
+    </span>
+  );
+};
+
+const UploadStudents = ({ school, schoolId, forcePaidAccess = false, academicYear = "" }) => {
   const createRowId = () => `sheet_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
   const emptyStudentRow = {
     rowId: "",
@@ -44,14 +97,15 @@ const UploadStudents = ({ school, schoolId, forcePaidAccess = false }) => {
     pin: "",
     phone: "",
     email: "",
+    customFields: {},
   };
   const [students, setStudents] = useState([]);
   const [uploadStatus, setUploadStatus] = useState("");
   const [activeTab, setActiveTab] = useState("csv");
   const [sheetRows, setSheetRows] = useState([]);
   const [classOptions, setClassOptions] = useState([]);
-  const [registeredStudentsByClass, setRegisteredStudentsByClass] = useState({});
   const [registeredStudentsMeta, setRegisteredStudentsMeta] = useState({});
+  const [selectedClassRegisteredStudents, setSelectedClassRegisteredStudents] = useState([]);
   const [sheetClassName, setSheetClassName] = useState("");
   const [sheetStudentCount, setSheetStudentCount] = useState("5");
   const [useSamePin, setUseSamePin] = useState(false);
@@ -61,10 +115,15 @@ const UploadStudents = ({ school, schoolId, forcePaidAccess = false }) => {
   const [resolvedSchool, setResolvedSchool] = useState(school || null);
   const [confirmUploadOpen, setConfirmUploadOpen] = useState(false);
   const [savedSheetRowIds, setSavedSheetRowIds] = useState([]);
+  const [customSheetColumns, setCustomSheetColumns] = useState([]);
+  const [newColumnLabel, setNewColumnLabel] = useState("");
+  const [editingColumnId, setEditingColumnId] = useState("");
+  const [editingColumnLabel, setEditingColumnLabel] = useState("");
+  const [visiblePins, setVisiblePins] = useState({});
 
   const buildStudentKey = (student) =>
     `${normalize(student.className).toUpperCase()}__${normalize(student.rollNumber)}`;
-  const getStudentClassKey = (student) => normalize(student.className).toUpperCase();
+  const getStudentClassKey = (student) => buildClassLookupKey(student.className);
 
   const buildSortedNewRows = (rows, className, fallbackSection, startRoll = 1) => {
     const sortedRows = [...rows].sort(sortStudentsAlphabetically);
@@ -75,10 +134,12 @@ const UploadStudents = ({ school, schoolId, forcePaidAccess = false }) => {
       className: row.className || className,
       section: row.section || fallbackSection,
       rollNumber: String(startRoll + index),
+      customFields: row.customFields || {},
     }));
   };
 
   const normalizedSchoolId = useMemo(() => normalize(schoolId).toLowerCase(), [schoolId]);
+  const normalizedAcademicYear = useMemo(() => normalizeAcademicYear(academicYear), [academicYear]);
   const rawSchoolId = useMemo(() => normalize(schoolId), [schoolId]);
   const propSchoolIsPaid = useMemo(() => forcePaidAccess || hasPaidSchoolAccess(school), [forcePaidAccess, school]);
 
@@ -94,6 +155,32 @@ const UploadStudents = ({ school, schoolId, forcePaidAccess = false }) => {
   }, [forcePaidAccess, school]);
 
   useEffect(() => {
+    const mergeYearFeeSettings = async (baseSchool) => {
+      if (!baseSchool || !normalizedAcademicYear || !normalizeSchoolId(baseSchool.schoolId || baseSchool.id)) {
+        return baseSchool;
+      }
+
+      try {
+        const yearSnap = await getDoc(
+          doc(
+            db,
+            "schools",
+            normalizeSchoolId(baseSchool.schoolId || baseSchool.id),
+            "academicYears",
+            normalizedAcademicYear
+          )
+        );
+        if (!yearSnap.exists()) return baseSchool;
+        return {
+          ...baseSchool,
+          ...yearSnap.data(),
+        };
+      } catch (error) {
+        console.error("Failed to load academic year fee settings for upload:", error);
+        return baseSchool;
+      }
+    };
+
     const loadSchoolAccess = async () => {
       setLoadingSchool(true);
       try {
@@ -101,7 +188,7 @@ const UploadStudents = ({ school, schoolId, forcePaidAccess = false }) => {
         for (const candidate of directCandidates) {
           const schoolSnap = await getDoc(doc(db, "schools", candidate));
           if (schoolSnap.exists()) {
-            const nextSchool = { id: schoolSnap.id, ...schoolSnap.data() };
+            const nextSchool = await mergeYearFeeSettings({ id: schoolSnap.id, ...schoolSnap.data() });
             setResolvedSchool(nextSchool);
             setIsPaidSchool(hasPaidSchoolAccess(nextSchool));
             setLoadingSchool(false);
@@ -115,7 +202,7 @@ const UploadStudents = ({ school, schoolId, forcePaidAccess = false }) => {
           );
           if (!bySchoolId.empty) {
             const match = bySchoolId.docs[0];
-            const nextSchool = { id: match.id, ...match.data() };
+            const nextSchool = await mergeYearFeeSettings({ id: match.id, ...match.data() });
             setResolvedSchool(nextSchool);
             setIsPaidSchool(hasPaidSchoolAccess(nextSchool));
             setLoadingSchool(false);
@@ -135,7 +222,7 @@ const UploadStudents = ({ school, schoolId, forcePaidAccess = false }) => {
         });
 
         if (matchedSchool) {
-          const nextSchool = { id: matchedSchool.id, ...matchedSchool.data() };
+          const nextSchool = await mergeYearFeeSettings({ id: matchedSchool.id, ...matchedSchool.data() });
           setResolvedSchool(nextSchool);
           setIsPaidSchool(hasPaidSchoolAccess(nextSchool));
         } else {
@@ -158,7 +245,7 @@ const UploadStudents = ({ school, schoolId, forcePaidAccess = false }) => {
     }
 
     loadSchoolAccess();
-  }, [normalizedSchoolId, propSchoolIsPaid, rawSchoolId, school]);
+  }, [normalizedAcademicYear, normalizedSchoolId, propSchoolIsPaid, rawSchoolId, school]);
 
   useEffect(() => {
     const loadClassOptions = async () => {
@@ -168,28 +255,12 @@ const UploadStudents = ({ school, schoolId, forcePaidAccess = false }) => {
       }
 
       try {
-        const candidateIds = Array.from(new Set([normalizedSchoolId, rawSchoolId].filter(Boolean)));
-        const snapshots = await Promise.all(
-          candidateIds.map((candidate) => getDocs(query(collection(db, "classes"), where("schoolId", "==", candidate))))
-        );
-
-        const optionsMap = new Map();
-        snapshots.forEach((snapshot) => {
-          snapshot.docs.forEach((entry) => {
-            const data = entry.data() || {};
-            const className = normalize(data.className || data.name);
-            if (!className) return;
-            optionsMap.set(className, {
-              className,
-              section: normalize(data.section) || inferSectionFromClassName(className),
-            });
-          });
-        });
-
+        const resolvedClasses = await resolveSchoolClasses(rawSchoolId || normalizedSchoolId, normalizedAcademicYear);
         setClassOptions(
-          Array.from(optionsMap.values()).sort((left, right) =>
-            left.className.localeCompare(right.className, undefined, { numeric: true, sensitivity: "base" })
-          )
+          resolvedClasses.map((entry) => ({
+            className: normalize(entry.className),
+            section: normalize(entry.section) || inferSectionFromClassName(entry.className),
+          }))
         );
       } catch (error) {
         console.error("Failed to load school classes for upload workspace:", error);
@@ -198,56 +269,100 @@ const UploadStudents = ({ school, schoolId, forcePaidAccess = false }) => {
     };
 
     loadClassOptions();
-  }, [normalizedSchoolId, rawSchoolId]);
+  }, [normalizedAcademicYear, normalizedSchoolId, rawSchoolId]);
 
   useEffect(() => {
     const loadRegisteredStudentsMeta = async () => {
       if (!normalizedSchoolId) {
         setRegisteredStudentsMeta({});
+        setSelectedClassRegisteredStudents([]);
         return;
       }
 
       try {
-        const snap = await getDocs(query(collection(db, "studentAccounts"), where("schoolId", "==", normalizedSchoolId)));
+        const candidateSchoolIds = Array.from(
+          new Set([normalizedSchoolId, rawSchoolId, normalize(resolvedSchool?.schoolId), normalize(resolvedSchool?.id)].filter(Boolean))
+        );
+        const snapshots = await Promise.all(
+          candidateSchoolIds.map((candidate) =>
+            getDocs(query(collection(db, "studentAccounts"), where("schoolId", "==", normalizeSchoolId(candidate))))
+          )
+        );
         const meta = {};
-        const groupedStudents = {};
+        const seenStudentIds = new Set();
 
-        snap.docs.forEach((entry) => {
-          const data = entry.data() || {};
-          const className = normalize(data.className).toUpperCase();
-          if (!className) return;
+        snapshots.forEach((snapshot) => {
+          snapshot.docs.forEach((entry) => {
+            if (seenStudentIds.has(entry.id)) return;
+            seenStudentIds.add(entry.id);
 
-          const rollNumber = Number(normalize(data.rollNumber));
-          const current = meta[className] || { count: 0, maxRoll: 0 };
-          meta[className] = {
-            count: current.count + 1,
-            maxRoll: Number.isFinite(rollNumber) ? Math.max(current.maxRoll, rollNumber) : current.maxRoll,
-          };
-          if (!groupedStudents[className]) groupedStudents[className] = [];
-          groupedStudents[className].push({
-            id: entry.id,
-            fullName: normalize(data.fullName || data.name),
-            rollNumber: normalize(data.rollNumber),
-            phone: normalize(data.phone || data.parentPhone),
-            email: normalize(data.email).toLowerCase(),
+            const data = entry.data() || {};
+            const entryYear = normalizeAcademicYear(data.academicYear);
+            if (normalizedAcademicYear && entryYear && entryYear !== normalizedAcademicYear) return;
+
+            const rawClassName = normalize(data.className || data.class);
+            const classKey = buildClassLookupKey(rawClassName);
+            if (!classKey) return;
+
+            const displayClassName = rawClassName || classKey;
+            const rollNumber = Number(normalize(data.rollNumber));
+            const current = meta[classKey] || { count: 0, maxRoll: 0 };
+            meta[classKey] = {
+              count: current.count + 1,
+              maxRoll: Number.isFinite(rollNumber) ? Math.max(current.maxRoll, rollNumber) : current.maxRoll,
+              className: displayClassName,
+            };
           });
         });
 
-        Object.keys(groupedStudents).forEach((className) => {
-          groupedStudents[className].sort(sortStudentsAlphabetically);
-        });
-
         setRegisteredStudentsMeta(meta);
-        setRegisteredStudentsByClass(groupedStudents);
       } catch (error) {
         console.error("Failed to load registered students for spreadsheet generator:", error);
         setRegisteredStudentsMeta({});
-        setRegisteredStudentsByClass({});
       }
     };
 
     loadRegisteredStudentsMeta();
-  }, [normalizedSchoolId]);
+  }, [normalizedAcademicYear, normalizedSchoolId, rawSchoolId, resolvedSchool]);
+
+  useEffect(() => {
+    const loadSelectedClassStudents = async () => {
+      if (!sheetClassName || !(rawSchoolId || normalizedSchoolId)) {
+        setSelectedClassRegisteredStudents([]);
+        return;
+      }
+
+      try {
+        const classEntry = classOptions.find((option) => option.className === sheetClassName);
+        const nextStudents = await loadStudentsForClass({
+          schoolId: rawSchoolId || normalizedSchoolId,
+          className: sheetClassName,
+          section: classEntry?.section || "",
+          academicYear: normalizedAcademicYear,
+        });
+
+        setSelectedClassRegisteredStudents(
+          nextStudents.map((student) => ({
+            id: student.studentId,
+            className: normalize(student.className),
+            section: normalize(student.section) || inferSectionFromClassName(student.className),
+            fullName: normalize(student.fullName || student.name),
+            rollNumber: normalize(student.rollNumber),
+            pin: normalize(student.pin),
+            phone: normalize(student.phone || student.parentPhone),
+            email: normalize(student.email).toLowerCase(),
+            customFields: student.customFields || {},
+            customFieldLabels: student.customFieldLabels || {},
+          }))
+        );
+      } catch (error) {
+        console.error("Failed to load selected class students for spreadsheet generator:", error);
+        setSelectedClassRegisteredStudents([]);
+      }
+    };
+
+    loadSelectedClassStudents();
+  }, [classOptions, normalizedAcademicYear, normalizedSchoolId, rawSchoolId, sheetClassName]);
 
   useEffect(() => {
     if (!useSamePin) return;
@@ -271,7 +386,7 @@ const UploadStudents = ({ school, schoolId, forcePaidAccess = false }) => {
   }, [sheetRows]);
 
   const getEffectiveStartRoll = (className = sheetClassName) => {
-    const classKey = normalize(className).toUpperCase();
+    const classKey = buildClassLookupKey(className);
     const classMeta = registeredStudentsMeta[classKey] || { maxRoll: 0 };
     const stagedMaxRoll = students
       .filter((student) => getStudentClassKey(student) === classKey)
@@ -337,6 +452,101 @@ const UploadStudents = ({ school, schoolId, forcePaidAccess = false }) => {
     setSavedSheetRowIds((prev) => prev.filter((savedRowId) => savedRowId !== rowId));
   };
 
+  const updateSheetCustomField = (rowId, columnKey, value) => {
+    setSheetRows((prev) =>
+      prev.map((row) =>
+        row.rowId === rowId
+          ? {
+              ...row,
+              customFields: {
+                ...(row.customFields || {}),
+                [columnKey]: value,
+              },
+            }
+          : row
+      )
+    );
+    setSavedSheetRowIds((prev) => prev.filter((savedRowId) => savedRowId !== rowId));
+  };
+
+  const addCustomSheetColumn = () => {
+    const label = normalize(newColumnLabel);
+    if (!label) {
+      setUploadStatus("Enter a column label before adding a custom sheet column.");
+      return;
+    }
+
+    const existingKeys = new Set(customSheetColumns.map((column) => column.key));
+    const baseKey = buildCustomColumnKey(label, customSheetColumns.length + 1);
+    let resolvedKey = baseKey;
+    let suffix = 2;
+    while (existingKeys.has(resolvedKey)) {
+      resolvedKey = `${baseKey}_${suffix}`;
+      suffix += 1;
+    }
+
+    const nextColumn = {
+      id: `custom_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      key: resolvedKey,
+      label,
+    };
+
+    setCustomSheetColumns((prev) => [...prev, nextColumn]);
+    setSheetRows((prev) =>
+      prev.map((row) => ({
+        ...row,
+        customFields: {
+          ...(row.customFields || {}),
+          [resolvedKey]: row.customFields?.[resolvedKey] || "",
+        },
+      }))
+    );
+    setNewColumnLabel("");
+    setUploadStatus(`Added custom column "${label}" to the spreadsheet.`);
+  };
+
+  const beginRenameCustomColumn = (column) => {
+    setEditingColumnId(column.id);
+    setEditingColumnLabel(column.label);
+  };
+
+  const saveCustomColumnRename = (columnId) => {
+    const nextLabel = normalize(editingColumnLabel);
+    if (!nextLabel) {
+      setUploadStatus("Column label cannot be empty.");
+      return;
+    }
+    setCustomSheetColumns((prev) =>
+      prev.map((column) => (column.id === columnId ? { ...column, label: nextLabel } : column))
+    );
+    setEditingColumnId("");
+    setEditingColumnLabel("");
+  };
+
+  const removeCustomSheetColumn = (columnId) => {
+    const target = customSheetColumns.find((column) => column.id === columnId);
+    if (!target) return;
+    setCustomSheetColumns((prev) => prev.filter((column) => column.id !== columnId));
+    setSheetRows((prev) =>
+      prev.map((row) => {
+        const nextFields = { ...(row.customFields || {}) };
+        delete nextFields[target.key];
+        return {
+          ...row,
+          customFields: nextFields,
+        };
+      })
+    );
+    setUploadStatus(`Removed custom column "${target.label}".`);
+  };
+
+  const togglePinVisibility = (pinKey) => {
+    setVisiblePins((prev) => ({
+      ...prev,
+      [pinKey]: !prev[pinKey],
+    }));
+  };
+
   const generateSheetRows = () => {
     const selectedClass = classOptions.find((option) => option.className === sheetClassName);
     if (!selectedClass) {
@@ -375,7 +585,7 @@ const UploadStudents = ({ school, schoolId, forcePaidAccess = false }) => {
   };
 
   const selectedClassMeta = useMemo(() => {
-    const classKey = normalize(sheetClassName).toUpperCase();
+    const classKey = buildClassLookupKey(sheetClassName);
     const baseMeta = registeredStudentsMeta[classKey] || { count: 0, maxRoll: 0 };
     const stagedForClass = students.filter((student) => getStudentClassKey(student) === classKey);
     const stagedMaxRoll = stagedForClass.reduce((maxValue, student) => {
@@ -391,10 +601,19 @@ const UploadStudents = ({ school, schoolId, forcePaidAccess = false }) => {
     };
   }, [registeredStudentsMeta, sheetClassName, students]);
 
-  const selectedClassRegisteredStudents = useMemo(() => {
-    const classKey = normalize(sheetClassName).toUpperCase();
-    return registeredStudentsByClass[classKey] || [];
-  }, [registeredStudentsByClass, sheetClassName]);
+  const sheetGridTemplate = useMemo(() => {
+    const baseColumns = [
+      "1.45fr",
+      "0.8fr",
+      "0.72fr",
+      "0.78fr",
+      "1.05fr",
+      "1fr",
+      "1.2fr",
+    ];
+    const customColumns = customSheetColumns.map(() => "1fr");
+    return [...baseColumns, ...customColumns, "0.9fr"].join(" ");
+  }, [customSheetColumns]);
 
   const mergedSheetRows = useMemo(() => {
     const mergedRows = [
@@ -417,7 +636,7 @@ const UploadStudents = ({ school, schoolId, forcePaidAccess = false }) => {
       ...row,
       displayRollNumber: String(index + 1),
     }));
-  }, [classOptions, selectedClassRegisteredStudents, sheetClassName, sheetRows]);
+  }, [classOptions, savedSheetRowIds, selectedClassRegisteredStudents, sheetClassName, sheetRows]);
 
   const newSheetRowCount = useMemo(
     () => mergedSheetRows.filter((row) => row.entrySource === "new").length,
@@ -491,6 +710,15 @@ const UploadStudents = ({ school, schoolId, forcePaidAccess = false }) => {
         pin: normalize(row.pin),
         phone: normalize(row.phone),
         email: normalize(row.email).toLowerCase(),
+        customFields: customSheetColumns.reduce((accumulator, column) => {
+          accumulator[column.key] = normalize(row.customFields?.[column.key]);
+          return accumulator;
+        }, {}),
+        customFieldLabels: customSheetColumns.reduce((accumulator, column) => {
+          accumulator[column.key] = column.label;
+          return accumulator;
+        }, {}),
+        academicYear: normalizedAcademicYear,
       }));
 
     if (!preparedRows.length) {
@@ -573,7 +801,12 @@ const UploadStudents = ({ school, schoolId, forcePaidAccess = false }) => {
       for (const student of students) {
         const normalizedClassName = normalize(student.className);
         const normalizedRoll = normalize(student.rollNumber);
-        const studentId = `${normalizedSchoolId}_${normalizedClassName}_${normalizedRoll}`;
+        const studentId = buildYearScopedStudentId({
+          schoolId: normalizedSchoolId,
+          academicYear: normalizedAcademicYear,
+          className: normalizedClassName,
+          rollNumber: normalizedRoll,
+        });
 
         if (seenIds.has(studentId)) {
           throw new Error(`Duplicate roll number ${normalizedRoll} found in class ${normalizedClassName} within this upload.`);
@@ -589,12 +822,18 @@ const UploadStudents = ({ school, schoolId, forcePaidAccess = false }) => {
       const batch = writeBatch(db);
 
       students.forEach((student) => {
-        const id = `${normalizedSchoolId}_${student.className}_${student.rollNumber}`;
+        const id = buildYearScopedStudentId({
+          schoolId: normalizedSchoolId,
+          academicYear: normalizedAcademicYear,
+          className: student.className,
+          rollNumber: student.rollNumber,
+        });
         const ref = doc(collection(db, "studentAccounts"), id);
 
         batch.set(ref, {
           ...student,
           schoolId: normalizedSchoolId,
+          academicYear: normalizedAcademicYear,
           phone: normalize(student.phone),
           email: normalize(student.email).toLowerCase(),
           selectedPlanId,
@@ -630,19 +869,6 @@ const UploadStudents = ({ school, schoolId, forcePaidAccess = false }) => {
 
   return (
     <div className="upload-students-page">
-      <div className="upload-students-hero">
-        <div>
-          <p className="upload-students-kicker">Student Import Hub</p>
-          <h2>Upload Students</h2>
-          <p className="upload-students-subtitle">
-            Import student profiles in bulk or add them manually with login and contact details.
-          </p>
-        </div>
-        <div className="upload-students-hero-badge">
-          <span>School</span>
-          <strong>{resolvedSchool?.schoolName || school?.schoolName || "School Admin"}</strong>
-        </div>
-      </div>
       {loadingSchool ? (
         <div className="upload-students-state-card">Checking school access...</div>
       ) : !(isPaidSchool || forcePaidAccess) ? (
@@ -657,32 +883,29 @@ const UploadStudents = ({ school, schoolId, forcePaidAccess = false }) => {
         <div className="upload-students-card-head">
           <div>
             <h3>Import Workspace</h3>
-            <p>Switch between bulk CSV import and a full spreadsheet workspace.</p>
           </div>
-        </div>
-        <div className="upload-students-tabs">
-          <button
-            type="button"
-            className={activeTab === "csv" ? "active" : ""}
-            onClick={() => setActiveTab("csv")}
-          >
-            CSV Upload
-          </button>
-          <button
-            type="button"
-            className={activeTab === "sheet" ? "active" : ""}
-            onClick={() => setActiveTab("sheet")}
-          >
-            Spreadsheet Input
-          </button>
+          <div className="upload-students-tabs">
+            <button
+              type="button"
+              className={activeTab === "csv" ? "active" : ""}
+              onClick={() => setActiveTab("csv")}
+            >
+              CSV Upload
+            </button>
+            <button
+              type="button"
+              className={activeTab === "sheet" ? "active" : ""}
+              onClick={() => setActiveTab("sheet")}
+            >
+              Spreadsheet Input
+            </button>
+          </div>
         </div>
 
         {activeTab === "csv" ? (
           <section className="upload-students-tab-panel">
             <div className="upload-students-partition-head">
-              <span className="upload-students-partition-tag">Bulk Import</span>
               <h4>CSV Upload</h4>
-              <p>Best for bulk import from Excel or any admin sheet exported as CSV.</p>
             </div>
             <label className="upload-students-file-picker">
               <span>Select CSV File</span>
@@ -692,87 +915,165 @@ const UploadStudents = ({ school, schoolId, forcePaidAccess = false }) => {
         ) : (
           <section className="upload-students-tab-panel upload-students-sheet-panel">
             <div className="upload-students-partition-head">
-              <span className="upload-students-partition-tag">Full Workspace</span>
-              <h4>Spreadsheet Input</h4>
-              <p>Review the current class roster first, then add only the new students you still need to create.</p>
+              <div className="upload-students-heading-inline">
+                <h4>Spreadsheet Input</h4>
+                <InfoTooltip
+                  label="Spreadsheet input info"
+                  text="The sheet shows existing students for the selected class and lets you stage only the new students you want to add."
+                />
+              </div>
             </div>
             <div className="upload-students-sheet-toolbar">
-              <div className="upload-students-sheet-toolbar-copy">
-                <strong>Class source</strong>
-                <span>
-                  {classOptions.length
-                    ? `${classOptions.length} class${classOptions.length === 1 ? "" : "es"} available from your school setup`
-                    : "No created classes found yet. Create classes first to get guided selection here."}
-                </span>
-                {sheetClassName ? (
-                  <span>
-                    {sheetClassName} currently has {selectedClassMeta.registeredCount || 0} registered student
-                    {(selectedClassMeta.registeredCount || 0) === 1 ? "" : "s"}
-                    {selectedClassMeta.stagedCount
-                      ? ` and ${selectedClassMeta.stagedCount} more saved in Ready to Upload`
-                      : ""}
-                    . Add only the extra rows you want to fill now.
-                  </span>
-                ) : null}
-              </div>
-              <div className="upload-students-batch-controls">
-                <label className="upload-students-batch-field">
-                  <span>Class</span>
-                  <select value={sheetClassName} onChange={(event) => setSheetClassName(event.target.value)}>
-                    <option value="">{classOptions.length ? "Select class" : "No classes available"}</option>
-                    {classOptions.map((option) => (
-                      <option key={option.className} value={option.className}>
-                        {option.className}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="upload-students-batch-field small">
-                  <span>Add Rows</span>
-                  <input
-                    type="number"
-                    min="1"
-                    max="200"
-                    value={sheetStudentCount}
-                    onChange={(event) => setSheetStudentCount(event.target.value)}
-                  />
-                </label>
-                <button type="button" className="upload-students-secondary-btn" onClick={generateSheetRows}>
-                  Add Rows
-                </button>
-              </div>
+              <div className="upload-students-sheet-toolbar-controls">
+                <div className="upload-students-batch-controls">
+                  <label className="upload-students-batch-field">
+                    <div className="upload-students-field-inline">
+                      <span>Class</span>
+                      <InfoTooltip
+                        label="Class selector info"
+                        text="The class list comes from the school setup for the active academic year."
+                      />
+                    </div>
+                    <select value={sheetClassName} onChange={(event) => setSheetClassName(event.target.value)}>
+                      <option value="">{classOptions.length ? "Select class" : "No classes available"}</option>
+                      {classOptions.map((option) => (
+                        <option key={option.className} value={option.className}>
+                          {option.className}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="upload-students-batch-field small">
+                    <div className="upload-students-field-inline">
+                      <span>Add Rows</span>
+                      <InfoTooltip
+                        label="Add rows info"
+                        text="Add only the extra rows you need for new students. Existing students already appear in the sheet."
+                      />
+                    </div>
+                    <input
+                      type="number"
+                      min="1"
+                      max="200"
+                      value={sheetStudentCount}
+                      onChange={(event) => setSheetStudentCount(event.target.value)}
+                    />
+                  </label>
+                  <button type="button" className="upload-students-secondary-btn" onClick={generateSheetRows}>
+                    Add Rows
+                  </button>
+                </div>
                 <label className="upload-students-pin-toggle">
                   <input
                     type="checkbox"
                     checked={useSamePin}
-                  onChange={(event) => {
-                    const checked = event.target.checked;
-                    setUseSamePin(checked);
-                    if (!checked) {
-                      setSharedPin("");
-                    }
-                  }}
+                    onChange={(event) => {
+                      const checked = event.target.checked;
+                      setUseSamePin(checked);
+                      if (!checked) {
+                        setSharedPin("");
+                      }
+                    }}
                   />
                   <span>Same PIN for all</span>
+                  <InfoTooltip
+                    label="Shared PIN info"
+                    text="Shared PIN applies only to new spreadsheet rows. Existing students keep their saved PIN."
+                  />
                 </label>
-              {useSamePin ? (
-                <div className="upload-students-shared-pin">
-                  <span>Common PIN</span>
+                {useSamePin ? (
+                  <div className="upload-students-shared-pin">
+                    <span>Common PIN</span>
+                    <input
+                      type="text"
+                      value={sharedPin}
+                      onChange={(event) => setSharedPin(normalize(event.target.value))}
+                      placeholder="Enter one PIN for all rows"
+                    />
+                  </div>
+                ) : null}
+              </div>
+            </div>
+            {sheetClassName ? (
+              <div className="upload-students-sheet-meta">
+                <span>{sheetClassName}</span>
+                <span>{selectedClassMeta.registeredCount || 0} registered</span>
+                {selectedClassMeta.stagedCount ? <span>{selectedClassMeta.stagedCount} staged</span> : null}
+                <InfoTooltip
+                  label="Class roster summary info"
+                  text="Registered counts come from the live class roster. Staged counts are new records saved into Ready to Upload."
+                />
+              </div>
+            ) : null}
+            <div className="upload-students-custom-columns">
+              <div className="upload-students-custom-columns-head">
+                <div>
+                  <div className="upload-students-heading-inline">
+                    <strong>Custom columns</strong>
+                    <InfoTooltip
+                      label="Custom columns info"
+                      text="Default columns stay locked. You can add, rename, and delete custom columns such as address, admission number, or guardian name."
+                    />
+                  </div>
+                </div>
+                <div className="upload-students-custom-columns-form">
                   <input
                     type="text"
-                    value={sharedPin}
-                    onChange={(event) => setSharedPin(normalize(event.target.value))}
-                    placeholder="Enter one PIN for all rows"
+                    value={newColumnLabel}
+                    onChange={(event) => setNewColumnLabel(event.target.value)}
+                    placeholder="New column label"
                   />
+                  <button type="button" className="upload-students-secondary-btn" onClick={addCustomSheetColumn}>
+                    <Plus size={15} />
+                    Add Column
+                  </button>
                 </div>
-              ) : null}
-            </div>
-            <div className="upload-students-inline-note">
-              Shared PIN applies only to new spreadsheet rows. Already created students keep their existing PIN, though different students can still have the same PIN.
+              </div>
+              {customSheetColumns.length ? (
+                <div className="upload-students-custom-column-list">
+                  {customSheetColumns.map((column) => (
+                    <div key={column.id} className="upload-students-custom-column-chip">
+                      {editingColumnId === column.id ? (
+                        <>
+                          <input
+                            type="text"
+                            value={editingColumnLabel}
+                            onChange={(event) => setEditingColumnLabel(event.target.value)}
+                            placeholder="Column label"
+                          />
+                          <button type="button" className="upload-students-chip-btn" onClick={() => saveCustomColumnRename(column.id)}>
+                            Save
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <span>{column.label}</span>
+                          <button type="button" className="upload-students-chip-btn" onClick={() => beginRenameCustomColumn(column)}>
+                            <Pencil size={13} />
+                          </button>
+                        </>
+                      )}
+                      <button type="button" className="upload-students-chip-btn danger" onClick={() => removeCustomSheetColumn(column.id)}>
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="upload-students-custom-columns-empty">
+                  No custom columns
+                </div>
+              )}
             </div>
             <div className="upload-students-sheet-progress">
               <div className="upload-students-sheet-progress-copy">
-                <strong>Spreadsheet progress</strong>
+                <div className="upload-students-heading-inline">
+                  <strong>Spreadsheet progress</strong>
+                  <InfoTooltip
+                    label="Spreadsheet progress info"
+                    text="New rows are still being edited. Saved rows are already staged from this sheet. Ready to Upload is the final list that will go to the database."
+                  />
+                </div>
                 <span>
                   {newSheetRowCount
                     ? `${newSheetRowCount} new row${newSheetRowCount === 1 ? "" : "s"} currently being edited in the sheet`
@@ -798,14 +1099,17 @@ const UploadStudents = ({ school, schoolId, forcePaidAccess = false }) => {
             </div>
             <div className="upload-students-sheet-wrap full-size">
               {mergedSheetRows.length ? (
-                <div className="upload-students-sheet">
-                  <div className="upload-students-sheet-head">Full Name</div>
-                  <div className="upload-students-sheet-head">Class</div>
-                  <div className="upload-students-sheet-head">Section</div>
-                  <div className="upload-students-sheet-head">Roll No</div>
-                  <div className="upload-students-sheet-head">PIN</div>
-                  <div className="upload-students-sheet-head">Phone</div>
-                  <div className="upload-students-sheet-head">Email</div>
+                <div className="upload-students-sheet" style={{ gridTemplateColumns: sheetGridTemplate }}>
+                  {DEFAULT_SHEET_COLUMNS.map((column) => (
+                    <div key={column.key} className="upload-students-sheet-head">
+                      {column.label}
+                    </div>
+                  ))}
+                  {customSheetColumns.map((column) => (
+                    <div key={column.id} className="upload-students-sheet-head upload-students-sheet-head-custom">
+                      {column.label}
+                    </div>
+                  ))}
                   <div className="upload-students-sheet-head">Status</div>
                   {mergedSheetRows.map((row, index) => (
                     <React.Fragment key={`${row.entrySource}-${row.id || row.rowId || index}`}>
@@ -822,12 +1126,24 @@ const UploadStudents = ({ school, schoolId, forcePaidAccess = false }) => {
                         placeholder="Auto"
                         readOnly
                       />
-                      <input
-                        value={row.entrySource === "existing" ? "Already created" : useSamePin ? sharedPin : row.pin}
-                        onChange={(e) => row.entrySource === "new" && updateSheetRow(row.rowId, "pin", e.target.value)}
-                        placeholder="1234"
-                        readOnly={useSamePin || row.entrySource === "existing"}
-                      />
+                      <div className="upload-students-pin-cell">
+                        <input
+                          type={visiblePins[`${row.entrySource}-${row.id || row.rowId || index}-pin`] ? "text" : "password"}
+                          className="upload-students-pin-input"
+                          value={useSamePin && row.entrySource !== "existing" ? sharedPin : row.pin || ""}
+                          onChange={(e) => row.entrySource === "new" && updateSheetRow(row.rowId, "pin", e.target.value)}
+                          placeholder="1234"
+                          readOnly={useSamePin || row.entrySource === "existing"}
+                        />
+                        <button
+                          type="button"
+                          className="upload-students-pin-toggle-btn"
+                          onClick={() => togglePinVisibility(`${row.entrySource}-${row.id || row.rowId || index}-pin`)}
+                          title={visiblePins[`${row.entrySource}-${row.id || row.rowId || index}-pin`] ? "Hide PIN" : "Show PIN"}
+                        >
+                          {visiblePins[`${row.entrySource}-${row.id || row.rowId || index}-pin`] ? <EyeOff size={15} /> : <Eye size={15} />}
+                        </button>
+                      </div>
                       <input
                         value={row.phone || ""}
                         onChange={(e) => row.entrySource === "new" && updateSheetRow(row.rowId, "phone", e.target.value)}
@@ -840,44 +1156,35 @@ const UploadStudents = ({ school, schoolId, forcePaidAccess = false }) => {
                         placeholder="student@email.com"
                         readOnly={row.entrySource === "existing"}
                       />
+                      {customSheetColumns.map((column) => (
+                        <input
+                          key={`${column.id}-${row.id || row.rowId || index}`}
+                          value={row.customFields?.[column.key] || ""}
+                          onChange={(e) => row.entrySource === "new" && updateSheetCustomField(row.rowId, column.key, e.target.value)}
+                          placeholder={column.label}
+                          readOnly={row.entrySource === "existing"}
+                        />
+                      ))}
                       {row.entrySource === "existing" ? (
                         <div className="upload-students-sheet-badge existing">Existing</div>
                       ) : row.entrySource === "saved" ? (
                         <div className="upload-students-sheet-badge saved">Saved</div>
                       ) : (
-                        <button type="button" className="upload-students-sheet-remove" onClick={() => removeSheetRow(row.rowId)}>
-                          Remove
+                        <button type="button" className="upload-students-sheet-remove" onClick={() => removeSheetRow(row.rowId)} title="Remove row">
+                          <Trash2 size={14} />
                         </button>
                       )}
                     </React.Fragment>
                   ))}
                 </div>
               ) : (
-                <div className="upload-students-sheet-empty">
-                  Choose a class, then click <strong>Add Rows</strong> to add new entry rows into the same student grid.
-                  Existing form-registered students for that class will also appear here automatically.
+              <div className="upload-students-sheet-empty">
+                <div className="upload-students-empty-inline">
+                  <Users size={16} />
+                  <span>No rows</span>
                 </div>
+              </div>
               )}
-            </div>
-
-            <div className="upload-students-actions between upload-students-sheet-footer">
-              <div className="upload-students-sheet-footer-copy">
-                <strong>Step 1</strong>
-                <span>Finish entering the new students in the sheet.</span>
-              </div>
-              <div className="upload-students-sheet-footer-actions">
-                <button type="button" className="upload-students-secondary-btn" onClick={addSheetRow}>
-                  Add Row
-                </button>
-                <button
-                  type="button"
-                  className="upload-students-primary-btn"
-                  onClick={addSpreadsheetStudents}
-                  disabled={!newSheetRowCount}
-                >
-                  Save Entered Students
-                </button>
-              </div>
             </div>
           </section>
         )}
@@ -887,13 +1194,68 @@ const UploadStudents = ({ school, schoolId, forcePaidAccess = false }) => {
       <section className="upload-students-card upload-students-preview-card">
         <div className="upload-students-card-head">
           <div>
-            <h3>Ready to Upload</h3>
-            <p>{students.length} student{students.length === 1 ? "" : "s"} currently staged for import.</p>
+            <div className="upload-students-heading-inline">
+              <h3>Ready to Upload</h3>
+              <InfoTooltip
+                label="Ready to upload info"
+                text="Only students saved into this staging list will be uploaded to the live database."
+              />
+            </div>
           </div>
-          <div className="upload-students-preview-actions">
+          <div className="upload-students-preview-count">{students.length} staged</div>
+        </div>
+
+        {students.length > 0 ? (
+          <div className="upload-students-preview-list">
+            {students.slice(0, 12).map((s, i) => (
+              <article key={`${s.rollNumber}-${i}`} className="upload-students-preview-item">
+                <strong>{s.fullName}</strong>
+                <span>Class {s.className} {s.section ? `· ${s.section}` : ""}</span>
+                <span>Roll {s.rollNumber}</span>
+                {s.customFieldLabels
+                  ? Object.entries(s.customFieldLabels).map(([fieldKey, label]) =>
+                      s.customFields?.[fieldKey] ? <span key={fieldKey}>{label}: {s.customFields[fieldKey]}</span> : null
+                    )
+                  : null}
+                {s.phone ? <span>{s.phone}</span> : null}
+                {s.email ? <span>{s.email}</span> : null}
+                <button
+                  type="button"
+                  className="upload-students-preview-remove"
+                  onClick={() => removeStagedStudent(i)}
+                >
+                  Remove from upload
+                </button>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="upload-students-empty">
+            <div className="upload-students-empty-inline">
+              <Upload size={16} />
+              <span>No staged students</span>
+            </div>
+          </div>
+        )}
+
+        {uploadStatus ? <p className="upload-students-status">{uploadStatus}</p> : null}
+
+        <div className="upload-students-actions between upload-students-sheet-footer upload-students-action-rail">
+          <div className="upload-students-sheet-footer-actions">
+            <button type="button" className="upload-students-secondary-btn" onClick={addSheetRow}>
+              Add Row
+            </button>
             <button
               type="button"
               className="upload-students-secondary-btn"
+              onClick={addSpreadsheetStudents}
+              disabled={!newSheetRowCount}
+            >
+              Save Entered Students
+            </button>
+            <button
+              type="button"
+              className="upload-students-danger-btn"
               onClick={clearStagedStudents}
               disabled={students.length === 0}
             >
@@ -909,33 +1271,6 @@ const UploadStudents = ({ school, schoolId, forcePaidAccess = false }) => {
             </button>
           </div>
         </div>
-
-        {students.length > 0 ? (
-          <div className="upload-students-preview-list">
-            {students.slice(0, 12).map((s, i) => (
-              <article key={`${s.rollNumber}-${i}`} className="upload-students-preview-item">
-                <strong>{s.fullName}</strong>
-                <span>Class {s.className} {s.section ? `· ${s.section}` : ""}</span>
-                <span>Roll {s.rollNumber}</span>
-                {s.phone ? <span>{s.phone}</span> : null}
-                {s.email ? <span>{s.email}</span> : null}
-                <button
-                  type="button"
-                  className="upload-students-preview-remove"
-                  onClick={() => removeStagedStudent(i)}
-                >
-                  Remove from upload
-                </button>
-              </article>
-            ))}
-          </div>
-        ) : (
-          <div className="upload-students-empty">
-            No students added yet. Import a CSV or use the manual form above.
-          </div>
-        )}
-
-        {uploadStatus ? <p className="upload-students-status">{uploadStatus}</p> : null}
       </section>
         </>
       )}

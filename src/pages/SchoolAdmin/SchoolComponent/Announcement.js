@@ -31,6 +31,7 @@ import {
   normalizeSection,
   resolveSchoolClasses,
 } from "./academicUtils";
+import { normalizeAcademicYear } from "./schoolYearUtils";
 import "./AnnouncementGmailView.css";
 
 const TARGET_TABS = [
@@ -83,7 +84,7 @@ const buildTargetLabel = ({ targetMode, className, section, selectedStudents = [
   return "Whole School";
 };
 
-export default function AnnouncementGmailView({ schoolId }) {
+export default function AnnouncementGmailView({ schoolId, academicYear = "" }) {
   const [announcements, setAnnouncements] = useState([]);
   const [selected, setSelected] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -100,6 +101,7 @@ export default function AnnouncementGmailView({ schoolId }) {
   const [selectedStudentIds, setSelectedStudentIds] = useState([]);
   const [attachments, setAttachments] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const normalizedAcademicYear = useMemo(() => normalizeAcademicYear(academicYear), [academicYear]);
 
   const fileInputRef = useRef(null);
 
@@ -125,7 +127,7 @@ export default function AnnouncementGmailView({ schoolId }) {
     const loadClasses = async () => {
       setClassesLoading(true);
       try {
-        const data = await resolveSchoolClasses(schoolId);
+        const data = await resolveSchoolClasses(schoolId, normalizedAcademicYear);
         if (!alive) return;
         setClassOptions(
           data.map((entry) => ({
@@ -145,7 +147,7 @@ export default function AnnouncementGmailView({ schoolId }) {
     return () => {
       alive = false;
     };
-  }, [schoolId]);
+  }, [normalizedAcademicYear, schoolId]);
 
   useEffect(() => {
     const q = query(
@@ -154,12 +156,14 @@ export default function AnnouncementGmailView({ schoolId }) {
       orderBy("createdAt", "desc")
     );
     const unsub = onSnapshot(q, (snap) => {
-      const data = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      const data = snap.docs
+        .map((d) => ({ id: d.id, ...d.data() }))
+        .filter((entry) => !normalizedAcademicYear || normalizeAcademicYear(entry.academicYear) === normalizedAcademicYear);
       setAnnouncements(data);
       setLoading(false);
     });
     return () => unsub();
-  }, [schoolId]);
+  }, [normalizedAcademicYear, schoolId]);
 
   useEffect(() => {
     let alive = true;
@@ -177,6 +181,7 @@ export default function AnnouncementGmailView({ schoolId }) {
           schoolId,
           className: selectedClassMeta.className,
           section: selectedClassMeta.section,
+          academicYear: normalizedAcademicYear,
         });
         if (!alive) return;
         setClassStudents(rows);
@@ -196,7 +201,7 @@ export default function AnnouncementGmailView({ schoolId }) {
     return () => {
       alive = false;
     };
-  }, [schoolId, selectedClassMeta.className, selectedClassMeta.section, targetMode]);
+  }, [normalizedAcademicYear, schoolId, selectedClassMeta.className, selectedClassMeta.section, targetMode]);
 
   const resetForm = () => {
     setTitle("");
@@ -362,6 +367,7 @@ export default function AnnouncementGmailView({ schoolId }) {
         attachments: uploadedAttachments.filter((attachment) => attachment.url),
         imageUrl: firstImage?.url || "",
         schoolId,
+        academicYear: normalizedAcademicYear,
         updatedAt: serverTimestamp(),
       };
 

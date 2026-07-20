@@ -1,0 +1,293 @@
+.school-teachers-page {
+  display: grid;
+  gap: 18px;
+  color: #17233b;
+}
+
+.school-teachers-hero,
+.school-teachers-card {
+  border: 1px solid #dbe7f5;
+  border-radius: 24px;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+  box-shadow: 0 18px 38px rgba(15, 23, 42, 0.06);
+}
+
+.school-teachers-hero {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+  padding: 24px 26px;
+}
+
+.school-teachers-kicker {
+  margin: 0 0 8px;
+  color: #2563eb;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+.school-teachers-hero h2 {
+  margin: 0;
+  font-size: clamp(1.45rem, 2.6vw, 2rem);
+}
+
+.school-teachers-hero p {
+  margin: 10px 0 0;
+  max-width: 680px;
+  color: #5f6f87;
+  line-height: 1.65;
+}
+
+.school-teachers-hero-badge {
+  min-width: 150px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid #dbe7f5;
+  background: #ffffff;
+}
+
+.school-teachers-hero-badge span {
+  display: block;
+  color: #64748b;
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.school-teachers-hero-badge strong {
+  display: block;
+  margin-top: 8px;
+  font-size: 1.6rem;
+}
+
+.school-teachers-grid {
+  display: grid;
+  grid-template-columns: minmax(320px, 0.9fr) minmax(0, 1.1fr);
+  gap: 18px;
+}
+
+.school-teachers-card {
+  padding: 20px;
+}
+
+.school-teachers-card-head h3 {
+  margin: 0;
+  font-size: 1.05rem;
+}
+
+.school-teachers-card-head p {
+  margin: 8px 0 0;
+  color: #5f6f87;
+  line-height: 1.55;
+}
+
+.school-teachers-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 16px;
+}
+
+.school-teachers-form label {
+  display: grid;
+  gap: 6px;
+}
+
+.school-teachers-form label span {
+  color: #475569;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.school-teachers-form input,
+.school-teachers-search input {
+  min-height: 46px;
+  width: 100%;
+  padding: 0 14px;
+  border: 1px solid #dbe4f0;
+  border-radius: 14px;
+  background: #ffffff;
+  color: #17233b;
+}
+
+.school-teachers-form .span-2 {
+  grid-column: 1 / -1;
+}
+
+.school-teachers-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.school-teachers-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.school-teachers-btn.primary {
+  background: linear-gradient(135deg, #2563eb, #1d4ed8);
+  color: #ffffff;
+}
+
+.school-teachers-btn.ghost {
+  background: #eff6ff;
+  color: #2457c5;
+}
+
+.school-teachers-btn.danger {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.school-teachers-status {
+  margin: 14px 0 0;
+  color: #166534;
+  font-weight: 700;
+}
+
+.school-teachers-search {
+  margin-top: 16px;
+}
+
+.school-teachers-list {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.school-teachers-list-card {
+  padding: 16px;
+  border: 1px solid #dbe7f5;
+  border-radius: 18px;
+  background: #ffffff;
+}
+
+.school-teachers-list-top {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+}
+
+.school-teachers-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, #dbeafe, #dcfce7);
+  color: #1d4ed8;
+  font-weight: 800;
+}
+
+.school-teachers-meta strong {
+  display: block;
+}
+
+.school-teachers-meta span {
+  display: block;
+  margin-top: 4px;
+  color: #64748b;
+  font-size: 0.86rem;
+}
+
+.school-teachers-tags .role {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4338ca;
+  font-size: 0.74rem;
+  font-weight: 800;
+}
+
+.school-teachers-tags .role.active {
+  background: #dcfce7;
+  color: #166534;
+}
+
+.school-teachers-details {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.school-teachers-details span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border-radius: 12px;
+  background: #f8fbff;
+  color: #5f6f87;
+  font-size: 0.82rem;
+}
+
+.school-teachers-list-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.school-teachers-empty {
+  margin-top: 16px;
+  padding: 16px;
+  border-radius: 16px;
+  background: #f8fbff;
+  color: #64748b;
+}
+
+@media (max-width: 980px) {
+  .school-teachers-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .school-teachers-hero {
+    flex-direction: column;
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .school-teachers-card {
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .school-teachers-form {
+    grid-template-columns: 1fr;
+  }
+
+  .school-teachers-actions,
+  .school-teachers-list-actions {
+    flex-direction: column;
+  }
+
+  .school-teachers-btn {
+    width: 100%;
+  }
+
+  .school-teachers-list-top {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+}

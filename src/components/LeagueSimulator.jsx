@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { memo, useDeferredValue, useEffect, useMemo, useState } from "react";
 import {
   CalendarRange,
   CheckCircle2,
@@ -18,7 +18,7 @@ import { collection, getDocs, query, where } from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
 import "./LeagueSimulator.css";
 
-const PROFILE_FALLBACK = `${process.env.PUBLIC_URL || ""}/images/propic.png`;
+const PROFILE_FALLBACK = `${process.env.PUBLIC_URL || ""}/images/propic.webp`;
 const STORAGE_PREFIX = "hepsy_fantasy_league_v3";
 const LEAGUE_TABS = [
   { key: "overview", label: "Overview" },
@@ -123,6 +123,31 @@ const getInitials = (name = "") =>
     .map((part) => part[0]?.toUpperCase() || "")
     .join("") || "HQ";
 
+const preloadVisual = (src) =>
+  new Promise((resolve) => {
+    if (!src || typeof window === "undefined") {
+      resolve();
+      return;
+    }
+
+    const image = new window.Image();
+    let settled = false;
+
+    const finish = () => {
+      if (settled) return;
+      settled = true;
+      resolve();
+    };
+
+    image.onload = finish;
+    image.onerror = finish;
+    image.src = src;
+
+    if (typeof image.decode === "function") {
+      image.decode().then(finish).catch(finish);
+    }
+  });
+
 const buildStudentMetrics = (student, reports, progressDocs) => {
   const studentReports = reports
     .filter((report) => (report.studentId || report.userId) === student.id)
@@ -204,7 +229,7 @@ const buildStudentMetrics = (student, reports, progressDocs) => {
   };
 };
 
-const PlayerBadge = ({
+const PlayerBadge = memo(({
   player,
   selected,
   locked,
@@ -229,12 +254,12 @@ const PlayerBadge = ({
     }}
   >
     <div className="league-student-card-top">
-      <span className="league-rating-badge">{player.rating}</span>
+      <span className="league-rating-badge">OVR {player.rating}</span>
       <span className="league-class-pill">{player.className}</span>
     </div>
 
     <div className="league-student-avatar-shell">
-      <img src={player.avatar} alt={player.name} />
+      <img src={player.avatar} alt={player.name} loading="eager" fetchPriority="high" decoding="async" />
       {isCaptain ? (
         <span className="league-captain-chip">
           <Crown size={14} />
@@ -246,6 +271,16 @@ const PlayerBadge = ({
           VC
         </span>
       ) : null}
+    </div>
+
+    <div className="league-student-card-status">
+      {isCurrentUser ? (
+        <span className="league-card-flag locked">CAPTAIN LOCKED</span>
+      ) : selected ? (
+        <span className="league-card-flag active">IN LINEUP</span>
+      ) : (
+        <span className="league-card-flag">AVAILABLE</span>
+      )}
     </div>
 
     <div className="league-student-copy">
@@ -269,7 +304,7 @@ const PlayerBadge = ({
     </div>
 
     <div className="league-student-price">
-      <span>Projected KP</span>
+      <span>MINT Value</span>
       <strong>{player.marketValue}</strong>
     </div>
 
@@ -283,7 +318,7 @@ const PlayerBadge = ({
         }}
         disabled={locked || isCurrentUser}
       >
-        {isCurrentUser ? "Locked In Team" : selected ? "Remove" : "Add To Team"}
+        {isCurrentUser ? "Locked In Team" : selected ? "Remove From Squad" : "Add To Squad"}
       </button>
     ) : null}
 
@@ -297,11 +332,11 @@ const PlayerBadge = ({
         }}
         disabled={isCurrentUser}
       >
-        {isCurrentUser ? "You Are Captain" : isViceCaptain ? "Vice Captain Locked" : "Make Vice Captain"}
+        {isCurrentUser ? "You Are Captain" : isViceCaptain ? "Vice Captain Locked" : "Set Vice Captain"}
       </button>
     ) : null}
   </article>
-);
+));
 
 export default function LeagueSimulator({ session }) {
   const savedState = useMemo(() => getSavedState(session), [session]);
@@ -321,6 +356,7 @@ export default function LeagueSimulator({ session }) {
   const [simulationSummary, setSimulationSummary] = useState(savedState.simulationSummary);
   const [notice, setNotice] = useState(savedState.notice || "");
   const [insightSlide, setInsightSlide] = useState(0);
+  const [visualsReady, setVisualsReady] = useState(false);
   const currentUserId = session?.id || "";
 
   useEffect(() => {
@@ -421,6 +457,7 @@ export default function LeagueSimulator({ session }) {
     if (classFilter === "all") return students;
     return students.filter((student) => student.className === classFilter);
   }, [students, classFilter]);
+  const deferredFilteredStudents = useDeferredValue(filteredStudents);
 
   const lineupPlayers = useMemo(() => {
     const playerMap = new Map(students.map((student) => [student.id, student]));
@@ -503,7 +540,7 @@ export default function LeagueSimulator({ session }) {
           if (!captain) return <p className="league-note">Choose a captain from your selected five.</p>;
           return (
             <div className="league-captain-spotlight">
-              <img src={captain.avatar} alt={captain.name} />
+              <img src={captain.avatar} alt={captain.name} loading="eager" fetchPriority="high" decoding="async" />
               <strong>{captain.name}</strong>
               <span>{captain.fantasyPoints * 2} boosted points</span>
             </div>
@@ -522,7 +559,7 @@ export default function LeagueSimulator({ session }) {
           if (!viceCaptain) return <p className="league-note">Pick one more lineup player as vice captain.</p>;
           return (
             <div className="league-captain-spotlight">
-              <img src={viceCaptain.avatar} alt={viceCaptain.name} />
+              <img src={viceCaptain.avatar} alt={viceCaptain.name} loading="eager" fetchPriority="high" decoding="async" />
               <strong>{viceCaptain.name}</strong>
               <span>{viceCaptain.fantasyPoints + Math.round(viceCaptain.fantasyPoints * 0.5)} boosted points</span>
             </div>
@@ -746,9 +783,76 @@ export default function LeagueSimulator({ session }) {
 
   const teamName = `${session?.schoolName || "Hepsy"} Captains`;
   const currentPhase = TIMELINE_STEPS[phaseIndex] || TIMELINE_STEPS[0];
+  const captainPlayer = students.find((student) => student.id === captainId) || lineupPlayers[0] || null;
+  const arenaPoolPreview = deferredFilteredStudents.slice(0, 3);
+  const criticalVisualSources = useMemo(
+    () =>
+      Array.from(
+        new Set(
+          [
+            PROFILE_FALLBACK,
+            selectedPlayer?.avatar,
+            captainPlayer?.avatar,
+            ...lineupPlayers.map((player) => player?.avatar),
+            ...arenaPoolPreview.map((player) => player?.avatar),
+          ].filter(Boolean)
+        )
+      ),
+    [arenaPoolPreview, captainPlayer?.avatar, lineupPlayers, selectedPlayer?.avatar]
+  );
 
-  if (loading) {
-    return <section className="league-shell"><div className="league-state-card">Loading league roster...</div></section>;
+  useEffect(() => {
+    if (loading || error) {
+      setVisualsReady(false);
+      return undefined;
+    }
+
+    let cancelled = false;
+    const fallbackTimer = window.setTimeout(() => {
+      if (!cancelled) {
+        setVisualsReady(true);
+      }
+    }, 2200);
+
+    Promise.all(criticalVisualSources.map(preloadVisual)).then(() => {
+      if (cancelled) return;
+      window.requestAnimationFrame(() => {
+        if (!cancelled) {
+          setVisualsReady(true);
+        }
+      });
+    });
+
+    return () => {
+      cancelled = true;
+      window.clearTimeout(fallbackTimer);
+    };
+  }, [criticalVisualSources, error, loading]);
+
+  if (loading || (!visualsReady && !error)) {
+    return (
+      <section className="league-shell league-loading-shell">
+        <div className="league-loading-card">
+          <div className="league-loading-glow" aria-hidden="true" />
+          <div className="league-loading-orbit" aria-hidden="true">
+            <span className="league-loading-ring league-loading-ring-gold" />
+            <span className="league-loading-ring league-loading-ring-cyan" />
+            <span className="league-loading-core">
+              <Sparkles size={18} />
+            </span>
+          </div>
+          <div className="league-loading-copy">
+            <span>{loading ? "Syncing fantasy roster" : "Powering arena visuals"}</span>
+            <strong>{loading ? "Building your student pool" : "Finalizing the MINT arena"}</strong>
+            <p>
+              {loading
+                ? "Pulling students, reports, and season data into one smooth draft experience."
+                : "Loading the first-view cards and captain visuals before the arena opens."}
+            </p>
+          </div>
+        </div>
+      </section>
+    );
   }
 
   if (error) {
@@ -757,113 +861,48 @@ export default function LeagueSimulator({ session }) {
 
   return (
     <section className="league-shell">
-        <div className="league-topbar">
-        <div>
-          <p className="league-eyebrow">hepsy quiz league</p>
-          <h1>{session?.schoolName || "School League"} Fantasy Arena</h1>
-          <span>Build a 5-student squad from your school and let real practice performance drive the points.</span>
-        </div>
-
-        <div className="league-topbar-meta">
-          <div>
-            <span>Captain</span>
-            <strong>{session?.name || "Student Leader"}</strong>
-          </div>
-          <div>
-            <span>School</span>
-            <strong>{session?.schoolName || "Hepsy Network"}</strong>
-          </div>
-          <div>
-            <span>Live Phase</span>
-            <strong>{currentPhase}</strong>
-          </div>
-        </div>
-        </div>
-
       {notice ? <div className="league-notice-banner">{notice}</div> : null}
 
-      <div className="league-hero-grid">
-        <article className="league-panel league-profile-panel">
-          <div className="league-panel-title">Team Profile</div>
-          <div className="league-team-profile">
-            <div className="league-crest">
-              <Shield size={42} />
-              <strong>{getInitials(session?.schoolName)}</strong>
+      <div className="league-arena-overview">
+          <article className="league-panel league-pitch-panel league-pitch-panel-full">
+            <div className="league-pitch-title">
+              <div className="league-eyebrow">HEPSY QUIZ LEAGUE</div>
+              <h1>MINT Fantasy Arena</h1>
+              <div className="league-panel-title">5 Student Fantasy Draft</div>
+              <p>Pick your five, lock the vice captain, and play the full fantasy league on a dedicated screen.</p>
             </div>
-            <div>
-              <h2>{teamName}</h2>
-              <p>{session?.className || "All Classes"} fantasy squad</p>
-            </div>
-          </div>
-          <div className="league-profile-stats">
-            <div>
-              <span>Ranked Pool</span>
-              <strong>{students.length}</strong>
-            </div>
-            <div>
-              <span>Lineup Power</span>
-              <strong>{totalLineupPoints}</strong>
-            </div>
-            <div>
-              <span>Win Signal</span>
-              <strong>{averageLineupAccuracy}%</strong>
-            </div>
-          </div>
-          <div className="league-profile-badge">Academic Fantasy Division</div>
-        </article>
 
-        <article className="league-panel league-lineup-panel">
-          <div className="league-panel-heading">
-            <div>
-              <div className="league-panel-title">Active Lineup</div>
-              <h3>Choose any 5 students from your school</h3>
-            </div>
-            <button
-              type="button"
-              className="league-ghost-btn"
-              onClick={advanceLeaguePhase}
-            >
-              <TimerReset size={16} />
-              {phaseIndex === 0
-                ? "Lock Formation"
-                : phaseIndex === 1
-                  ? "Lock Practice"
-                  : phaseIndex === 2
-                    ? "Simulate Matchday"
-                    : "Restart Season"}
-            </button>
-          </div>
-
-          <div className="league-lineup-strip">
-            {Array.from({ length: 5 }, (_, index) => {
-              const player = lineupPlayers[index];
-              return (
-                <div key={player?.id || `slot-${index}`} className={`league-lineup-slot ${player ? "filled" : ""}`}>
-                  {player ? (
-                    <>
-                      <div className="league-slot-avatar">
-                        <img src={player.avatar} alt={player.name} />
-                        {captainId === player.id ? (
-                          <span className="league-slot-captain">
-                            <Crown size={12} />
-                          </span>
-                        ) : null}
-                        {viceCaptainId === player.id ? (
-                          <span className="league-slot-vice-captain">VC</span>
-                        ) : null}
+            <div className="league-lineup-strip">
+              {Array.from({ length: 5 }, (_, index) => {
+                const player = lineupPlayers[index];
+                return (
+                  <div key={player?.id || `slot-${index}`} className={`league-lineup-slot ${player ? "filled" : ""}`}>
+                    {player ? (
+                      <div className={`league-slot-card ${captainId === player.id ? "captain" : ""}`}>
+                        <div className="league-slot-card-top">
+                          <span className="league-slot-ovr">{player.rating}</span>
+                          <span className="league-slot-class">{player.className}</span>
+                        </div>
+                        <div className="league-slot-avatar">
+                          <img src={player.avatar} alt={player.name} loading="eager" fetchPriority="high" decoding="async" />
+                          {captainId === player.id ? (
+                            <span className="league-slot-captain">
+                              <Crown size={12} />
+                            </span>
+                          ) : null}
+                          {viceCaptainId === player.id ? (
+                            <span className="league-slot-vice-captain">VC</span>
+                          ) : null}
+                        </div>
+                        <strong>{captainId === player.id ? `[Captain ${player.name}]` : player.name}</strong>
+                        <div className="league-slot-stats">
+                          <span>ACC {player.avgAccuracy}%</span>
+                          <span>XP {player.practiceXp}</span>
+                          <span>PTS {player.fantasyPoints}</span>
+                        </div>
+                        <div className="league-slot-kp">Projected KP {player.marketValue}</div>
                       </div>
-                      <strong>{player.rating}</strong>
-                      <span>{player.name}</span>
-                      <button
-                        type="button"
-                        onClick={() => handleViceCaptain(player.id)}
-                        disabled={player.id === currentUserId}
-                      >
-                        {captainId === player.id ? "Captain" : viceCaptainId === player.id ? "Vice Captain" : "Set VC"}
-                      </button>
-                    </>
-                  ) : (
-                    <>
+                    ) : (
                       <div className="league-empty-slot">
                         <div className="league-empty-avatar">
                           <Plus size={22} />
@@ -871,130 +910,84 @@ export default function LeagueSimulator({ session }) {
                         <strong>Add Player</strong>
                         <span>Select from the pool</span>
                       </div>
-                    </>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </article>
-
-        <aside className="league-sidebar-stack">
-          <article className="league-panel league-sidebar-card">
-            <div className="league-panel-title">League Hub</div>
-            <div className="league-sidebar-stat">
-              <Sparkles size={18} />
-              <div>
-                <span>Knowledge Points</span>
-                <strong>{projectedKp} KP</strong>
-              </div>
-            </div>
-            <div className="league-sidebar-stat">
-              <Users size={18} />
-              <div>
-                <span>Squad Slots</span>
-                <strong>{lineupPlayers.length} / 5</strong>
-              </div>
-            </div>
-            <div className="league-sidebar-stat">
-              <Trophy size={18} />
-              <div>
-                <span>Season Record</span>
-                <strong>{seasonStats.wins}-{seasonStats.losses}</strong>
-              </div>
-            </div>
-          </article>
-
-          <article className="league-panel league-sidebar-card">
-            <div className="league-panel-title">Season Status</div>
-            <p className="league-phase-copy">{currentPhase}</p>
-            <div className="league-mini-timeline">
-              {TIMELINE_STEPS.map((step, index) => (
-                <div
-                  key={step}
-                  className={`league-mini-node ${index <= phaseIndex ? "done" : ""} ${index === phaseIndex ? "active" : ""} ${index > phaseIndex ? "locked" : ""}`}
-                >
-                  <span>
-                    {index < phaseIndex ? (
-                      <CheckCircle2 size={12} />
-                    ) : index === phaseIndex ? (
-                      <Star size={12} />
-                    ) : (
-                      <Lock size={11} />
                     )}
-                  </span>
-                  <small>{step}</small>
-                </div>
-              ))}
+                  </div>
+                );
+              })}
             </div>
-            <button type="button" className="league-confirm-btn" onClick={advanceLeaguePhase}>
-              <CheckCircle2 size={18} />
-              {phaseIndex === 0
-                ? "Confirm Lineup"
-                : phaseIndex === 1
-                  ? "Confirm Practice Lock"
-                  : phaseIndex === 2
-                    ? "Run Matchday"
-                    : "Reset Season"}
-            </button>
+
+            <div className="league-pitch-action">
+              <button
+                type="button"
+                className="league-lock-btn"
+                onClick={advanceLeaguePhase}
+              >
+                <Lock size={16} />
+                {phaseIndex === 0
+                  ? "Lock Formation"
+                  : phaseIndex === 1
+                    ? "Lock Practice"
+                    : phaseIndex === 2
+                      ? "Run Matchday"
+                      : "Reset Season"}
+              </button>
+            </div>
           </article>
-        </aside>
-      </div>
 
-      <div className="league-tabs">
-        {LEAGUE_TABS.map((tab) => (
-          <button
-            key={tab.key}
-            type="button"
-            className={tab.key === activeTab ? "active" : ""}
-            onClick={() => setActiveTab(tab.key)}
-          >
-            {tab.label}
-          </button>
-        ))}
-      </div>
-
-      <div className="league-content-grid">
-        <div className="league-main-column">
-          {activeTab === "overview" ? (
-            <>
-              <div className="league-filter-row">
-                {classOptions.map((option) => (
-                  <button
-                    key={option}
-                    type="button"
-                    className={option === classFilter ? "active" : ""}
-                    onClick={() => setClassFilter(option)}
+          <div className="league-arena-summary-row">
+            <article className="league-panel league-season-strip">
+              <div className="league-panel-title">Season Status</div>
+              <div className="league-season-strip-track">
+                {TIMELINE_STEPS.map((step, index) => (
+                  <div
+                    key={step}
+                    className={`league-season-step ${index <= phaseIndex ? "done" : ""} ${index === phaseIndex ? "active" : ""}`}
                   >
-                    {option === "all" ? "All Classes" : option}
-                  </button>
+                    <span>
+                      {index < phaseIndex ? <CheckCircle2 size={12} /> : index === phaseIndex ? <Star size={12} /> : <Lock size={11} />}
+                    </span>
+                    <strong>{step}</strong>
+                  </div>
                 ))}
               </div>
+              <button type="button" className="league-confirm-lineup-btn" onClick={advanceLeaguePhase}>
+                Confirm Lineup
+              </button>
+            </article>
 
-              <div className="league-card-grid">
-                {filteredStudents.slice(0, 8).map((player) => (
-                  <PlayerBadge
-                    key={player.id}
-                    player={player}
-                    selected={lineupIds.includes(player.id)}
-                    locked={lineupIds.length >= 5 && !lineupIds.includes(player.id)}
-                    isCaptain={captainId === player.id}
-                    isViceCaptain={viceCaptainId === player.id}
-                    isCurrentUser={player.id === currentUserId}
-                    onInspect={inspectPlayer}
-                    onSelect={toggleLineupPlayer}
-                    onViceCaptain={handleViceCaptain}
-                  />
-                ))}
+            <article className="league-panel league-hub-strip">
+              <div className="league-panel-title">League Hub</div>
+              <div className="league-hub-grid">
+                <div>
+                  <span>Knowledge Points</span>
+                  <strong>{projectedKp} KP</strong>
+                </div>
+                <div>
+                  <span>Squad Slots</span>
+                  <strong>{lineupPlayers.length} / 5</strong>
+                </div>
+                <div>
+                  <span>Season Record</span>
+                  <strong>{seasonStats.wins}-{seasonStats.losses}</strong>
+                </div>
               </div>
-            </>
-          ) : null}
+            </article>
+          </div>
 
-          {activeTab === "market" ? (
-            <div className="league-market-layout">
-              <div className="league-scroll-panel league-market-pool">
-                <div className="league-card-grid">
-                  {filteredStudents.map((player) => (
+          <div className="league-arena-bottom">
+            <article className="league-panel league-pool-panel">
+              <div className="league-player-pool-head">
+                <div>
+                  <div className="league-panel-title">Student Pool</div>
+                  <h3>Choose from your active roster</h3>
+                </div>
+              </div>
+              <div className="league-pool-carousel-shell">
+                <button type="button" className="league-carousel-arrow" aria-label="Previous player cards">
+                  ‹
+                </button>
+                <div className="league-card-grid league-card-carousel">
+                  {arenaPoolPreview.map((player) => (
                     <PlayerBadge
                       key={player.id}
                       player={player}
@@ -1009,174 +1002,60 @@ export default function LeagueSimulator({ session }) {
                     />
                   ))}
                 </div>
+                <button type="button" className="league-carousel-arrow" aria-label="Next player cards">
+                  ›
+                </button>
               </div>
+            </article>
 
-              <aside className="league-detail-panel">
-                {selectedPlayer ? (
-                  <>
-                    <div className="league-detail-head">
-                      <img src={selectedPlayer.avatar} alt={selectedPlayer.name} />
-                      <div>
-                        <h3>{selectedPlayer.name}</h3>
-                        <p>{selectedPlayer.className}</p>
-                      </div>
-                    </div>
-
-                    <div className="league-radar-list">
-                      <div><span>Accuracy</span><strong>{selectedPlayer.avgAccuracy}%</strong></div>
-                      <div><span>Practice XP</span><strong>{selectedPlayer.practiceXp}</strong></div>
-                      <div><span>Total Score</span><strong>{selectedPlayer.totalScore}</strong></div>
-                      <div><span>Attempts</span><strong>{selectedPlayer.attempts}</strong></div>
-                      <div><span>Consistency</span><strong>{selectedPlayer.consistency}</strong></div>
-                      <div><span>Speed</span><strong>{selectedPlayer.speed}</strong></div>
-                    </div>
-
-                    <div className="league-history-card">
-                      <div className="league-history-bars">
-                        {[selectedPlayer.avgAccuracy, selectedPlayer.recentForm, selectedPlayer.consistency, selectedPlayer.speed].map((value, index) => (
-                          <span key={`${selectedPlayer.id}-bar-${index}`} style={{ height: `${Math.max(18, value)}%` }} />
-                        ))}
-                      </div>
-                      <p>Live profile built from reports, practice completion, and progress updates already stored in Firebase.</p>
-                    </div>
-
-                    {!lineupIds.includes(selectedPlayer.id) || selectedPlayer.id === currentUserId ? null : (
-                      <button
-                        type="button"
-                        className="league-captain-btn"
-                        onClick={() => handleViceCaptain(selectedPlayer.id)}
-                      >
-                        {viceCaptainId === selectedPlayer.id ? "Vice Captain Active" : "Set As Vice Captain"}
-                      </button>
-                    )}
-
-                    <button
-                      type="button"
-                      className="league-confirm-btn"
-                      onClick={() => toggleLineupPlayer(selectedPlayer)}
-                      disabled={
-                        selectedPlayer.id === currentUserId ||
-                        (lineupIds.length >= 5 && !lineupIds.includes(selectedPlayer.id))
-                      }
-                    >
-                      {selectedPlayer.id === currentUserId
-                        ? "Current User Locked"
-                        : lineupIds.includes(selectedPlayer.id)
-                          ? "Remove From Lineup"
-                          : "Acquire Player"}
-                    </button>
-                  </>
-                ) : (
-                  <p>Select a student to inspect the profile.</p>
-                )}
-              </aside>
-            </div>
-          ) : null}
-
-          {activeTab === "match" ? (
-            <div className="league-match-layout">
-              <section className="league-match-banner">
+            <article className="league-panel league-profile-panel league-profile-compact">
+              <div className="league-panel-title">Team Profile</div>
+              <div className="league-profile-matrix">
                 <div>
-                  <span>{teamName}</span>
+                  <span>Ranked Pool</span>
+                  <strong>{students.length}</strong>
+                </div>
+                <div>
+                  <span>Lineup Power</span>
                   <strong>{totalLineupPoints}</strong>
                 </div>
-                <div className="league-match-vs">VS</div>
                 <div>
-                  <span>School Rivals XI</span>
-                  <strong>{rivalPoints}</strong>
+                  <span>Projected KP</span>
+                  <strong>{projectedKp}</strong>
                 </div>
-              </section>
-
-              <div className="league-match-stats">
-                <article className="league-panel">
-                  <div className="league-panel-title">Your Squad Edge</div>
-                  <div className="league-inline-stats">
-                    <div><Target size={16} /><span>{averageLineupAccuracy}% accuracy</span></div>
-                    <div><TrendingUp size={16} /><span>{totalLineupXp} team XP</span></div>
-                    <div><Star size={16} /><span>{viceCaptainId ? "Captain + vice captain bonuses active" : "Choose a vice captain"}</span></div>
-                  </div>
-                </article>
-
-                <article className="league-panel">
-                  <div className="league-panel-title">Projected Result</div>
-                  <p className="league-result-copy">
-                    {simulationSummary?.body ||
-                      (totalLineupPoints >= rivalPoints
-                        ? "Your current five look stronger than the school rival projection."
-                        : "You need a stronger captain or higher-form players to overtake the rival projection.")}
-                  </p>
-                </article>
+                <div>
+                  <span>Win Signal</span>
+                  <strong>{averageLineupAccuracy}%</strong>
+                </div>
               </div>
+            </article>
 
-              {simulationSummary?.details ? (
-                <article className="league-panel">
-                  <div className="league-panel-title">Simulation Summary</div>
-                  <div className="league-summary-stack">
-                    <strong>{simulationSummary.title}</strong>
-                    <p>{simulationSummary.body}</p>
-                    {simulationSummary.details.map((line) => (
-                      <div key={line} className="league-summary-row">{line}</div>
-                    ))}
+            <article className="league-panel league-captain-panel">
+              <div className="league-panel-title">Captain Spotlight</div>
+              {captainPlayer ? (
+                <div className="league-captain-hero">
+                  <div className="league-captain-orbit">
+                    <img src={captainPlayer.avatar} alt={captainPlayer.name} loading="eager" fetchPriority="high" decoding="async" />
+                    <span>C</span>
                   </div>
-                </article>
-              ) : null}
-            </div>
-          ) : null}
+                  <strong>{captainPlayer.name}</strong>
+                  <p>{captainPlayer.fantasyPoints * 2} boosted points</p>
+                </div>
+              ) : (
+                <div className="league-captain-hero empty">
+                  <div className="league-captain-orbit empty"><span>C</span></div>
+                  <strong>No captain yet</strong>
+                  <p>Add players to highlight your captain.</p>
+                </div>
+              )}
+            </article>
+          </div>
+      </div>
 
-          {activeTab === "standings" ? (
-            <div className="league-scroll-panel">
-              <div className="league-standings-table">
-                {leaderboard.map((entry, index) => (
-                  <div key={entry.id} className={`league-standing-row ${entry.selected ? "selected" : ""}`}>
-                    <span>#{index + 1}</span>
-                    <strong>{entry.name}</strong>
-                    <small>{entry.className}</small>
-                    <span>{entry.xp} XP</span>
-                    <strong>{entry.score} pts</strong>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : null}
-
-          {activeTab === "timeline" ? (
-            <div className="league-timeline-panel">
-              {TIMELINE_STEPS.map((step, index) => (
-                <article key={step} className={`league-timeline-card ${index === phaseIndex ? "active" : ""} ${index < phaseIndex ? "done" : ""}`}>
-                  <div className="league-timeline-icon">
-                    {index < phaseIndex ? <CheckCircle2 size={18} /> : <CalendarRange size={18} />}
-                  </div>
-                  <div>
-                    <h4>{step}</h4>
-                    <p>{timelineSummary[index] || "Continue building the best five-player school squad."}</p>
-                  </div>
-                </article>
-              ))}
-            </div>
-          ) : null}
-        </div>
-
-        <aside className="league-right-column">
-          <article className="league-panel league-insight-slider">
-            <div className="league-insight-slider-head">
-              <div className="league-panel-title">{activeInsightSlide.title}</div>
-              <div className="league-insight-dots" aria-label="Insight slides">
-                {insightSlides.map((slide, index) => (
-                  <button
-                    key={slide.key}
-                    type="button"
-                    className={index === insightSlide ? "active" : ""}
-                    onClick={() => setInsightSlide(index)}
-                    aria-label={`Show ${slide.title}`}
-                  />
-                ))}
-              </div>
-            </div>
-            <div className="league-insight-body">
-              {activeInsightSlide.content}
-            </div>
-          </article>
-        </aside>
+      <div className="league-footer-lite">
+        <span>HEPSY</span>
+        <span>Legal</span>
+        <span>Privacy Notice</span>
       </div>
     </section>
   );

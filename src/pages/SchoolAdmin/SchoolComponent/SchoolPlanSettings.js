@@ -113,6 +113,8 @@ export default function SchoolPlanSettings({ school, schoolId, onPlanUpdated }) 
         ...currentSchoolData,
         ...school,
         ...payload,
+        id: school?.schoolDocId || school?.id || currentSchoolData?.schoolDocId || currentSchoolData?.id || schoolDocId,
+        schoolDocId: school?.schoolDocId || school?.id || currentSchoolData?.schoolDocId || currentSchoolData?.id || schoolDocId,
         schoolId: rawSchoolId || normalizedSchoolId || schoolDocId,
         schoolName,
       };

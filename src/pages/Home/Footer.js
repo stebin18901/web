@@ -3,7 +3,7 @@ import { FaFacebook, FaTwitter, FaInstagram, FaLinkedin } from 'react-icons/fa';
 import emailjs from 'emailjs-com';
 import './Footer.css';
 
-const HEPSY_LOGO = `${process.env.PUBLIC_URL || ""}/images/logo.png`;
+const HEPSY_LOGO = `${process.env.PUBLIC_URL || ""}/images/logo.webp`;
 
 const Footer = () => {
     // State to hold form data and submission status
@@ -107,4 +107,3 @@ const Footer = () => {
 };
 
 export default Footer;
-

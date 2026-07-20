@@ -20,6 +20,19 @@ import { normalizeSchoolId } from "../../config/defaultSchool";
 import "./SchoolLogin.css";
 
 const normalizeEmail = (value) => String(value || "").trim().toLowerCase();
+const SCHOOL_SESSION_KEY = "schoolData";
+const SCHOOL_SESSION_TIMESTAMP_KEY = "schoolAdminSessionAt";
+const SCHOOL_SESSION_DOC_ID_KEY = "schoolAdminSessionDocId";
+const SCHOOL_SESSION_AUTH_MODE_KEY = "schoolAdminAuthMode";
+
+const readStoredSchoolSession = () => {
+  try {
+    const raw = localStorage.getItem(SCHOOL_SESSION_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (error) {
+    return null;
+  }
+};
 
 const resolveSchoolById = async (rawIdentifier) => {
   const cleanIdentifier = String(rawIdentifier || "").trim();
@@ -115,6 +128,7 @@ const buildSchoolPayload = (schoolData, fallbackDocId = "") => {
   return {
     ...schoolData,
     id: fallbackDocId || schoolData.id || resolvedSchoolId,
+    schoolDocId: fallbackDocId || schoolData.schoolDocId || schoolData.id || resolvedSchoolId,
     schoolId: resolvedSchoolId,
     schoolName: schoolData.schoolName || schoolData.name || "School",
     email: normalizeEmail(schoolData.loginEmail || schoolData.email || ""),
@@ -135,10 +149,16 @@ const SchoolLogin = ({ onLoginSuccess }) => {
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
 
-  const openSchoolAdmin = useCallback((schoolData, fallbackDocId = "") => {
+  const openSchoolAdmin = useCallback((schoolData, fallbackDocId = "", authMode = "local") => {
     const payload = buildSchoolPayload(schoolData, fallbackDocId);
-    localStorage.setItem("schoolData", JSON.stringify(payload));
-    onLoginSuccess?.(payload);
+    localStorage.setItem(SCHOOL_SESSION_KEY, JSON.stringify({ ...payload, authMode }));
+    localStorage.setItem(SCHOOL_SESSION_TIMESTAMP_KEY, String(Date.now()));
+    localStorage.setItem(
+      SCHOOL_SESSION_DOC_ID_KEY,
+      String(payload.schoolDocId || payload.id || payload.schoolId || "").trim()
+    );
+    localStorage.setItem(SCHOOL_SESSION_AUTH_MODE_KEY, String(authMode).trim().toLowerCase());
+    onLoginSuccess?.({ ...payload, authMode });
     navigate("/school-admin/home", { replace: true });
   }, [navigate, onLoginSuccess]);
 
@@ -149,7 +169,31 @@ const SchoolLogin = ({ onLoginSuccess }) => {
       if (cancelled) return;
 
       try {
+        const storedSchool = readStoredSchoolSession();
+        const storedAuthMode = String(
+          localStorage.getItem(SCHOOL_SESSION_AUTH_MODE_KEY) || storedSchool?.authMode || ""
+        )
+          .trim()
+          .toLowerCase();
+        const storedDocId = String(
+          localStorage.getItem(SCHOOL_SESSION_DOC_ID_KEY)
+          || storedSchool?.schoolDocId
+          || storedSchool?.id
+          || storedSchool?.schoolId
+          || ""
+        ).trim();
+
+        if (storedSchool?.schoolId) {
+          setLoading(false);
+          return;
+        }
+
         if (!user) {
+          setLoading(false);
+          return;
+        }
+
+        if (storedAuthMode !== "firebase" || !storedDocId) {
           setLoading(false);
           return;
         }
@@ -160,7 +204,19 @@ const SchoolLogin = ({ onLoginSuccess }) => {
           return;
         }
 
-        openSchoolAdmin(schoolRecord.data, schoolRecord.docId);
+        const resolvedDocId = String(
+          schoolRecord.docId || schoolRecord.data?.schoolDocId || schoolRecord.data?.schoolId || ""
+        ).trim();
+        const matchesStoredDoc =
+          resolvedDocId &&
+          normalizeSchoolId(resolvedDocId) === normalizeSchoolId(storedDocId);
+
+        if (!matchesStoredDoc) {
+          setLoading(false);
+          return;
+        }
+
+        openSchoolAdmin(schoolRecord.data, schoolRecord.docId, "firebase");
       } catch (err) {
         setError(err.message || "Unable to load school account");
       } finally {
@@ -214,7 +270,7 @@ const SchoolLogin = ({ onLoginSuccess }) => {
       };
 
       await setDoc(doc(db, "schools", cleanSchoolId), schoolData, { merge: true });
-      openSchoolAdmin(schoolData, cleanSchoolId);
+      openSchoolAdmin(schoolData, cleanSchoolId, "local");
     } catch (err) {
       setError(err.message || "Registration failed");
     } finally {
@@ -240,7 +296,7 @@ const SchoolLogin = ({ onLoginSuccess }) => {
       if (schoolRecord) {
         const storedPassword = String(schoolRecord.data?.password || "").trim();
         if (storedPassword && storedPassword === cleanPassword) {
-          openSchoolAdmin(schoolRecord.data, schoolRecord.docId);
+          openSchoolAdmin(schoolRecord.data, schoolRecord.docId, "local");
           return;
         }
       }
@@ -263,7 +319,7 @@ const SchoolLogin = ({ onLoginSuccess }) => {
         throw new Error("No school profile found for this account.");
       }
 
-      openSchoolAdmin(resolvedSchool.data, resolvedSchool.docId);
+      openSchoolAdmin(resolvedSchool.data, resolvedSchool.docId, "firebase");
     } catch (err) {
       const messageText = err?.code === "auth/invalid-credential"
         ? "Invalid school email or password."

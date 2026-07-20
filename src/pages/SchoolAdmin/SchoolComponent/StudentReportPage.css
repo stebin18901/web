@@ -326,10 +326,127 @@
     padding: 22px;
   }
 
+  .student-report-page {
+    gap: 12px;
+  }
+
+  .student-report-hero,
+  .student-profile-hero,
+  .student-report-toolbar,
+  .student-report-panel,
+  .student-overview-card,
+  .student-report-table-wrap,
+  .student-mini-table-wrap {
+    border-radius: 18px;
+  }
+
+  .student-report-hero h1,
+  .student-profile-hero h1 {
+    font-size: 1.28rem;
+  }
+
+  .student-report-hero p,
+  .student-profile-hero p,
+  .student-panel-head span,
+  .student-report-list-head p,
+  .student-inline-note {
+    font-size: 0.84rem;
+    line-height: 1.45;
+  }
+
+  .student-report-kicker,
+  .student-report-table th,
+  .student-mini-table th,
+  .student-overview-card span {
+    font-size: 0.68rem;
+  }
+
+  .student-report-toolbar {
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .student-report-toolbar span,
+  .student-report-toolbar label {
+    font-size: 0.82rem;
+  }
+
+  .student-report-toolbar select,
+  .student-report-toolbar input {
+    min-height: 42px;
+    border-radius: 12px;
+    font-size: 0.84rem;
+  }
+
+  .student-overview-card {
+    padding: 16px;
+  }
+
+  .student-overview-card strong {
+    font-size: 1.2rem;
+  }
+
+  .student-report-panel {
+    padding: 16px;
+  }
+
+  .student-info-list div,
+  .student-report-list-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+
   .student-report-table th,
   .student-report-table td,
   .student-mini-table th,
   .student-mini-table td {
     padding: 13px 14px;
+  }
+
+  .student-report-link {
+    padding: 8px 12px;
+    font-size: 0.78rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .student-report-hero,
+  .student-profile-hero,
+  .student-report-toolbar,
+  .student-report-panel,
+  .student-overview-card,
+  .student-report-table-wrap,
+  .student-mini-table-wrap {
+    border-radius: 14px;
+  }
+
+  .student-report-hero,
+  .student-profile-hero,
+  .student-report-panel {
+    padding: 12px;
+  }
+
+  .student-report-hero h1,
+  .student-profile-hero h1 {
+    font-size: 1.12rem;
+  }
+
+  .student-report-hero p,
+  .student-profile-hero p,
+  .student-report-toolbar select,
+  .student-report-toolbar input,
+  .student-info-list span,
+  .student-info-list strong,
+  .student-report-table td,
+  .student-mini-table td {
+    font-size: 0.78rem;
+  }
+
+  .student-report-chip {
+    min-width: 0;
+    width: 100%;
+    padding: 8px 12px;
+    font-size: 0.8rem;
   }
 }

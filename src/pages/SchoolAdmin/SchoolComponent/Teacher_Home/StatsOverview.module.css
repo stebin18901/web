@@ -4,10 +4,10 @@
   background: none;
   display: flex;
   flex-direction: column;
-  gap: 60px; /* Increased gap for better separation */
-  color: #fff;
-  padding: 20px; /* Added some padding for small screens */
-  max-width: 1200px; /* Added max-width for content centering (if used) */
+  gap: 28px;
+  color: #0f172a;
+  padding: 16px;
+  max-width: 1200px;
   margin: 0 auto;
 }
 
@@ -16,194 +16,268 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: linear-gradient(145deg, #5d5ffc, #3d92ff);
-  padding: 60px; /* Increased padding */
-  border-radius: 30px; /* Slightly larger border-radius */
-  box-shadow: 0 20px 50px rgba(0,0,0,0.3); /* Stronger shadow */
+  gap: 24px;
+  background:
+    radial-gradient(circle at top right, rgba(255, 255, 255, 0.28), transparent 28%),
+    linear-gradient(135deg, #2563eb, #0ea5e9 55%, #22c55e 120%);
+  padding: 34px;
+  border-radius: 26px;
+  box-shadow: 0 20px 50px rgba(14, 52, 110, 0.2);
 }
 
 .promoHeroText { 
-  max-width: 55%; /* Slightly reduced max-width to give image more space */
+  max-width: 58%;
+  color: #ffffff;
 }
 
 .promoHeroText h1 {
-  font-size: 42px; /* Increased font size for impact */
+  margin: 0;
+  font-size: clamp(2rem, 4vw, 3rem);
   font-weight: 800;
   line-height: 1.2;
 }
 
 .promoHeroText p {
-  font-size: 18px; /* Increased paragraph font size for readability */
-  margin: 18px 0 30px; /* Adjusted margins */
-  opacity: 0.9;
+  font-size: 15px;
+  margin: 14px 0 24px;
+  max-width: 560px;
+  line-height: 1.7;
+  opacity: 0.95;
 }
 
 .promoCta {
-  display: inline-block; /* Essential for padding to work correctly */
-  background: linear-gradient(145deg, #5d5ffc, #3d92ff);
-  color: #2135ff;
-  padding: 14px 30px; /* Increased padding */
+  display: inline-block;
+  background: #ffffff;
+  color: #0f4ec9;
+  padding: 12px 22px;
   border-radius: 16px;
-  font-weight: 700; /* Slightly reduced weight for balance */
+  font-weight: 700;
   cursor: pointer;
-  text-decoration: none; /* In case it's an <a> tag */
+  text-decoration: none;
   transition: transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .promoCta:hover {
   transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 22px rgba(15, 23, 42, 0.18);
 }
 
 .promoHeroImg { 
-  width: 200px; /* Increased image size */
+  width: 180px;
   max-width: 40%;
-  flex-shrink: 0; /* Prevents image from shrinking in flex layout */
+  flex-shrink: 0;
+  filter: drop-shadow(0 18px 28px rgba(15, 23, 42, 0.2));
 }
 
 /* --- STATS --- */
 .promoStats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 25px; /* Increased gap */
+  gap: 16px;
 }
 
 .promoStatCard {
-  background: linear-gradient(145deg, #5d5ffc, #3d92ff);
-  padding: 30px; /* Increased padding */
-  border-radius: 24px; /* Larger border-radius */
-  text-align: center;
-  backdrop-filter: blur(15px); /* Stronger blur */
-  transition: transform 0.3s ease, background 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  background: linear-gradient(180deg, #ffffff, #f8fbff);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  padding: 20px;
+  border-radius: 20px;
+  text-align: left;
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.06);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
 .promoStatCard:hover { 
-  transform: translateY(-8px); /* Stronger hover lift */
-  background: linear-gradient(145deg, #5d5ffc, #3d92ff);
+  transform: translateY(-3px);
+  box-shadow: 0 18px 30px rgba(15, 23, 42, 0.1);
 }
 
 .promoStatCard h2 {
-  font-size: 40px; /* Increased size for number impact */
+  font-size: 2rem;
   font-weight: 900;
-  margin-bottom: 5px;
+  margin: 0 0 4px;
+  color: #0f172a;
 }
 
 .promoStatCard p {
-  opacity: 0.8;
+  margin: 0;
+  color: #64748b;
+  font-size: 0.9rem;
+  line-height: 1.45;
 }
 
 .positive { 
   color: #67f3bd; 
 }
 
+.statContent {
+  min-width: 0;
+}
+
+.promoStatCard :global(svg) {
+  color: #2563eb;
+  flex-shrink: 0;
+}
+
 /* --- PROGRAMS --- */
 .sectionTitle {
-  font-size: 32px; /* Increased size */
+  font-size: clamp(1.4rem, 2.8vw, 2rem);
   font-weight: 900;
-  margin-bottom: 25px; /* Increased margin */
+  margin: 0 0 16px;
+  color: #0f172a;
 }
 
 .programGrid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 25px;
+  gap: 16px;
 }
 
 .programCard {
-  background: linear-gradient(145deg, #5d5ffc, #3d92ff);
+  background: linear-gradient(180deg, #ffffff, #f8fbff);
+  border: 1px solid rgba(148, 163, 184, 0.16);
   border-radius: 20px;
-  padding: 30px 20px; /* Increased vertical padding */
-  text-align: center;
-  transition: transform 0.3s ease, background 0.3s ease;
+  padding: 22px 18px;
+  text-align: left;
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.05);
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
 }
 
 .programCard:hover { 
-  transform: translateY(-8px); 
-  background: linear-gradient(145deg, #5d5ffc, #3d92ff);
+  transform: translateY(-3px);
+  box-shadow: 0 18px 30px rgba(15, 23, 42, 0.08);
+}
+
+.programIconContainer {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 14px;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #dbeafe, #dcfce7);
 }
 
 .programIcon {
-  width: 45px; /* Increased icon size */
-  height: 45px;
-  margin-bottom: 15px;
-  object-fit: contain;
+  width: 24px;
+  height: 24px;
+  color: #2563eb;
 }
 
-.programCard h3 {
-  font-size: 18px;
+.programCard h4 {
+  margin: 0;
+  font-size: 1rem;
   font-weight: 700;
-  margin-bottom: 5px;
+  color: #0f172a;
 }
 
 .programCard p {
-  font-size: 14px;
-  opacity: 0.8;
+  margin: 8px 0 0;
+  font-size: 0.88rem;
+  color: #64748b;
+  line-height: 1.55;
 }
 
 /* --- IMPACT --- */
 .impactCard {
-  background: linear-gradient(145deg, #5d5ffc, #3d92ff);
-  padding: 40px; /* Increased padding */
-  border-radius: 30px;
+  background: linear-gradient(135deg, #0f172a, #1e3a8a 70%, #0ea5e9 140%);
+  padding: 28px;
+  border-radius: 24px;
+  color: #ffffff;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.18);
 }
 
-/* --- BLOGS --- */
-.blogSection h2 { 
-  font-size: 28px; /* Adjusted size */
-  margin-bottom: 25px;
+.impactTitle {
+  margin: 0 0 14px;
+  font-size: 1.5rem;
 }
 
-.blogRow { 
-  display: flex; 
-  gap: 25px; 
+.impactList {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
 }
 
-.blogCard {
-  background: linear-gradient(145deg, #5d5ffc, #3d92ff);
-  padding: 25px; /* Increased padding */
-  border-radius: 20px;
-  flex: 1;
-  transition: transform 0.3s ease;
-}
-
-.blogCard:hover {
-  transform: translateY(-4px);
-}
-
-.blogCard h3 {
-  font-size: 18px;
-  margin: 10px 0;
+.impactList li {
+  display: flex;
+  align-items: center;
+  min-height: 58px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.96);
+  font-size: 0.92rem;
   font-weight: 700;
 }
 
+/* --- BLOGS --- */
+.blogRow { 
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.blogCard {
+  background: linear-gradient(180deg, #ffffff, #f8fbff);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  padding: 22px;
+  border-radius: 20px;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  box-shadow: 0 12px 26px rgba(15, 23, 42, 0.05);
+}
+
+.blogCard:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 18px 30px rgba(15, 23, 42, 0.08);
+}
+
+.blogCard h4 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
 .blogCard p {
-  font-size: 14px;
-  opacity: 0.8;
+  margin: 8px 0 0;
+  font-size: 0.88rem;
+  color: #64748b;
+  line-height: 1.55;
 }
 
 /* --- CTA FOOTER --- */
 .footerCta {
-  background: linear-gradient(145deg, #875cff, #45adff);
-  padding: 50px; /* Increased padding */
-  border-radius: 30px;
+  background: linear-gradient(135deg, #eff6ff, #ecfeff);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  padding: 28px;
+  border-radius: 24px;
   text-align: center;
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.05);
 }
 
 .footerCta h2 {
-  font-size: 32px;
+  font-size: clamp(1.35rem, 2.5vw, 2rem);
   font-weight: 800;
-  margin-bottom: 15px;
+  margin: 0;
+  color: #0f172a;
 }
 
 .footerBtn {
   margin-top: 15px;
-  background: linear-gradient(145deg, #5d5ffc, #3d92ff);
-  border-radius: 14px; /* Slightly larger radius */
-  padding: 16px 32px; /* Increased padding */
+  background: linear-gradient(135deg, #2563eb, #0ea5e9);
+  border-radius: 14px;
+  padding: 13px 22px;
   font-weight: 800;
   border: none;
   cursor: pointer;
-  color: #2135ff;
+  color: #ffffff;
   transition: transform 0.2s ease, opacity 0.2s ease;
 }
 
@@ -216,78 +290,117 @@
 /* TABLET / MID-SIZE SCREENS */
 @media (max-width: 992px) {
   .promoHero {
-    padding: 40px;
+    padding: 26px;
   }
 
-  .promoHeroText h1 {
-    font-size: 36px;
+  .promoStats,
+  .programGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .programGrid { 
-    grid-template-columns: repeat(2, 1fr); 
+  .impactList {
+    grid-template-columns: 1fr;
   }
 }
 
 /* MOBILE SCREENS */
 @media (max-width: 768px) {
   .promoWrapper {
-    gap: 40px;
-    padding: 15px;
+    gap: 18px;
+    padding: 10px;
   }
 
   .promoHero { 
-    flex-direction: column; 
-    text-align: center; 
-    padding: 30px;
+    padding: 18px;
+    gap: 18px;
   }
 
   .promoHeroText {
-    max-width: 100%; /* Text takes full width */
-  }
-
-  .promoHeroText h1 {
-    font-size: 32px;
-  }
-
-  .promoHeroImg {
-    width: 180px;
-    margin-top: 25px; /* Space between text and image */
     max-width: 100%;
   }
 
+  .promoHeroText h1 {
+    font-size: 1.6rem;
+  }
+
+  .promoHeroImg {
+    width: 122px;
+    margin-top: 0;
+    max-width: 34%;
+  }
+
   .promoStats { 
-    grid-template-columns: 1fr; /* Single column for stats */
-    gap: 15px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
   }
 
   .programGrid { 
-    grid-template-columns: 1fr; /* Single column for programs */
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .blogRow { 
-    flex-direction: column; 
-    gap: 15px;
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
 
   .sectionTitle {
-    font-size: 28px;
+    font-size: 1.22rem;
   }
 
   .footerCta {
-    padding: 30px;
+    padding: 18px;
   }
 
   .footerCta h2 {
-    font-size: 24px;
+    font-size: 1.18rem;
   }
 }
 
 /* Very Small Mobile Screens */
 @media (max-width: 480px) {
-  .promoHero {
-    padding: 20px;
+  .promoWrapper {
+    padding: 6px;
   }
+
+  .promoHero {
+    align-items: flex-start;
+    padding: 14px;
+    border-radius: 18px;
+  }
+
   .promoHeroText h1 {
-    font-size: 28px;
+    font-size: 1.3rem;
+  }
+
+  .promoHeroText p,
+  .programCard p,
+  .blogCard p,
+  .promoStatCard p,
+  .impactList li {
+    font-size: 0.8rem;
+  }
+
+  .promoStats,
+  .programGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .promoStatCard,
+  .programCard,
+  .blogCard,
+  .impactCard,
+  .footerCta {
+    border-radius: 16px;
+  }
+
+  .promoStatCard,
+  .programCard,
+  .blogCard {
+    padding: 16px;
+  }
+
+  .promoHeroImg {
+    width: 96px;
+    max-width: 28%;
   }
 }

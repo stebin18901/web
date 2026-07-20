@@ -7,7 +7,7 @@ import NewsFeed from "../pages/new/NewsFeed";
 const Subjects = () => {
   const banners = [
     {
-      imageUrl: process.env.PUBLIC_URL + "/images/subwall.png",
+      imageUrl: process.env.PUBLIC_URL + "/images/banner.webp",
       title: "Mathematics Quest",
       description: "Sharpen your math skills through fun challenges!",
       buttonText: "Start Now",

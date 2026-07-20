@@ -6,24 +6,26 @@ import AttendanceReports from "./AttendanceReports";
 import MarksReports from "./MarksReports";
 import StudentAttentionList from "./StudentAttentionList";
 import { normalizeSchoolId, resolveTeacherAcademicScope } from "./academicUtils";
+import { normalizeAcademicYear } from "./schoolYearUtils";
 
-const AcademicReportsPage = ({ schoolId, mode = "school_admin", teacher = null }) => {
+const AcademicReportsPage = ({ schoolId, academicYear = "", mode = "school_admin", teacher = null }) => {
   const [attendanceDocs, setAttendanceDocs] = useState([]);
   const [examDocs, setExamDocs] = useState([]);
   const [allowedClasses, setAllowedClasses] = useState([]);
   const [loading, setLoading] = useState(true);
+  const normalizedAcademicYear = useMemo(() => normalizeAcademicYear(academicYear), [academicYear]);
 
   useEffect(() => {
     const loadScope = async () => {
       if (mode === "teacher" && teacher) {
-        const scope = await resolveTeacherAcademicScope(teacher);
+        const scope = await resolveTeacherAcademicScope({ ...teacher, academicYear: normalizedAcademicYear });
         setAllowedClasses(scope.classes.map((entry) => entry.className));
       } else {
         setAllowedClasses([]);
       }
     };
     loadScope();
-  }, [mode, teacher]);
+  }, [mode, normalizedAcademicYear, teacher]);
 
   useEffect(() => {
     const loadReports = async () => {
@@ -41,14 +43,18 @@ const AcademicReportsPage = ({ schoolId, mode = "school_admin", teacher = null }
         const classFilter = (entry) =>
           !allowedClasses.length || allowedClasses.includes(String(entry.className || "").toUpperCase());
 
-        setAttendanceDocs(attendanceRows.filter(classFilter));
-        setExamDocs(examRows.filter(classFilter));
+        setAttendanceDocs(
+          attendanceRows.filter(classFilter).filter((entry) => !normalizedAcademicYear || normalizeAcademicYear(entry.academicYear) === normalizedAcademicYear)
+        );
+        setExamDocs(
+          examRows.filter(classFilter).filter((entry) => !normalizedAcademicYear || normalizeAcademicYear(entry.academicYear) === normalizedAcademicYear)
+        );
       } finally {
         setLoading(false);
       }
     };
     loadReports();
-  }, [allowedClasses, schoolId]);
+  }, [allowedClasses, normalizedAcademicYear, schoolId]);
 
   const todayLabel = new Date().toISOString().slice(0, 10);
   const monthPrefix = todayLabel.slice(0, 7);
@@ -179,12 +185,10 @@ const AcademicReportsPage = ({ schoolId, mode = "school_admin", teacher = null }
 
   return (
     <div className="academic-page">
-      <section className="academic-hero">
-        <div>
-          <p className="academic-kicker">Academic Layer</p>
-          <h1>Academic Reports</h1>
-          <p>Attendance and marks insights for quick academic follow-up without leaving the dashboard.</p>
-        </div>
+        <section className="academic-hero">
+          <div>
+            <h1>Academic Reports</h1>
+          </div>
         <div className="academic-hero-badge">
           <span>Scope</span>
           <strong>{mode === "teacher" ? "Teacher View" : "School Overview"}</strong>

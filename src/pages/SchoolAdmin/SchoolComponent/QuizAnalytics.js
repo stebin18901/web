@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   collection,
   getDocs,
@@ -11,15 +11,17 @@ import { Bar } from "react-chartjs-2";
 import { Chart, registerables } from "chart.js";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import { normalizeAcademicYear } from "./schoolYearUtils";
 Chart.register(...registerables);
 
 
 
-const QuizAnalytics = ({ schoolId }) => {
+const QuizAnalytics = ({ schoolId, academicYear = "" }) => {
   const [students, setStudents] = useState([]);
   const [reports, setReports] = useState([]);
   const [selectedClass, setSelectedClass] = useState("");
   const [selectedStudentId, setSelectedStudentId] = useState("");
+  const normalizedYear = useMemo(() => normalizeAcademicYear(academicYear), [academicYear]);
 
   const handleDownloadPDF = () => {
   const doc = new jsPDF();
@@ -57,11 +59,15 @@ const QuizAnalytics = ({ schoolId }) => {
       const q = query(collection(db, "users"), where("schoolId", "==", schoolId));
       const snap = await getDocs(q);
       const studentList = [];
-      snap.forEach((doc) => studentList.push({ id: doc.id, ...doc.data() }));
+      snap.forEach((doc) => {
+        const data = doc.data();
+        if (normalizedYear && normalizeAcademicYear(data.academicYear) !== normalizedYear) return;
+        studentList.push({ id: doc.id, ...data });
+      });
       setStudents(studentList);
     };
     fetchStudents();
-  }, [schoolId]);
+  }, [normalizedYear, schoolId]);
 
   // Fetch reports by student ids
   useEffect(() => {
@@ -72,6 +78,7 @@ const QuizAnalytics = ({ schoolId }) => {
       const schoolReports = [];
       allReports.forEach((doc) => {
         const data = doc.data();
+        if (normalizedYear && normalizeAcademicYear(data.academicYear) !== normalizedYear) return;
         if (studentIds.includes(data.userId)) {
           schoolReports.push({ id: doc.id, ...data });
         }
@@ -79,7 +86,7 @@ const QuizAnalytics = ({ schoolId }) => {
       setReports(schoolReports);
     };
     fetchReports();
-  }, [students]);
+  }, [normalizedYear, students]);
 
   const filteredStudents = selectedClass
     ? students.filter((s) => s.class === selectedClass)

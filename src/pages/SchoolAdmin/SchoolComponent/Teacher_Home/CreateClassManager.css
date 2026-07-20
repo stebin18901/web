@@ -52,3 +52,40 @@
   font-size: 13px;
   margin-bottom: 4px;
 }
+
+@media (max-width: 900px) {
+  .ccm-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .ccm-container {
+    padding: 12px;
+  }
+
+  .ccm-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ccm-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+    padding: 10px 12px;
+  }
+
+  .ccm-row input,
+  .ccm-actions button {
+    width: 100%;
+  }
+
+  .ccm-actions button {
+    padding: 9px 14px;
+    font-size: 12px;
+  }
+
+  .log-line {
+    font-size: 12px;
+  }
+}

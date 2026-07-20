@@ -2,7 +2,7 @@ import { BLOG_SITE_URL } from "./blogs";
 
 export const SITE_NAME = "Hepsy";
 export const SITE_URL = BLOG_SITE_URL;
-export const DEFAULT_SOCIAL_IMAGE = `${SITE_URL}/images/logo.png`;
+export const DEFAULT_SOCIAL_IMAGE = `${SITE_URL}/images/logo.webp`;
 
 export const absoluteUrl = (value = "") => {
   if (!value) return "";
@@ -16,7 +16,7 @@ export const buildOrganizationSchema = () => ({
   "@type": "Organization",
   name: SITE_NAME,
   url: SITE_URL,
-  logo: absoluteUrl("/images/logo.png"),
+  logo: absoluteUrl("/images/logo.webp"),
 });
 
 export const buildWebsiteSchema = () => ({
@@ -67,7 +67,7 @@ export const buildArticleSchema = (blog) => ({
     name: SITE_NAME,
     logo: {
       "@type": "ImageObject",
-      url: absoluteUrl("/images/logo.png"),
+      url: absoluteUrl("/images/logo.webp"),
     },
   },
   mainEntityOfPage: blog.canonicalUrl,

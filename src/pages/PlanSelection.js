@@ -11,6 +11,7 @@ import {
   getSubscriptionPricingFromSettings,
   getVisibleSubscriptionPlans,
 } from "../config/subscriptionConfig";
+import loadExternalScript from "../utils/loadExternalScript";
 import "./PlanSelection.css";
 
 const buildStudentSession = (enrollmentId, enrollment) => ({
@@ -39,6 +40,15 @@ const buildStudentSession = (enrollmentId, enrollment) => ({
   expiryDate: enrollment.expiryDate || "",
   startDate: enrollment.startDate || "",
   loggedInAt: new Date().toISOString(),
+});
+
+const RAZORPAY_CHECKOUT_URL = "https://checkout.razorpay.com/v1/checkout.js";
+const getPendingPlanPayload = (plan, amount) => ({
+  pendingPlanId: plan.id,
+  pendingPlanName: plan.name,
+  pendingPlanAmount: amount,
+  paymentStatus: "initiated",
+  subscriptionStage: "checkout_created",
 });
 
 const PlanSelection = () => {
@@ -151,9 +161,7 @@ const PlanSelection = () => {
       await setDoc(
         enrollmentRef,
         {
-          planId: selectedPlanId,
-          planName: selectedPlan.name,
-          planAmount: amount,
+          ...getPendingPlanPayload(selectedPlan, amount),
           updatedAt: new Date().toISOString(),
         },
         { merge: true }
@@ -200,6 +208,7 @@ const PlanSelection = () => {
       await setDoc(
         enrollmentRef,
         {
+          ...getPendingPlanPayload(selectedPlan, amount),
           razorpaySubscriptionId: data.subscriptionId,
           checkoutUrl: data.shortUrl || "",
           subscriptionCreatedAt: new Date().toISOString(),
@@ -213,7 +222,11 @@ const PlanSelection = () => {
       }
 
       if (!window.Razorpay) {
-        throw new Error("Razorpay script not loaded. Please refresh the page.");
+        await loadExternalScript(RAZORPAY_CHECKOUT_URL);
+      }
+
+      if (!window.Razorpay) {
+        throw new Error("Razorpay checkout is unavailable right now. Please try again.");
       }
 
       const options = {

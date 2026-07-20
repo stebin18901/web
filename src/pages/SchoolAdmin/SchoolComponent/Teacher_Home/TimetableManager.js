@@ -21,6 +21,7 @@ import {
   Users,
 } from "lucide-react";
 import "./TimetableManager.css";
+import { matchesAcademicYearScope, normalizeAcademicYear } from "../schoolYearUtils";
 
 const DAY_OPTIONS = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 const PERIOD_CHOICES = [4, 5, 6, 7, 8];
@@ -405,7 +406,7 @@ const collectScheduleWarnings = (table, settings, schoolTimetables, currentDocId
   return Array.from(new Set(warnings)).slice(0, 8);
 };
 
-export default function TimetableManager({ schoolId, school }) {
+export default function TimetableManager({ schoolId, school, academicYear = "" }) {
   const [classes, setClasses] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [schoolTimetables, setSchoolTimetables] = useState([]);
@@ -419,6 +420,7 @@ export default function TimetableManager({ schoolId, school }) {
   const [status, setStatus] = useState("");
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [confirmClearOpen, setConfirmClearOpen] = useState(false);
+  const normalizedYear = useMemo(() => normalizeAcademicYear(academicYear), [academicYear]);
 
   useEffect(() => {
     if (!schoolId) return undefined;
@@ -428,7 +430,11 @@ export default function TimetableManager({ schoolId, school }) {
     const timetablesQuery = query(collection(db, "timetables"), where("schoolId", "==", schoolId));
 
     const unsubscribeClasses = onSnapshot(classesQuery, (snapshot) => {
-      const nextClasses = sortClasses(snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() })));
+      const nextClasses = sortClasses(
+        snapshot.docs
+          .map((entry) => ({ id: entry.id, ...entry.data() }))
+          .filter((entry) => !normalizedYear || normalizeAcademicYear(entry.academicYear) === normalizedYear)
+      );
       setClasses(nextClasses);
       setSelectedClassId((current) => current || nextClasses[0]?.id || "");
     });
@@ -436,12 +442,17 @@ export default function TimetableManager({ schoolId, school }) {
     const unsubscribeTeachers = onSnapshot(teachersQuery, (snapshot) => {
       const nextTeachers = snapshot.docs
         .map((entry) => ({ id: entry.id, ...entry.data() }))
-        .filter((teacher) => ["teacher", "class_teacher", ""].includes(normalizeLower(teacher.role)));
+        .filter((teacher) => ["teacher", "class_teacher", ""].includes(normalizeLower(teacher.role)))
+        .filter((teacher) => matchesAcademicYearScope(teacher, normalizedYear));
       setTeachers(nextTeachers);
     });
 
     const unsubscribeTimetables = onSnapshot(timetablesQuery, (snapshot) => {
-      setSchoolTimetables(snapshot.docs.map((entry) => ({ id: entry.id, ...entry.data() })));
+      setSchoolTimetables(
+        snapshot.docs
+          .map((entry) => ({ id: entry.id, ...entry.data() }))
+          .filter((entry) => !normalizedYear || normalizeAcademicYear(entry.academicYear) === normalizedYear)
+      );
     });
 
     return () => {
@@ -449,7 +460,7 @@ export default function TimetableManager({ schoolId, school }) {
       unsubscribeTeachers();
       unsubscribeTimetables();
     };
-  }, [schoolId]);
+  }, [normalizedYear, schoolId]);
 
   const selectedClass = useMemo(
     () => classes.find((item) => item.id === selectedClassId) || null,
@@ -470,8 +481,8 @@ export default function TimetableManager({ schoolId, school }) {
   }, [selectedClass?.id]);
 
   const currentDocId = useMemo(
-    () => (selectedClass?.className ? `${schoolId}_${selectedClass.className}` : ""),
-    [schoolId, selectedClass?.className]
+    () => (selectedClass?.className ? `${normalizeLower(schoolId)}_${normalizedYear || "general"}_${selectedClass.className}` : ""),
+    [normalizedYear, schoolId, selectedClass?.className]
   );
 
   const currentTimetableDoc = useMemo(
@@ -618,6 +629,7 @@ export default function TimetableManager({ schoolId, school }) {
           className: selectedClass.className,
           grade: selectedClass.grade || Number(String(selectedClass.className || "").match(/^\d+/)?.[0] || 0),
           division: selectedClass.division || String(selectedClass.className || "").replace(/^\d+/, ""),
+          academicYear: normalizedYear,
           table: timetable,
           settings,
           weeklyTargets,

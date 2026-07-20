@@ -1,10 +1,29 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { Suspense, lazy, useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { collection, doc, getDoc, getDocs, query, setDoc, where } from "firebase/firestore";
 import { db } from "../firebase/firebaseConfig";
 import { DEFAULT_SCHOOL_CLASS_OPTIONS, getDefaultSchoolPlan, getUniqueClasses, normalizeClassName } from "../config/defaultSchool";
-import { compareReleaseVersions, getAppReleaseConfig } from "../utils/appReleaseConfig";
+import {
+  Bell,
+  BookOpen,
+  ChartColumn,
+  FileText,
+  Gamepad2,
+  House,
+  Lock,
+  Sparkles,
+  Swords,
+  UserRound,
+} from "lucide-react";
 import "./Dashboard.css";
+
+const ProgressView = lazy(() => import("./dashboardViews/ProgressView"));
+const LeaderboardView = lazy(() => import("./dashboardViews/LeaderboardView"));
+const UpdatesView = lazy(() => import("./dashboardViews/UpdatesView"));
+const LeagueView = lazy(() => import("./dashboardViews/LeagueView"));
+const ProfileView = lazy(() => import("./dashboardViews/ProfileView"));
+const DashboardAuxPanel = lazy(() => import("./dashboardViews/DashboardAuxPanel"));
+const LearnView = lazy(() => import("./dashboardViews/LearnView"));
 
 const normalizeClassToken = (value) => String(value || "").trim().toUpperCase().replace(/\s+/g, "");
 const normalizeSubjectToken = (value) =>
@@ -62,10 +81,9 @@ const getDeviceLabel = () => {
   if (/linux/i.test(ua)) return "Linux device";
   return "Browser device";
 };
-const PROFILE_CARD_IMAGE = `${process.env.PUBLIC_URL || ""}/images/propic.png`;
-const HEPSY_LOGO = `${process.env.PUBLIC_URL || ""}/images/logo.png`;
-const LEAGUE_BANNER_IMAGE = `${process.env.PUBLIC_URL || ""}/images/career.png`;
-const STUDENT_APP_RELEASE = getAppReleaseConfig("student");
+const PROFILE_CARD_IMAGE = `${process.env.PUBLIC_URL || ""}/images/propic.webp`;
+const HEPSY_LOGO = `${process.env.PUBLIC_URL || ""}/images/logo.webp`;
+const LEAGUE_BANNER_IMAGE = `${process.env.PUBLIC_URL || ""}/images/career.webp`;
 const getHolderTierByScore = (scoreValue) => {
   const score = Number(scoreValue || 0);
 
@@ -157,21 +175,33 @@ const makeSubjectLogo = (subjectName = "") => {
 
 
 const dashboardNavItems = [
-  { key: "home", label: "Home", hint: "Overview", description: "Current dashboard view" },
-  { key: "league", label: "League", hint: "Mini-season", description: "Transfer market, simulated matchdays, and standings" },
-  { key: "updates", label: "Updates", hint: "Admin notices", description: "Announcements, releases, and school updates" },
-  { key: "subjects", label: "Learn", hint: "Coming soon", description: "Guided learning journeys are being prepared" },
-  { key: "practice", label: "Practice", hint: "Browse chapters", description: "Browse subjects, chapters, notes, and tests" },
-  { key: "mock-tests", label: "Mock Tests", hint: "Coming soon", description: "Full test simulations soon" },
-  { key: "leaderboard", label: "Leaderboard", hint: "Class ranking", description: "Competitive ranking view" },
-  { key: "progress", label: "My Progress", hint: "Track growth", description: "Detailed learning analytics" },
-  { key: "notes", label: "Notes", hint: "Coming soon", description: "Saved revision notes soon" },
-  { key: "profile", label: "Profile", hint: "Coming soon", description: "Profile tools coming soon" },
+  { key: "home", label: "Home", hint: "Overview", description: "Current dashboard view", icon: House },
+  { key: "league", label: "League", hint: "Mini-season", description: "Transfer market, simulated matchdays, and standings", icon: Swords },
+  { key: "updates", label: "Updates", hint: "Admin notices", description: "Announcements, releases, and school updates", icon: Bell },
+  { key: "subjects", label: "Learn", hint: "Dream paths", description: "Choose a guided journey and move into focused practice", icon: Sparkles },
+  { key: "practice", label: "Practice", hint: "Browse chapters", description: "Browse subjects, chapters, notes, and tests", icon: BookOpen },
+  { key: "mock-tests", label: "Mock Tests", hint: "Coming soon", description: "Full test simulations soon", icon: Gamepad2 },
+  { key: "leaderboard", label: "Leaderboard", hint: "Class ranking", description: "Competitive ranking view", icon: ChartColumn },
+  { key: "progress", label: "My Progress", hint: "Track growth", description: "Detailed learning analytics", icon: FileText },
+  { key: "notes", label: "Notes", hint: "Coming soon", description: "Saved revision notes soon", icon: Lock },
+  { key: "profile", label: "Profile", hint: "Coming soon", description: "Profile tools coming soon", icon: UserRound },
 ];
-const lockedNavKeys = new Set(["subjects", "mock-tests", "notes"]);
+const lockedNavKeys = new Set(["mock-tests", "notes"]);
 
-const dashboardBackdropUrl = `${process.env.PUBLIC_URL}/images/dashboard.png`;
-const practiceBackdropUrl = `${process.env.PUBLIC_URL}/images/week.png`;
+const dashboardBackdropUrl = `${process.env.PUBLIC_URL}/images/dashboard.webp`;
+const practiceBackdropUrl = `${process.env.PUBLIC_URL}/images/week.webp`;
+
+const DashboardViewLoader = ({ children }) => (
+  <Suspense
+    fallback={
+      <div className="dashboard-glass-card" style={{ padding: "20px", color: "#64748b", fontWeight: 600 }}>
+        Loading view...
+      </div>
+    }
+  >
+    {children}
+  </Suspense>
+);
 
 const Dashboard = () => {
   const [quizzes, setQuizzes] = useState([]);
@@ -186,6 +216,10 @@ const Dashboard = () => {
   const [canScrollRight, setCanScrollRight] = useState(false);
   const [activeNav, setActiveNav] = useState("home");
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarCompact, setIsSidebarCompact] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem("dashboardSidebarCompact") === "true";
+  });
   const [session, setSession] = useState(() => safeJsonParse(localStorage.getItem("schoolStudentSession")));
   const [showAccountModal, setShowAccountModal] = useState(false);
   const [linkedAccounts, setLinkedAccounts] = useState([]);
@@ -200,12 +234,6 @@ const Dashboard = () => {
     safeNumber(localStorage.getItem(getNotificationReadKey(safeJsonParse(localStorage.getItem("schoolStudentSession"))?.id)))
   );
   const [holderTierPopup, setHolderTierPopup] = useState(null);
-  const [appUpdate, setAppUpdate] = useState({
-    visible: false,
-    latestVersion: "",
-    downloadUrl: "",
-    forceUpdate: false,
-  });
   const subjectScrollRef = useRef(null);
   const navigate = useNavigate();
   const sessionId = session?.id || "";
@@ -972,58 +1000,9 @@ const Dashboard = () => {
   }, []);
 
   useEffect(() => {
-    let cancelled = false;
-
-    const loadStudentAppRelease = async () => {
-      try {
-        const snapshot = await getDoc(
-          doc(db, "app_metadata", STUDENT_APP_RELEASE.configDocId)
-        );
-
-        if (!snapshot.exists() || cancelled) {
-          return;
-        }
-
-        const data = snapshot.data() || {};
-        const latestVersion = String(
-          data.latest_version || data.min_version || ""
-        ).trim();
-        const currentVersion = String(
-          session?.appVersion ||
-            localStorage.getItem("hepsyStudentAppVersion") ||
-            localStorage.getItem("hepsyAppVersion") ||
-            ""
-        ).trim();
-        const onAndroid =
-          typeof navigator !== "undefined" &&
-          /android/i.test(navigator.userAgent || "");
-        const shouldShow =
-          Boolean(data.download_url) &&
-          (Boolean(data.is_force_update) ||
-            (latestVersion &&
-              currentVersion &&
-              compareReleaseVersions(latestVersion, currentVersion) > 0) ||
-            (!currentVersion && onAndroid));
-
-        if (cancelled) return;
-
-        setAppUpdate({
-          visible: shouldShow,
-          latestVersion,
-          downloadUrl: data.download_url || "",
-          forceUpdate: Boolean(data.is_force_update),
-        });
-      } catch (error) {
-        console.error("Failed to load student app release config:", error);
-      }
-    };
-
-    loadStudentAppRelease();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [session?.appVersion]);
+    if (typeof window === "undefined") return;
+    localStorage.setItem("dashboardSidebarCompact", isSidebarCompact ? "true" : "false");
+  }, [isSidebarCompact]);
 
   const scrollSubjects = (direction) => {
     const container = subjectScrollRef.current;
@@ -1102,7 +1081,7 @@ const Dashboard = () => {
       <div className="dashboard-scene-backdrop" />
       <div className="dashboard-scene-glow dashboard-glow-a" />
       <div className="dashboard-scene-glow dashboard-glow-b" />
-      <div className={`dashboard-shell ${isSidebarOpen ? "sidebar-open" : ""}`}>
+      <div className={`dashboard-shell ${isSidebarOpen ? "sidebar-open" : ""} ${isSidebarCompact ? "sidebar-compact" : ""}`}>
         <button
           type="button"
           className="dashboard-sidebar-toggle"
@@ -1117,20 +1096,32 @@ const Dashboard = () => {
         {isSidebarOpen && <button type="button" className="dashboard-sidebar-scrim" onClick={() => setIsSidebarOpen(false)} aria-label="Close navigation" />}
         <aside className="dashboard-sidebar" id="dashboard-sidebar-nav">
           <div className="dashboard-sidebar-inner">
-            <button
-              type="button"
-              className="brand-wrap brand-button dashboard-brand"
-              onClick={() => setShowAccountModal(true)}
-            >
-              <div className="brand-badge brand-badge-logo">
-                <img src={HEPSY_LOGO} alt="Hepsy logo" />
-              </div>
-              <div>
-                <p className="dash-kicker">HEPSY</p>
-                <h1>HEPSY</h1>
-                <p className="dash-sub">LEARN SMARTER</p>
-              </div>
-            </button>
+            <div className="dashboard-sidebar-head">
+              <button
+                type="button"
+                className="brand-wrap brand-button dashboard-brand"
+                onClick={() => setShowAccountModal(true)}
+              >
+                <div className="brand-badge brand-badge-logo">
+                  <img src={HEPSY_LOGO} alt="Hepsy logo" />
+                </div>
+                <div>
+                  <p className="dash-kicker">HEPSY</p>
+                  <h1>HEPSY</h1>
+                  <p className="dash-sub">LEARN SMARTER</p>
+                </div>
+              </button>
+
+              <button
+                type="button"
+                className="dashboard-sidebar-compact-toggle"
+                onClick={() => setIsSidebarCompact((prev) => !prev)}
+                aria-label={isSidebarCompact ? "Expand sidebar" : "Collapse sidebar"}
+                title={isSidebarCompact ? "Expand sidebar" : "Collapse sidebar"}
+              >
+                <span className={`dashboard-sidebar-compact-bar ${isSidebarCompact ? "expanded" : ""}`} aria-hidden="true" />
+              </button>
+            </div>
 
             <nav className="dashboard-nav" aria-label="Dashboard navigation">
               {visibleDashboardNavItems.map((item) => (
@@ -1138,12 +1129,15 @@ const Dashboard = () => {
                   key={item.key}
                   type="button"
                   className={`dashboard-nav-item ${activeNav === item.key ? "active" : "inactive"} ${lockedNavKeys.has(item.key) ? "locked" : ""}`}
-                  title={item.description}
+                  title={isSidebarCompact ? item.label : item.description}
                   aria-disabled={lockedNavKeys.has(item.key)}
                   onClick={() => handleNavSelect(item.key)}
                 >
+                  <span className="dashboard-nav-icon" aria-hidden="true">
+                    <item.icon size={18} />
+                  </span>
                   <span className="dashboard-nav-label">
-                    {item.label}
+                    <span className="dashboard-nav-label-text">{item.label}</span>
                     {lockedNavKeys.has(item.key) && <span className="dashboard-nav-lock" aria-hidden="true">🔒</span>}
                   </span>
                   {activeNav !== item.key && <small>{item.hint}</small>}
@@ -1184,39 +1178,6 @@ const Dashboard = () => {
             ) : null}
 
             <div className="dashboard-side-footer">
-              {appUpdate.visible ? (
-                <div className="dashboard-app-update-card">
-                  <div className="dashboard-app-update-copy">
-                    <span>App Update</span>
-                    <strong>
-                      {appUpdate.latestVersion
-                        ? `Version ${appUpdate.latestVersion} available`
-                        : "A newer Android build is available"}
-                    </strong>
-                    <small>
-                      {appUpdate.forceUpdate
-                        ? "This release is marked as required before continuing in older app builds."
-                        : "Open the latest student app build for a smoother experience."}
-                    </small>
-                  </div>
-                  <button
-                    type="button"
-                    className="dashboard-app-update-button"
-                    onClick={() => {
-                      const target =
-                        appUpdate.downloadUrl || STUDENT_APP_RELEASE.downloadRoute;
-                      if (String(target).startsWith("http")) {
-                        window.open(target, "_blank", "noopener,noreferrer");
-                        return;
-                      }
-                      navigate(target);
-                    }}
-                  >
-                    Update
-                  </button>
-                </div>
-              ) : null}
-
               <button
                 type="button"
                 className="dashboard-side-account brand-wrap brand-button"
@@ -1300,19 +1261,38 @@ const Dashboard = () => {
             <div className="holder-tier-popup-spark holder-tier-popup-spark-a" aria-hidden="true" />
             <div className="holder-tier-popup-spark holder-tier-popup-spark-b" aria-hidden="true" />
             <div className="holder-tier-popup-spark holder-tier-popup-spark-c" aria-hidden="true" />
-            <span className="holder-tier-popup-kicker">
-              {holderTierPopup.direction === "promotion" ? "Card Upgraded" : "Card Updated"}
-            </span>
-            <h3 id="holder-tier-popup-title">
-              {holderTierPopup.direction === "promotion"
-                ? `You are now a ${holderTierPopup.currentTier.label}`
-                : `You moved to ${holderTierPopup.currentTier.label}`}
-            </h3>
-            <p>
-              {holderTierPopup.direction === "promotion"
-                ? `Excellent work. Your performance moved from ${holderTierPopup.previousTier.label} to ${holderTierPopup.currentTier.label}.`
-                : `Your holding changed from ${holderTierPopup.previousTier.label} to ${holderTierPopup.currentTier.label}. Keep practicing to climb back stronger.`}
-            </p>
+            <div className="holder-tier-popup-hero">
+              <span className="holder-tier-popup-kicker">
+                {holderTierPopup.direction === "promotion" ? "Card Upgraded" : "Card Updated"}
+              </span>
+              <h3 id="holder-tier-popup-title">
+                {holderTierPopup.direction === "promotion"
+                  ? `You are now a ${holderTierPopup.currentTier.label}`
+                  : `You moved to ${holderTierPopup.currentTier.label}`}
+              </h3>
+              <p>
+                {holderTierPopup.direction === "promotion"
+                  ? `Excellent work. Your performance moved from ${holderTierPopup.previousTier.label} to ${holderTierPopup.currentTier.label}.`
+                  : `Your holding changed from ${holderTierPopup.previousTier.label} to ${holderTierPopup.currentTier.label}. Keep practicing to climb back stronger.`}
+              </p>
+            </div>
+            <div className="holder-tier-popup-scene">
+              <div className={`holder-tier-popup-card holder-tier-popup-card-${holderTierPopup.previousTier.key}`}>
+                <span className="holder-tier-popup-card-label">Previous</span>
+                <strong>{holderTierPopup.previousTier.label}</strong>
+                <small>{session?.name || "Student Card"}</small>
+              </div>
+              <div className="holder-tier-popup-burst" aria-hidden="true">
+                <span className="holder-tier-popup-burst-ring holder-tier-popup-burst-ring-a" />
+                <span className="holder-tier-popup-burst-ring holder-tier-popup-burst-ring-b" />
+                <span className="holder-tier-popup-arrow">→</span>
+              </div>
+              <div className={`holder-tier-popup-card holder-tier-popup-card-featured holder-tier-popup-card-${holderTierPopup.currentTier.key}`}>
+                <span className="holder-tier-popup-card-label">Current</span>
+                <strong>{holderTierPopup.currentTier.label}</strong>
+                <small>{holderTierPopup.direction === "promotion" ? "Evolution complete" : "Push for the next rise"}</small>
+              </div>
+            </div>
             <div className="holder-tier-popup-track">
               <div className={`holder-tier-popup-chip holder-tier-popup-chip-${holderTierPopup.previousTier.key}`}>
                 {holderTierPopup.previousTier.label}
@@ -1534,9 +1514,9 @@ const Dashboard = () => {
           )}
 
           <div
-            className={`dash-grid dashboard-view-grid ${activeNav === "practice" ? "practice-layout" : ""} ${activeNav === "league" ? "league-layout" : ""}`}
+            className={`dash-grid dashboard-view-grid ${activeNav === "practice" ? "practice-layout" : ""} ${activeNav === "league" ? "league-layout" : ""} ${activeNav === "subjects" ? "learn-layout" : ""}`}
           >
-            <main className="hero-panel">
+            <main className={`hero-panel ${activeNav === "subjects" ? "learn-hero-panel" : ""}`}>
               {activeNav === "practice" && (
                 <>
                   <section className="dashboard-view-hero dashboard-glass-card practice-hero-card">
@@ -1706,262 +1686,61 @@ const Dashboard = () => {
               )}
 
               {activeNav === "progress" && (
-                <>
-                  <section className="dashboard-view-hero dashboard-glass-card">
-                    <span className="dashboard-view-kicker">My Progress</span>
-                    <h2>Readable progress tracking with the numbers that actually matter.</h2>
-                    <p>Review completion, class rank, recent attempts, and score quality in one cleaner view.</p>
-                  </section>
-                  <div className="progress-metric-grid">
-                    {progressCards.map((card) => (
-                      <section key={card.label} className={`progress-metric-card tone-${card.tone}`}>
-                        <span>{card.label}</span>
-                        <strong>{card.value}</strong>
-                      </section>
-                    ))}
-                  </div>
-                  <section className="leader-card recent-score-panel">
-                    <div className="row-head row-head-stack">
-                      <div>
-                        <div className="panel-title">Recent Scores</div>
-                        <p className="panel-support-copy">Latest submitted quizzes, sorted from newest to oldest.</p>
-                      </div>
-                    </div>
-                    {recentReports.length === 0 ? (
-                      <div className="empty-note">No attempts yet.</div>
-                    ) : (
-                      <ol className="score-timeline">
-                        {recentReports.slice(0, 8).map((report, index) => (
-                          <li key={report.id} className="score-timeline-item">
-                            <span className="score-order">{String(index + 1).padStart(2, "0")}</span>
-                            <div className="score-body">
-                              <strong>{report.quizTitle || report.quizId}</strong>
-                              <small>{formatDateLabel(report.submittedAt)}</small>
-                            </div>
-                            <strong className="score-value">{report.percentage}%</strong>
-                          </li>
-                        ))}
-                      </ol>
-                    )}
-                  </section>
-                </>
+                <DashboardViewLoader>
+                  <ProgressView
+                    progressCards={progressCards}
+                    recentReports={recentReports}
+                    formatDateLabel={formatDateLabel}
+                  />
+                </DashboardViewLoader>
+              )}
+
+              {activeNav === "subjects" && (
+                <DashboardViewLoader>
+                  <LearnView
+                    session={session}
+                    studentStats={studentStats}
+                    overallProgress={overallProgress}
+                    onOpenPractice={() => setActiveNav("practice")}
+                  />
+                </DashboardViewLoader>
               )}
 
               {activeNav === "leaderboard" && (
-                <>
-                  <section className="dashboard-view-hero dashboard-glass-card">
-                    <span className="dashboard-view-kicker">Leaderboard</span>
-                    <h2>See your class standing clearly, with stronger visual hierarchy.</h2>
-                    <p>The ranking board is separated from home so students can focus on competition and movement.</p>
-                  </section>
-                  {leaderboard.length === 0 ? (
-                    <section className="leaderboard-card leaderboard-empty-card">
-                      <div className="empty-note">Leaderboard will appear after submissions.</div>
-                    </section>
-                  ) : (
-                    <>
-                      <div className="leaderboard-podium">
-                        {leaderboard.slice(0, 3).map((entry, idx) => {
-                          const holderTier = getHolderTierByScore(entry.avg);
-                          return (
-                          <article
-                            key={entry.id}
-                            className={`leader-podium-card podium-${idx + 1} holder-tone-${holderTier.key}`}
-                          >
-                            <div className="leader-podium-copy">
-                              <span className="leader-podium-rank">#{idx + 1}</span>
-                              <strong>{entry.name}</strong>
-                              <p>{entry.points} pts</p>
-                              <small>{entry.avg}% avg accuracy</small>
-                            </div>
-                            <div className="leader-podium-art" aria-hidden="true">
-                              <img
-                                className="leader-podium-avatar"
-                                src={PROFILE_CARD_IMAGE}
-                                alt=""
-                              />
-                            </div>
-                          </article>
-                        )})}
-                      </div>
-                      <section className="leaderboard-card leaderboard-full-card">
-                        <div className="row-head row-head-stack">
-                          <div>
-                            <div className="panel-title">Full Class Ranking</div>
-                            <p className="panel-support-copy">Sorted by total points, then average score.</p>
-                          </div>
-                        </div>
-                        <div className="leaderboard-table">
-                          {leaderboard.map((entry, idx) => (
-                            <div
-                              key={entry.id}
-                              className={`leaderboard-table-row ${entry.id === session?.id ? "current-student" : ""}`}
-                            >
-                              <span className="leaderboard-table-rank">#{idx + 1}</span>
-                              <strong>{entry.name}</strong>
-                              <span>{entry.avg}% Avg</span>
-                              <span>{entry.points} pts</span>
-                            </div>
-                          ))}
-                        </div>
-                      </section>
-                    </>
-                  )}
-                </>
+                <DashboardViewLoader>
+                  <LeaderboardView
+                    leaderboard={leaderboard}
+                    getHolderTierByScore={getHolderTierByScore}
+                    profileCardImage={PROFILE_CARD_IMAGE}
+                    sessionId={session?.id}
+                  />
+                </DashboardViewLoader>
               )}
 
               {activeNav === "updates" && (
-                <>
-                  <section className="dashboard-view-hero dashboard-glass-card">
-                    <span className="dashboard-view-kicker">Admin Updates</span>
-                    <h2>Announcements, new releases, fantasy drops, and school notices in one stream.</h2>
-                    <p>These updates are published from the admin workspace and automatically filtered for your school when needed.</p>
-                  </section>
-                  <section className="dashboard-updates-feed">
-                    {adminNotifications.length ? (
-                      adminNotifications.map((item) => (
-                        <article key={item.id} className={`dashboard-update-card tone-${item.tone || "general"}`}>
-                          <div className="dashboard-update-copy">
-                            <div className="dashboard-update-meta">
-                              <span>{item.schoolId ? item.schoolName || item.schoolId : "All Schools"}</span>
-                              {item.pinned ? <strong>Pinned</strong> : null}
-                            </div>
-                            <h3>{item.title}</h3>
-                            <p>{item.message}</p>
-                            {item.ctaLabel && item.ctaLink ? (
-                              <button
-                                type="button"
-                                className="dashboard-update-cta"
-                                onClick={() => {
-                                  if (String(item.ctaLink).startsWith("/")) {
-                                    navigate(item.ctaLink);
-                                    return;
-                                  }
-                                  window.open(item.ctaLink, "_blank", "noopener,noreferrer");
-                                }}
-                              >
-                                {item.ctaLabel}
-                              </button>
-                            ) : null}
-                          </div>
-                          {item.imageUrl ? (
-                            <div className="dashboard-update-art">
-                              <img src={item.imageUrl} alt={item.title} />
-                            </div>
-                          ) : null}
-                        </article>
-                      ))
-                    ) : (
-                      <div className="empty-note">No admin updates available yet.</div>
-                    )}
-                  </section>
-                </>
+                <DashboardViewLoader>
+                  <UpdatesView adminNotifications={adminNotifications} navigate={navigate} />
+                </DashboardViewLoader>
               )}
 
               {activeNav === "league" && (
-                <section className="league-launch-banner">
-                  <div className="league-launch-orb league-launch-orb-one" aria-hidden="true" />
-                  <div className="league-launch-orb league-launch-orb-two" aria-hidden="true" />
-
-                  <div className="league-launch-copy">
-                    <span className="dashboard-view-kicker">Quiz Fantasy League</span>
-                    <h2>Draft your school squad and enter the fantasy arena.</h2>
-                    <p>
-                      Your full fantasy league experience is now on its own dedicated page for a cleaner,
-                      wider, and more immersive game flow.
-                    </p>
-                    <div className="league-launch-badges" aria-label="League highlights">
-                      <span>5 student lineup</span>
-                      <span>Captain always locked</span>
-                      <span>Live fantasy scoring</span>
-                    </div>
-                    <button
-                      type="button"
-                      className="league-launch-cta"
-                      onClick={() => navigate("/league/fantasy")}
-                    >
-                      <span>Play Now</span>
-                      <strong>Fantasy Arena</strong>
-                    </button>
-                  </div>
-
-                  <div className="league-launch-art" aria-hidden="true">
-                    <div className="league-launch-art-frame">
-                      <img src={LEAGUE_BANNER_IMAGE} alt="" />
-                    </div>
-                    <div className="league-launch-floating-card league-launch-floating-card-top">
-                      <small>Lineup Power</small>
-                      <strong>Boosted by practice</strong>
-                    </div>
-                    <div className="league-launch-floating-card league-launch-floating-card-bottom">
-                      <small>School League</small>
-                      <strong>Ready for matchday</strong>
-                    </div>
-                  </div>
-                </section>
+                <DashboardViewLoader>
+                  <LeagueView leagueBannerImage={LEAGUE_BANNER_IMAGE} navigate={navigate} />
+                </DashboardViewLoader>
               )}
 
               {activeNav === "profile" && (
-                <>
-                  <section className="dashboard-view-hero dashboard-glass-card">
-                    <span className="dashboard-view-kicker">Profile</span>
-                    <h2>Your student details, plan access, and account status in one place.</h2>
-                    <p>Review your active plan, expiry date, linked school details, and current registration status without leaving the dashboard.</p>
-                  </section>
-                  <section className="leader-card profile-details-panel">
-                    <div className="row-head row-head-stack">
-                      <div>
-                        <div className="panel-title">Student Details</div>
-                        <p className="panel-support-copy">Basic account and subscription details pulled from your active session.</p>
-                      </div>
-                    </div>
-                    <div className="profile-details-grid">
-                      <article className="profile-detail-card">
-                        <span>Student Name</span>
-                        <strong>{session.name || "Student"}</strong>
-                      </article>
-                      <article className="profile-detail-card">
-                        <span>School</span>
-                        <strong>{session.schoolName || session.schoolId || "Not available"}</strong>
-                      </article>
-                      <article className="profile-detail-card">
-                        <span>Current Class</span>
-                        <strong>{session.className || "Not available"}</strong>
-                      </article>
-                      <article className="profile-detail-card">
-                        <span>Selected Classes</span>
-                        <strong>{selectedClasses.length ? selectedClasses.join(", ") : "Not available"}</strong>
-                      </article>
-                      <article className="profile-detail-card">
-                        <span>Current Plan</span>
-                        <strong>{session.planName || activePlan.name || session.planId || "Default"}</strong>
-                      </article>
-                      <article className="profile-detail-card">
-                        <span>Plan Access</span>
-                        <strong>{session.accessMode || "default-school"}</strong>
-                      </article>
-                      <article className="profile-detail-card">
-                        <span>Payment Status</span>
-                        <strong>{session.paymentStatus || "Not available"}</strong>
-                      </article>
-                      <article className="profile-detail-card">
-                        <span>Registration Status</span>
-                        <strong>{session.registrationStatus || "Not available"}</strong>
-                      </article>
-                      <article className="profile-detail-card">
-                        <span>Expiry Date</span>
-                        <strong>{formatDateLabel(session.expiryDate)}</strong>
-                      </article>
-                      <article className="profile-detail-card">
-                        <span>Logged In Device</span>
-                        <strong>{session.deviceLabel || getDeviceLabel()}</strong>
-                      </article>
-                    </div>
-                  </section>
-                </>
+                <DashboardViewLoader>
+                  <ProfileView
+                    session={session}
+                    selectedClasses={selectedClasses}
+                    activePlan={activePlan}
+                    formatDateLabel={formatDateLabel}
+                  />
+                </DashboardViewLoader>
               )}
 
-              {!["home", "practice", "progress", "leaderboard", "updates", "league", "profile"].includes(activeNav) && (
+              {!["home", "subjects", "practice", "progress", "leaderboard", "updates", "league", "profile"].includes(activeNav) && (
                 <section className="dashboard-view-hero dashboard-glass-card dashboard-placeholder-card">
                   <span className="dashboard-view-kicker">{placeholderView.hint}</span>
                   <h2>{placeholderView.title}</h2>
@@ -1970,138 +1749,19 @@ const Dashboard = () => {
               )}
             </main>
 
-            {activeNav !== "practice" && activeNav !== "league" && activeNav !== "updates" && (
-            <aside className="right-panel">
-              {activeNav === "home" && (
-                <section className="stats-card">
-                  <div className="panel-title">Snapshot</div>
-                  <div className="stats-grid">
-                    <div>
-                      <p className="stat-num">{studentStats.totalPoints}</p>
-                      <p className="stat-label">Total Points</p>
-                    </div>
-                    <div>
-                      <p className="stat-num">{studentStats.avgAccuracy}%</p>
-                      <p className="stat-label">Accuracy</p>
-                    </div>
-                    <div>
-                      <p className="stat-num">{studentStats.totalQuizzes}</p>
-                      <p className="stat-label">Quizzes Attempted</p>
-                    </div>
-                  </div>
-                </section>
-              )}
-
-              {activeNav === "progress" && (
-                <section className={`stats-card progress-summary-panel holder-card holder-card-${progressHolderTier.key}`}>
-                  <div className="holder-card-shell">
-                    <div className="holder-card-score-block">
-                      <span className="holder-card-overall">{studentStats.avgAccuracy}</span>
-                      <span className="holder-card-overall-label">OVR</span>
-                      <span className="holder-card-tier">{progressHolderTier.label}</span>
-                    </div>
-
-                    <div className="holder-card-art">
-                      <div className="holder-card-glow"></div>
-                      <img
-                        className="holder-card-avatar"
-                        src={PROFILE_CARD_IMAGE}
-                        alt={session?.name ? `${session.name} profile` : "Student profile"}
-                      />
-                    </div>
-
-                    <div className="holder-card-nameplate">
-                      <span className="holder-card-kicker">Profile Summary</span>
-                      <strong>{session?.name || "Student"}</strong>
-                      <p>{progressHolderTier.accent}</p>
-                    </div>
-
-                    <div className="holder-card-stats-grid">
-                      <div>
-                        <span>COM</span>
-                        <strong>{overallProgress}</strong>
-                      </div>
-                      <div>
-                        <span>PTS</span>
-                        <strong>{studentStats.totalPoints}</strong>
-                      </div>
-                      <div>
-                        <span>RNK</span>
-                        <strong>{studentStats.rank}</strong>
-                      </div>
-                      <div>
-                        <span>ATM</span>
-                        <strong>{studentStats.totalQuizzes}</strong>
-                      </div>
-                      <div>
-                        <span>PLN</span>
-                        <strong>{session.planName || activePlan.name || "Base"}</strong>
-                      </div>
-                      <div>
-                        <span>EXP</span>
-                        <strong>{session.expiryDate ? formatDateLabel(session.expiryDate).split(",")[0] : "NA"}</strong>
-                      </div>
-                    </div>
-                  </div>
-                </section>
-              )}
-
-              {activeNav === "leaderboard" && (
-                <section className="stats-card">
-                  <div className="panel-title">Your Standing</div>
-                  <div className="progress-summary-list">
-                    <div className="progress-summary-item">
-                      <span>Current Rank</span>
-                      <strong>#{studentStats.rank}</strong>
-                    </div>
-                    <div className="progress-summary-item">
-                      <span>Total Points</span>
-                      <strong>{studentStats.totalPoints}</strong>
-                    </div>
-                    <div className="progress-summary-item">
-                      <span>Average Accuracy</span>
-                      <strong>{studentStats.avgAccuracy}%</strong>
-                    </div>
-                    <div className="progress-summary-item">
-                      <span>Class Entries</span>
-                      <strong>{leaderboard.length}</strong>
-                    </div>
-                  </div>
-                </section>
-              )}
-
-              {activeNav === "profile" && (
-                <section className="stats-card profile-summary-panel">
-                  <div className="panel-title">Profile Summary</div>
-                  <div className="progress-summary-list">
-                    <div className="progress-summary-item">
-                      <span>Plan</span>
-                      <strong>{session.planName || activePlan.name || "Default"}</strong>
-                    </div>
-                    <div className="progress-summary-item">
-                      <span>Expiry</span>
-                      <strong>{formatDateLabel(session.expiryDate)}</strong>
-                    </div>
-                    <div className="progress-summary-item">
-                      <span>Payment</span>
-                      <strong>{session.paymentStatus || "Not available"}</strong>
-                    </div>
-                    <div className="progress-summary-item">
-                      <span>Registration</span>
-                      <strong>{session.registrationStatus || "Not available"}</strong>
-                    </div>
-                  </div>
-                </section>
-              )}
-
-              {!["home", "practice", "progress", "leaderboard", "profile"].includes(activeNav) && (
-                <section className="stats-card">
-                  <div className="panel-title">Status</div>
-                  <div className="empty-note">This section is being prepared.</div>
-                </section>
-              )}
-            </aside>
-            )}
+            <DashboardViewLoader>
+              <DashboardAuxPanel
+                activeNav={activeNav}
+                studentStats={studentStats}
+                progressHolderTier={progressHolderTier}
+                session={session}
+                profileCardImage={PROFILE_CARD_IMAGE}
+                overallProgress={overallProgress}
+                activePlan={activePlan}
+                formatDateLabel={formatDateLabel}
+                leaderboard={leaderboard}
+              />
+            </DashboardViewLoader>
           </div>
         </>
       )}

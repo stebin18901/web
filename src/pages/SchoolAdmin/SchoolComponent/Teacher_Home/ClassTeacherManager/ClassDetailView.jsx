@@ -5,6 +5,7 @@ import {
   Plus, X, Loader2, BookOpen, Users, ListOrdered,
 } from "lucide-react";
 import "./ClassDetailView.css";
+import { buildYearScopedClassId, normalizeAcademicYear } from "../../schoolYearUtils";
 
 const DEFAULT_SUBJECTS = ["Mathematics", "Science", "English", "Social Studies", "Computer Science", "Hindi", "Malayalam"];
 
@@ -27,6 +28,7 @@ export default function ClassDetailView({
   className,
   schoolId,
   school,
+  academicYear = "",
   teachers = [],
   draggedTeacher,
   setDraggedTeacher,
@@ -42,19 +44,20 @@ export default function ClassDetailView({
   const [loading, setLoading] = useState(false);
   const [confirmState, setConfirmState] = useState({ open: false });
   const [studentCount, setStudentCount] = useState(null);
+  const scopedClassId = buildYearScopedClassId({ schoolId, academicYear: normalizeAcademicYear(academicYear), className });
 
   useEffect(() => {
     if (!className || !schoolId) return;
-    const ref = doc(db, "classes", `${schoolId}_${className}`);
+    const ref = doc(db, "classes", scopedClassId);
     const unsub = onSnapshot(ref, (snap) => {
       setClassData(snap.exists() ? snap.data() : null);
     });
     return () => unsub();
-  }, [className, schoolId]);
+  }, [className, schoolId, scopedClassId]);
 
   useEffect(() => {
     if (!className || !schoolId) return;
-    const classId = `${schoolId}_${className}`;
+    const classId = scopedClassId;
     const rollRef = doc(db, "classes", classId, "meta", "rollSetup");
     const studentsRef = collection(db, "classes", classId, "students");
 
@@ -70,13 +73,13 @@ export default function ClassDetailView({
     });
 
     return () => { unsubRoll(); unsubStudents(); };
-  }, [className, schoolId]);
+  }, [className, schoolId, scopedClassId]);
 
   const upsertTeachersToClass = async (teachersToProcess) => {
     if (mode !== "admin" || !teachersToProcess.length) return;
     setLoading(true);
     try {
-      const ref = doc(db, "classes", `${schoolId}_${className}`);
+      const ref = doc(db, "classes", scopedClassId);
       const snap = await getDoc(ref);
       const data = snap.exists() ? snap.data() : {};
       let team = Array.isArray(data.team) ? [...data.team] : [];
@@ -115,7 +118,7 @@ export default function ClassDetailView({
     if (mode !== "admin" || !draggedSubject) return;
     setLoading(true);
     try {
-      const ref = doc(db, "classes", `${schoolId}_${className}`);
+      const ref = doc(db, "classes", scopedClassId);
       const snap = await getDoc(ref);
       const data = snap.exists() ? snap.data() : {};
       const team = Array.isArray(data.team) ? [...data.team] : [];
@@ -138,7 +141,7 @@ export default function ClassDetailView({
       open: true,
       message: "Remove this teacher from class?",
       onConfirm: async () => {
-        const ref = doc(db, "classes", `${schoolId}_${className}`);
+        const ref = doc(db, "classes", scopedClassId);
         const snap = await getDoc(ref);
         const team = (snap.data()?.team || []).filter((t) => t.userId !== teacherId);
         await updateDoc(ref, { team });
