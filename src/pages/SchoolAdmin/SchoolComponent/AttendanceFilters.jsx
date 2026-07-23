@@ -1,4 +1,5 @@
 import React from "react";
+import SchoolAdminQuickLinkHint from "./SchoolAdminQuickLinkHint";
 
 const AttendanceFilters = ({
   classes = [],
@@ -47,6 +48,15 @@ const AttendanceFilters = ({
               </option>
             ))}
           </select>
+          {!classes.length ? (
+            <SchoolAdminQuickLinkHint
+              title="No classes created yet"
+              description="Create classes first so attendance can load a class roster for the active academic year."
+              links={[
+                { label: "Open Dashboard > Class", to: "/school-admin/home?tab=classes" },
+              ]}
+            />
+          ) : null}
         </div>
         <div className="academic-field">
           <label>Date</label>

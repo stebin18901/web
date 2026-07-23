@@ -1,5 +1,6 @@
 import React from "react";
 import { ExternalLink, Link2 } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 import StatsOverview from "./Teacher_Home/StatsOverviewControlCenter";
 import TopPerformers from "./Teacher_Home/TopPerformers";
 import "./TeacherHome.css";
@@ -14,6 +15,8 @@ const MOCK_STUDENTS = [
 ];
 
 const TeacherHome = (props) => {
+  const location = useLocation();
+  const navigate = useNavigate();
   const schoolId = props?.schoolId || "";
   const school = props?.school || null;
   const academicYear = props?.academicYear || "";
@@ -68,6 +71,15 @@ const TeacherHome = (props) => {
     () => tabs.find((tab) => tab.id === activeTab)?.component || null,
     [activeTab, tabs]
   );
+
+  React.useEffect(() => {
+    const searchParams = new URLSearchParams(location.search || "");
+    const requestedTab = String(searchParams.get("tab") || "").trim().toLowerCase();
+    if (!requestedTab) return;
+    if (tabs.some((tab) => tab.id === requestedTab)) {
+      setActiveTab(requestedTab);
+    }
+  }, [location.search, tabs]);
 
   const flashCopyMessage = React.useCallback((message) => {
     setCopyMessage(message);
@@ -144,7 +156,10 @@ const TeacherHome = (props) => {
           <button
             key={tab.id}
             type="button"
-            onClick={() => setActiveTab(tab.id)}
+            onClick={() => {
+              setActiveTab(tab.id);
+              navigate(`/school-admin/home?tab=${tab.id}`, { replace: true });
+            }}
             className={`tag-btn ${activeTab === tab.id ? "active" : ""}`}
           >
             {tab.label}

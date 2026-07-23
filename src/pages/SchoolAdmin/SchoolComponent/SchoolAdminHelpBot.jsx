@@ -282,7 +282,6 @@ export default function SchoolAdminHelpBot({ schoolId = "", academicYear = "" })
                     <div className="school-help-content-head">
                       <div className="school-help-content-badges">
                         <span>{selectedGuide.category}</span>
-                        {selectedGuide.route ? <span className="route">{selectedGuide.route}</span> : null}
                       </div>
                       <h4>{selectedGuide.title}</h4>
                     </div>

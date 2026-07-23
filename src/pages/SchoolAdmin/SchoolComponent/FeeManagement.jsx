@@ -38,6 +38,7 @@ import {
   processFeeTransaction,
 } from "./feeManagementUtils";
 import { loadStudentsForClass, normalizeClassName, resolveSchoolClasses } from "./academicUtils";
+import SchoolAdminQuickLinkHint from "./SchoolAdminQuickLinkHint";
 import "./FeeManagement.css";
 
 const normalize = (value) => String(value || "").trim();
@@ -861,7 +862,27 @@ export default function FeeManagement({ schoolId, schoolName = "", academicYear 
           {loading ? (
             <div className="fee-management-state-card">Loading fee records...</div>
           ) : !students.length ? (
-            <div className="fee-management-state-card">No students found for this school yet.</div>
+            <div className="fee-management-state-card">
+              No students found for this school yet.
+              <SchoolAdminQuickLinkHint
+                title={classOptions.length ? "Fee records need enrolled students" : "Classes and students are not ready yet"}
+                description={
+                  classOptions.length
+                    ? "Add students into class rosters first, then fee management can load their payment setup."
+                    : "Create classes first, then add students so the fee ledger can be generated from the active roster."
+                }
+                links={
+                  classOptions.length
+                    ? [
+                        { label: "Open Upload Students", to: "/school-admin/students/upload" },
+                        { label: "Open Student Report", to: "/school-admin/students/student-report" },
+                      ]
+                    : [
+                        { label: "Open Dashboard > Class", to: "/school-admin/home?tab=classes" },
+                      ]
+                }
+              />
+            </div>
           ) : filteredStudents.length === 0 ? (
             <div className="fee-management-state-card">No students match the current filters.</div>
           ) : (

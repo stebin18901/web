@@ -5,6 +5,7 @@ import { collection, doc, getDoc, getDocs, limit, query, where, writeBatch } fro
 import { Eye, EyeOff, Info, Pencil, Plus, Trash2, Upload, Users } from "lucide-react";
 import { buildYearScopedStudentId, normalizeAcademicYear } from "./schoolYearUtils";
 import { loadStudentsForClass, resolveSchoolClasses, splitClassAndDivision } from "./academicUtils";
+import SchoolAdminQuickLinkHint from "./SchoolAdminQuickLinkHint";
 import "./UploadStudents.css";
 
 const normalize = (value) => String(value || "").trim();
@@ -994,6 +995,15 @@ const UploadStudents = ({ school, schoolId, forcePaidAccess = false, academicYea
                 ) : null}
               </div>
             </div>
+            {!classOptions.length ? (
+              <SchoolAdminQuickLinkHint
+                title="No classes available for this academic year"
+                description="Create classes first, then return here to generate the spreadsheet and add students into those class rosters."
+                links={[
+                  { label: "Open Dashboard > Class", to: "/school-admin/home?tab=classes" },
+                ]}
+              />
+            ) : null}
             {sheetClassName ? (
               <div className="upload-students-sheet-meta">
                 <span>{sheetClassName}</span>

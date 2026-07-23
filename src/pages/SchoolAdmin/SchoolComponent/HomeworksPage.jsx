@@ -30,6 +30,7 @@ import {
   resolveSchoolClasses,
 } from "./academicUtils";
 import { normalizeAcademicYear } from "./schoolYearUtils";
+import SchoolAdminQuickLinkHint from "./SchoolAdminQuickLinkHint";
 import "./AcademicManagement.css";
 
 const HOMEWORK_STATUS_OPTIONS = [
@@ -412,8 +413,17 @@ export default function HomeworksPage({ schoolId, academicYear = "", actorName =
                   >
                     {formatClassLabel(entry.className, entry.section)}
                   </option>
-                ))}
-              </select>
+                  ))}
+                </select>
+                {!classes.length ? (
+                  <SchoolAdminQuickLinkHint
+                    title="No classes created yet"
+                    description="Create classes first so homework can be assigned to a real class for the active academic year."
+                    links={[
+                      { label: "Open Dashboard > Class", to: "/school-admin/home?tab=classes" },
+                    ]}
+                  />
+                ) : null}
             </div>
             <div className="academic-field">
               <label>Due Date</label>

@@ -17,6 +17,7 @@ import AttendanceMarkingTable from "./AttendanceMarkingTable";
 import AttendanceHistory from "./AttendanceHistory";
 import MonthlyAttendanceView from "./MonthlyAttendanceView";
 import { syncAttendanceNotifications } from "./parentNotificationUtils";
+import SchoolAdminQuickLinkHint from "./SchoolAdminQuickLinkHint";
 import {
   buildAttendanceDocId,
   formatDateInput,
@@ -477,7 +478,27 @@ const AttendancePage = ({ schoolId, academicYear = "", mode = "school_admin", te
               onNoteChange={(studentId, note) => updateRow(studentId, { note })}
             />
           ) : (
-            <div className="academic-state">No students found for this class.</div>
+            <div className="academic-state">
+              No students found for this class.
+              <SchoolAdminQuickLinkHint
+                title={classes.length ? "This class roster is still empty" : "No classes created yet"}
+                description={
+                  classes.length
+                    ? "Create or upload students into this class before taking attendance."
+                    : "Create classes first, then add students before taking attendance."
+                }
+                links={
+                  classes.length
+                    ? [
+                        { label: "Open Upload Students", to: "/school-admin/students/upload" },
+                        { label: "Open Student Report", to: "/school-admin/students/student-report" },
+                      ]
+                    : [
+                        { label: "Open Dashboard > Class", to: "/school-admin/home?tab=classes" },
+                      ]
+                }
+              />
+            </div>
           )}
           <div className="academic-sticky-bar">
             <div>

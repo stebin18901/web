@@ -1,8 +1,8 @@
 {
-  "version": "2.0.0",
+  "version": "2.2.0",
   "project": "school-admin",
   "collection": "schoolAdminChatGuide",
-  "updatedOn": "2026-07-20",
+  "updatedOn": "2026-07-21",
   "documents": [
     {
       "id": "guide_dashboard_overview",
@@ -13,11 +13,16 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "How should I use pending actions on the dashboard?",
+        "Where are the student and teacher form links on dashboard?",
+        "What is yearly summary used for?",
+        "What is the recommended complete working order for a school?",
+        "How does the active academic year work?",
         "How do I use dashboard?",
         "What can I see on home?",
         "What is pending-actions control center?"
       ],
-      "answer": "The dashboard is the command center for the active academic year. It gives the school admin a quick view of pending attendance sheets, marks drafts, fee follow-up, communication activity, and enrollment health.",
+      "answer": "The dashboard is the daily control center for the active academic year. It should help the school admin see what still needs action across attendance, marks, fees, homework, announcements, year setup, and operational follow-up without opening every module one by one.",
       "steps": [
         "Open Dashboard from the sidebar.",
         "Check the active academic year at the top.",
@@ -35,11 +40,16 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "What is the school-admin dashboard for?",
+        "Where are the student and teacher form links on dashboard?",
+        "What is yearly summary used for?",
+        "What is the recommended complete working order for a school?",
+        "How does the active academic year work?",
         "What should I do with pending actions?",
         "Why do I see drafts on dashboard?",
         "How do I clear dashboard follow-up items?"
       ],
-      "answer": "Pending actions are operational reminders. They normally point to draft attendance, draft marks, unpaid fee follow-up, or year tasks that still need completion.",
+      "answer": "Pending actions should be treated like a work queue. Use them to finish drafts, review overdue fee follow-up, complete exam work, and close year setup gaps before the team starts creating new records on top of incomplete work.",
       "steps": [
         "Read the item carefully.",
         "Open the related module like Attendance, Academics, or Fees.",
@@ -57,11 +67,16 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "What is the school-admin dashboard for?",
+        "How should I use pending actions on the dashboard?",
+        "What is yearly summary used for?",
+        "What is the recommended complete working order for a school?",
+        "How does the active academic year work?",
         "Where is teacher form?",
         "Where is student form?",
         "How do I share intake links?"
       ],
-      "answer": "The student and teacher public form links are shown on the dashboard top-right cards so they can be copied or opened quickly.",
+      "answer": "The student and teacher public form links are available on the dashboard top-right area so the school can quickly open, copy, or share them with staff, parents, or applicants without going into Settings.",
       "steps": [
         "Open Dashboard Home.",
         "Find the Teacher Form and Student Form cards on the top-right area.",
@@ -79,11 +94,16 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "What is the school-admin dashboard for?",
+        "How should I use pending actions on the dashboard?",
+        "Where are the student and teacher form links on dashboard?",
+        "What is the recommended complete working order for a school?",
+        "How does the active academic year work?",
         "What is yearly summary?",
         "How do I compare years?",
         "Can I view school summary by year?"
       ],
-      "answer": "Yearly Summary helps the school review high-level performance and setup patterns for the selected year, such as classes, teachers, and academic progress indicators.",
+      "answer": "Yearly Summary is for management review of the selected academic year. It should help the school compare enrollment strength, class readiness, teacher setup, fee health, and academic progress before making operational or admission decisions.",
       "steps": [
         "Open Dashboard.",
         "Use the Yearly tab if available in the dashboard area.",
@@ -101,11 +121,15 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "How do I create a new academic year?",
+        "What student data should be transferred to a new year?",
+        "What is the correct order after switching the year?",
+        "How do roles and permissions work?",
         "What is active year?",
         "How do I change year?",
         "Why are records year scoped?"
       ],
-      "answer": "The active academic year is the master workspace selector. Attendance, marks, fees, classes, homework, and reports all follow the selected year so records from 2026 and 2027 do not mix.",
+      "answer": "The active academic year is the master workspace for school-admin. Classes, students, attendance, marks, homework, fees, and reports should all follow that year so one school can operate 2026, 2027, and later years separately without mixing daily records.",
       "steps": [
         "Open Settings.",
         "Go to Academic Year Setup.",
@@ -123,11 +147,15 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "How does the active academic year work?",
+        "What student data should be transferred to a new year?",
+        "What is the correct order after switching the year?",
+        "How do roles and permissions work?",
         "Create new year",
         "Open next academic year",
         "How do I start 2027?"
       ],
-      "answer": "Create the new year from Settings and choose which setup data should be transferred from the old year.",
+      "answer": "Create a new academic year from Settings when the school is ready to open a fresh operational cycle. During creation, decide what setup data should move forward, keep old transactional history in the previous year, and confirm the new year before daily work starts.",
       "steps": [
         "Open Settings.",
         "Go to Academic Year Setup.",
@@ -146,11 +174,15 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "How does the active academic year work?",
+        "How do I create a new academic year?",
+        "What is the correct order after switching the year?",
+        "What is the strict student identity and year enrollment workflow?",
         "What student data do I transfer?",
         "Should I transfer marks and attendance?",
         "Year transfer best practice"
       ],
-      "answer": "Usually only student registration details should be carried forward to a new year. Attendance, marks, and finalized academic results should remain in the older year workspace.",
+      "answer": "Only carry forward durable student identity and registration details unless the school has a special reason to transfer more. Attendance sheets, exam marks, finalized reports, and historical financial activity should remain with the old year so the new year starts clean.",
       "steps": [
         "Transfer student identity and registration details.",
         "Transfer class structure only if the school wants to reuse it.",
@@ -168,11 +200,15 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "How does the active academic year work?",
+        "How do I create a new academic year?",
+        "What student data should be transferred to a new year?",
+        "What is the strict student identity and year enrollment workflow?",
         "What do I do after changing year?",
         "How do I set up the new year properly?",
         "Working order after year switch"
       ],
-      "answer": "After switching the academic year, the school should set up roster, teachers, fee templates, and only then start attendance, marks, announcements, and homework.",
+      "answer": "After switching the active year, first verify classes, sections, and enrollment structure, then confirm staff roles and fee configuration, and only after that begin attendance, marks, homework, announcements, and other day-to-day entries in the new workspace.",
       "steps": [
         "Switch the academic year.",
         "Confirm class setup and teacher setup.",
@@ -191,11 +227,16 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "How do I upload students from spreadsheet input?",
+        "Why should I review existing class roster before uploading new rows?",
+        "How does Same PIN for all work during upload?",
+        "How do I use Student Report?",
+        "Why can a student appear in Student Report but not in Upload, Attendance, or Fees?",
         "Student master workflow",
         "How are students stored?",
         "Why is enrollment year important?"
       ],
-      "answer": "Each operational student should belong to the selected year enrollment. Attendance, marks, reports, and fees should use that year enrollment rather than mixing students from older years.",
+      "answer": "Student identity should be treated as a master record, while year enrollment should be treated as the operational record for a specific academic year. Attendance, marks, reports, homework, and fees must follow the year enrollment layer so the same student can exist historically across years without module mismatch.",
       "steps": [
         "Confirm the active academic year.",
         "Upload or create students for that year.",
@@ -213,11 +254,16 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "What is the strict student identity and year enrollment workflow?",
+        "Why should I review existing class roster before uploading new rows?",
+        "How does Same PIN for all work during upload?",
+        "How do I use Student Report?",
+        "Why can a student appear in Student Report but not in Upload, Attendance, or Fees?",
         "Upload students",
         "Spreadsheet input help",
         "Bulk add student records"
       ],
-      "answer": "Upload Students is used to stage rows first and then push them into the current year database. It is best for full class creation or large intake updates.",
+      "answer": "Use Upload Students to stage spreadsheet rows first, review them carefully, and only then push them into the current year roster. This flow is best when the school is onboarding a whole class, importing a batch from Excel, or creating many new year-enrollment records together.",
       "steps": [
         "Open Students > Upload Students.",
         "Choose the class.",
@@ -236,11 +282,16 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "What is the strict student identity and year enrollment workflow?",
+        "How do I upload students from spreadsheet input?",
+        "How does Same PIN for all work during upload?",
+        "How do I use Student Report?",
+        "Why can a student appear in Student Report but not in Upload, Attendance, or Fees?",
         "Why review existing students first?",
         "How do I avoid duplicate student upload?",
         "Existing roster check"
       ],
-      "answer": "The safest workflow is to review the existing year class roster first and then add only students who are not already present in that year.",
+      "answer": "Review the existing roster first to avoid duplicate year enrollments, accidental class mix-ups, and unnecessary PIN resets. The safest school workflow is to confirm what already exists in the active year and then upload only truly missing or corrected students.",
       "steps": [
         "Open Student Report for the current class.",
         "Review the students already created.",
@@ -259,11 +310,16 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "What is the strict student identity and year enrollment workflow?",
+        "How do I upload students from spreadsheet input?",
+        "Why should I review existing class roster before uploading new rows?",
+        "How do I use Student Report?",
+        "Why can a student appear in Student Report but not in Upload, Attendance, or Fees?",
         "Same PIN for all",
         "Shared PIN help",
         "How does PIN apply in upload?"
       ],
-      "answer": "Same PIN for all normally applies to the staged rows being created in the current upload action. Existing student records keep their saved PIN unless they are updated intentionally.",
+      "answer": "Same PIN for all applies only to the rows being staged in the current upload action unless the school explicitly edits existing students later. It is a convenience for bulk onboarding, not a rule that should silently overwrite saved PINs on already created records.",
       "steps": [
         "Open Upload Students.",
         "Enable Same PIN for all if needed.",
@@ -282,11 +338,16 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "What is the strict student identity and year enrollment workflow?",
+        "How do I upload students from spreadsheet input?",
+        "Why should I review existing class roster before uploading new rows?",
+        "How do I use Student Report?",
+        "Why can a student appear in Student Report but not in Upload, Attendance, or Fees?",
         "Add student columns",
         "Rename spreadsheet columns",
         "Delete custom columns"
       ],
-      "answer": "Default columns are locked because they are structurally required. Custom columns can be added, renamed, or deleted for school-specific information.",
+      "answer": "Default columns stay locked because they support the core student workflow used by attendance, reports, and other modules. Custom columns are optional school-specific fields that the admin can add, rename, or delete without breaking the required master student structure.",
       "steps": [
         "Open Upload Students.",
         "Add a custom column.",
@@ -305,11 +366,15 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "What is the strict student identity and year enrollment workflow?",
+        "How do I upload students from spreadsheet input?",
+        "Why should I review existing class roster before uploading new rows?",
+        "Why can a student appear in Student Report but not in Upload, Attendance, or Fees?",
         "Open student report",
         "See student marks and attendance",
         "View full student profile"
       ],
-      "answer": "Student Report lists year-scoped students and lets the school open a full student detail page showing marks, attendance, and linked academic activity.",
+      "answer": "Student Report is the best place to inspect complete year-scoped student records. Use it to filter by class, open a single student, and review attendance, marks, reports, and related operational data before making decisions or troubleshooting mismatches.",
       "steps": [
         "Open Students > Student Report.",
         "Filter by class if needed.",
@@ -328,16 +393,20 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "What is the strict student identity and year enrollment workflow?",
+        "How do I upload students from spreadsheet input?",
+        "Why should I review existing class roster before uploading new rows?",
+        "How do I use Student Report?",
         "Student visible in report only",
         "Student list mismatch",
         "Why does one module show students and another does not?"
       ],
-      "answer": "This usually happens when the active year, class mapping, or enrollment source is different across modules. Student Report may find the student record while another module expects the year enrollment roster.",
+      "answer": "This usually means the student identity exists, but the module you opened is reading a different year-enrollment or class-context source. Check active academic year, class/section naming, and whether the student is properly enrolled in the operational roster used by attendance and fees.",
       "steps": [
-        "Confirm the active academic year.",
-        "Confirm the class and section naming are consistent.",
-        "Verify the student exists in the year enrollment records.",
-        "Recheck Attendance, Fees, or Upload after confirming the correct year context."
+        "Check the active academic year in the current module.",
+        "Check whether the student exists only as a master record but not as a year enrollment record.",
+        "Verify class and section mapping used by attendance or fee filters.",
+        "Refresh the workflow by confirming the student is attached to the operational roster for that year."
       ],
       "note": "Year mismatch is one of the most common causes of missing student rows."
     },
@@ -350,11 +419,15 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "What is the difference between Save Draft and Finalize Attendance?",
+        "How do bulk attendance actions work?",
+        "How do Monthly View and Student History help?",
+        "Why does Attendance say no students found?",
         "Mark attendance",
         "Take class attendance",
         "Attendance save process"
       ],
-      "answer": "Attendance should be marked only after confirming the class, date, and active academic year. The page loads the year-specific roster and allows the school to record status per student.",
+      "answer": "Mark attendance only after confirming the active year, class, section, and date. The roster should represent the correct operational students for that day, and the admin or teacher should review statuses before saving so the attendance sheet becomes a reliable record for reports and notifications.",
       "steps": [
         "Open Attendance.",
         "Choose the class and date.",
@@ -373,11 +446,15 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "How do I mark attendance correctly?",
+        "How do bulk attendance actions work?",
+        "How do Monthly View and Student History help?",
+        "Why does Attendance say no students found?",
         "Attendance draft",
         "Finalize attendance",
         "Attendance locked state"
       ],
-      "answer": "Draft keeps the sheet editable. Finalize marks the sheet as completed and locks it from normal editing until it is reopened intentionally.",
+      "answer": "Save Draft is for ongoing work and corrections before the class attendance is complete. Finalize Attendance should be used only when the sheet is ready to become the official daily record, because finalized entries are expected to drive reports, follow-up, and parent communication.",
       "steps": [
         "Use Save Draft while review is still pending.",
         "Use Finalize only after checking all statuses.",
@@ -395,11 +472,15 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "How do I mark attendance correctly?",
+        "What is the difference between Save Draft and Finalize Attendance?",
+        "How do Monthly View and Student History help?",
+        "Why does Attendance say no students found?",
         "Mark all present",
         "Mark all absent",
         "Reset attendance changes"
       ],
-      "answer": "Bulk actions help speed up daily attendance marking. They should be used carefully, especially when the roster is large.",
+      "answer": "Bulk attendance actions speed up daily marking by applying the same status to many students at once. They are useful for large rosters, but the school should still review exceptions manually so absent, late, and special-status students are not lost inside a quick bulk action.",
       "steps": [
         "Load the correct class and date.",
         "Use Mark All Present or Mark All Absent only if the situation truly requires it.",
@@ -417,11 +498,15 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "How do I mark attendance correctly?",
+        "What is the difference between Save Draft and Finalize Attendance?",
+        "How do bulk attendance actions work?",
+        "Why does Attendance say no students found?",
         "Monthly attendance view",
         "Student attendance history",
         "Check attendance records"
       ],
-      "answer": "Monthly View shows class-wide daily attendance pattern for a month, while Student History lets the school trace one student's attendance across saved days.",
+      "answer": "Monthly View is useful for spotting class-wide patterns like repeated low-attendance days, while Student History is useful for checking one student over time. Together they help the school move from one-day entry to attendance analysis and follow-up.",
       "steps": [
         "Use Monthly View for class trend inspection.",
         "Use Student History when a parent, class teacher, or admin wants one student's attendance record.",
@@ -438,11 +523,15 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "How do I mark attendance correctly?",
+        "What is the difference between Save Draft and Finalize Attendance?",
+        "How do bulk attendance actions work?",
+        "How do Monthly View and Student History help?",
         "No students found in attendance",
         "Attendance roster empty",
         "Why is attendance list blank?"
       ],
-      "answer": "An empty attendance list usually means the class, section, or academic year does not match the current year enrollment roster.",
+      "answer": "An empty attendance roster usually means the current class, section, or active year does not match the enrolled operational students. Check whether the class exists in the selected year, whether students are enrolled for that year, and whether the module filters are pointing to the right roster.",
       "steps": [
         "Confirm the active year.",
         "Confirm the selected class and section.",
@@ -460,11 +549,15 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "How do class subject preferences work?",
+        "When should I use Manual Entry and when should I use Bulk Paste?",
+        "What is the difference between Save Draft and Finalize Marks?",
+        "How do I use Academic Reports?",
         "Exam marks setup",
         "Create exam structure",
         "How do I start marks entry?"
       ],
-      "answer": "Exam setup comes before marks entry. The school should confirm class, exam type, exam name, subjects, and max marks before student scores are entered.",
+      "answer": "Always create the exam structure before entering marks. Confirm year, class, section, exam name, subjects, and maximum marks first so the marks entry sheet is stable, comparable, and ready for later reports and student-level analysis.",
       "steps": [
         "Open Academics > Exam Marks.",
         "Choose the class.",
@@ -484,11 +577,15 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "How do I set up an exam before entering marks?",
+        "When should I use Manual Entry and when should I use Bulk Paste?",
+        "What is the difference between Save Draft and Finalize Marks?",
+        "How do I use Academic Reports?",
         "Save subject list",
         "Custom subjects for class",
         "Subject preferences"
       ],
-      "answer": "The system can remember a subject set per class and section so the school does not need to recreate the same exam subject structure every time.",
+      "answer": "Class subject preferences let the school save commonly used subject sets for a class or section, reducing repeated setup during exam creation. This is especially useful when the same subject structure is reused across unit tests, terminal exams, or coaching batches.",
       "steps": [
         "Choose the class in Exam Marks.",
         "Add or remove subjects as needed.",
@@ -507,11 +604,15 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "How do I set up an exam before entering marks?",
+        "How do class subject preferences work?",
+        "What is the difference between Save Draft and Finalize Marks?",
+        "How do I use Academic Reports?",
         "Manual entry or bulk paste",
         "How do I paste marks?",
         "Best way to upload marks"
       ],
-      "answer": "Manual Entry is best for smaller classes or correction work. Bulk Paste is better when marks are already prepared in spreadsheet format.",
+      "answer": "Use Manual Entry when the class is small, corrections are needed, or staff want to enter marks one student at a time. Use Bulk Paste when marks are already prepared in spreadsheet form and the school wants fast entry with structured validation.",
       "steps": [
         "Use Manual Entry for direct per-student editing.",
         "Use Bulk Paste when the school has tabular marks ready.",
@@ -529,11 +630,15 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "How do I set up an exam before entering marks?",
+        "How do class subject preferences work?",
+        "When should I use Manual Entry and when should I use Bulk Paste?",
+        "How do I use Academic Reports?",
         "Finalize marks",
         "Marks draft and lock",
         "When should I finalize marks?"
       ],
-      "answer": "Draft keeps the exam editable. Finalize marks locks the exam record and treats it as a published academic result set until reopened.",
+      "answer": "Save Draft keeps the exam editable while scores are still being checked or completed. Finalize Marks should be used only when the school is ready to treat that exam as the published result set for reports, averages, and student academic review.",
       "steps": [
         "Save Draft while review is pending.",
         "Check averages, missing values, subject totals, and remarks.",
@@ -551,11 +656,16 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "How do I set up an exam before entering marks?",
+        "How do class subject preferences work?",
+        "When should I use Manual Entry and when should I use Bulk Paste?",
+        "What is the difference between Save Draft and Finalize Marks?",
+        "How do I use Academic Reports?",
         "What is saved exams?",
         "How do I review old exams?",
         "Where can I see previously saved marks?"
       ],
-      "answer": "Saved Exams shows stored exam records for the active year and helps the school confirm what exam sets already exist for each class.",
+      "answer": "Saved Exams is the active-year reference table for stored exam sets. Use it to review what has already been created, reopen draft work if allowed, and avoid accidentally creating duplicate exam structures for the same class and assessment.",
       "steps": [
         "Open Exam Marks.",
         "Scroll to the Saved Exams area.",
@@ -573,11 +683,16 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "How do I set up an exam before entering marks?",
+        "How do class subject preferences work?",
+        "When should I use Manual Entry and when should I use Bulk Paste?",
+        "What is the difference between Save Draft and Finalize Marks?",
+        "How do I use Academic Reports?",
         "Assign homework",
         "Create homework",
         "Homework module help"
       ],
-      "answer": "Homeworks is used to create and manage class homework for the active year, including title, subject, due date, files, and status.",
+      "answer": "Use Homeworks to create a clear task with title, subject, class, due date, instructions, and optional files. The best workflow is to create homework against the correct year and class context so students and staff can track it cleanly later.",
       "steps": [
         "Open Academics > Homeworks.",
         "Create a new homework item.",
@@ -596,11 +711,16 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "How do I set up an exam before entering marks?",
+        "How do class subject preferences work?",
+        "When should I use Manual Entry and when should I use Bulk Paste?",
+        "What is the difference between Save Draft and Finalize Marks?",
+        "How do I use Academic Reports?",
         "Homework filters",
         "Homework status meaning",
         "How do I manage old homework?"
       ],
-      "answer": "Homework filters help the school review active, overdue, or class-specific homework more quickly.",
+      "answer": "Homework filters help the school quickly focus on class-specific work, active tasks, completed tasks, or overdue items. Use status and filters together so teachers can track pending work without scrolling through every homework record.",
       "steps": [
         "Open Homeworks.",
         "Filter by class if needed.",
@@ -618,11 +738,16 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "How do I set up an exam before entering marks?",
+        "How do class subject preferences work?",
+        "When should I use Manual Entry and when should I use Bulk Paste?",
+        "What is the difference between Save Draft and Finalize Marks?",
+        "How do I use Academic Reports?",
         "Upload homework file",
         "Attach PDF to homework",
         "Homework image upload"
       ],
-      "answer": "Yes. Homework supports image and PDF attachments so worksheets, instructions, or reference files can be linked directly to the homework item.",
+      "answer": "Yes. Homework supports PDF and image attachments so worksheets, notices, reference sheets, and assignment instructions can be added directly to the homework item and viewed later in one place.",
       "steps": [
         "Open Homeworks and create or edit an item.",
         "Select the file upload area.",
@@ -641,11 +766,16 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "How do I set up an exam before entering marks?",
+        "How do class subject preferences work?",
+        "When should I use Manual Entry and when should I use Bulk Paste?",
+        "What is the difference between Save Draft and Finalize Marks?",
+        "How do I use Academic Reports?",
         "Academic reports help",
         "How to read class reports",
         "What are academic summary cards?"
       ],
-      "answer": "Academic Reports summarize attendance and marks at class level so the school can identify weak areas, class averages, and students who need follow-up.",
+      "answer": "Academic Reports help the school move from raw marks and attendance to decision-making. Use them to compare classes, identify weak students, review performance trends, and support follow-up meetings with students, teachers, or parents.",
       "steps": [
         "Open Academics > Academic Reports.",
         "Confirm the class and year context.",
@@ -664,11 +794,16 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "How do I set up an exam before entering marks?",
+        "How do class subject preferences work?",
+        "When should I use Manual Entry and when should I use Bulk Paste?",
+        "What is the difference between Save Draft and Finalize Marks?",
+        "How do I use Academic Reports?",
         "Quiz analytics help",
         "How do I read quiz analytics?",
         "What if there is no quiz data?"
       ],
-      "answer": "Quiz Analytics helps the school view student practice and quiz-related engagement data when quiz activity exists for the selected school and year.",
+      "answer": "Quiz Analytics is for reviewing practice engagement and quiz performance when quiz data exists for the selected school and year. It helps the school understand participation, strength areas, weak areas, and whether students are actually using quiz resources.",
       "steps": [
         "Open Academics > Quiz Analytics.",
         "Review the selected class and student set.",
@@ -686,11 +821,16 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "What is common configuration in fees?",
+        "How does student fee customization work?",
+        "What do Paid, Partial, and Pending mean in fees?",
+        "Why are students missing in Fee Management?",
+        "How do receipts, dues, concessions, and reversals work?",
         "Fee template help",
         "School default fees",
         "Class fee configuration"
       ],
-      "answer": "Fee Management starts with a complete-school default template. Individual classes can then use their own template if their fee structure differs.",
+      "answer": "Fee Management starts from a school-level default template and then allows class-level templates when a class needs a different structure. This keeps the school consistent by default while still supporting different fee models for different classes or programmes.",
       "steps": [
         "Open Fee Management.",
         "Choose School or a class from the top selector.",
@@ -709,11 +849,16 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "How do school and class fee templates work?",
+        "How does student fee customization work?",
+        "What do Paid, Partial, and Pending mean in fees?",
+        "Why are students missing in Fee Management?",
+        "How do receipts, dues, concessions, and reversals work?",
         "What is common configuration?",
         "Show configuration details",
         "How do I edit fee setup?"
       ],
-      "answer": "Common configuration is the setup block where the school manages collection cycle, base tuition, structural waivers, and add-ons for the selected school or class template.",
+      "answer": "Common configuration is the shared fee setup area for the currently selected school or class context. Use it to define collection cycle, base tuition, structural waivers, and add-ons before reviewing individual student ledgers or applying student-level overrides.",
       "steps": [
         "Open Fee Management.",
         "Choose the class context at the top.",
@@ -732,11 +877,16 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "How do school and class fee templates work?",
+        "What is common configuration in fees?",
+        "What do Paid, Partial, and Pending mean in fees?",
+        "Why are students missing in Fee Management?",
+        "How do receipts, dues, concessions, and reversals work?",
         "Customize student fee",
         "Fee override",
         "Student fee concession setup"
       ],
-      "answer": "The student fee customizer appears inside each student row. It is used for per-student overrides without changing the class or school template.",
+      "answer": "Student fee customization should be used only when one student needs a different fee outcome than the school or class template. The row-level customizer lets the school add overrides without accidentally changing the standard template used by everyone else.",
       "steps": [
         "Open Fee Management.",
         "Locate the student row.",
@@ -756,18 +906,22 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "How do school and class fee templates work?",
+        "What is common configuration in fees?",
+        "How does student fee customization work?",
+        "What do Paid, Partial, and Pending mean in fees?",
         "Post receipt",
         "Add due",
         "Give concession",
         "Reverse payment"
       ],
-      "answer": "Fee actions support multiple transaction types. Receipt records a payment. Add Due increases the payable amount. Concession reduces the amount. Reversal corrects a previously recorded payment.",
+      "answer": "Receipts record money collected. Dues add or post payable amounts. Concessions reduce payable amounts based on approved relief. Reversals correct a wrong transaction. Each action should be treated like an accounting event so the fee ledger remains explainable later.",
       "steps": [
-        "Open Fee Management.",
-        "Find the correct student.",
-        "Choose the action type in the ledger area.",
-        "Enter amount and note.",
-        "Post the transaction."
+        "Open the correct student ledger in the active academic year.",
+        "Choose the correct action type such as receipt, due, concession, or reversal.",
+        "Enter the amount and reason carefully so the ledger stays auditable.",
+        "Save the entry and verify the outstanding balance updates correctly.",
+        "Use reversal only when correcting an already recorded wrong transaction."
       ],
       "note": "Clear notes make accounting and audits much easier later."
     },
@@ -780,11 +934,15 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "How do school and class fee templates work?",
+        "What is common configuration in fees?",
+        "How does student fee customization work?",
+        "How do receipts, dues, concessions, and reversals work?",
         "Fee statuses",
         "Partial fee meaning",
         "Pending fee explanation"
       ],
-      "answer": "Paid means outstanding balance is zero. Partial means some amount has been collected but balance remains. Pending means the required collection has not yet been covered.",
+      "answer": "Paid means the current outstanding balance is fully cleared. Partial means some amount has been collected but balance still remains. Pending means the fee obligation is still open and needs collection or follow-up from the school.",
       "steps": [
         "Review Total Fee, Paid, and Outstanding together.",
         "Use the status pill only as a quick visual summary.",
@@ -801,11 +959,15 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "How do school and class fee templates work?",
+        "What is common configuration in fees?",
+        "How does student fee customization work?",
+        "How do receipts, dues, concessions, and reversals work?",
         "No students in fees",
         "Fee management missing roster",
         "Why is fee student list empty?"
       ],
-      "answer": "Missing students in Fee Management usually means the current year roster is incomplete or the class and year context do not match the year enrollment records.",
+      "answer": "Students usually go missing in Fee Management when the active year, class filter, or year-enrollment source does not line up with the real student roster. First verify that the student exists in the current operational year and is mapped to the expected class context.",
       "steps": [
         "Confirm the active academic year.",
         "Check Student Report for the same year and class.",
@@ -823,17 +985,21 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "How should I choose announcement audience?",
+        "When will parent app notifications be triggered?",
+        "What should I check if parent notifications are not reaching the phone?",
+        "How should I use pending actions on the dashboard?",
         "Create announcement",
         "Send school notice",
         "Announcement workflow"
       ],
-      "answer": "Announcements are used to communicate updates to the intended audience within the active academic year.",
+      "answer": "Use Announcements to send operational communication to the right audience in the active year. Before sending, confirm title, message, audience, class targeting if needed, and whether the announcement is informational, urgent, or parent-facing.",
       "steps": [
-        "Open Announcements.",
-        "Choose the audience and class if required.",
-        "Write title and message.",
-        "Save or publish the notice.",
-        "Review the sent list."
+        "Open Announcements and confirm the active academic year context.",
+        "Choose the correct audience such as school-wide, class-specific, or parent-facing.",
+        "Enter a clear title and short message that can be understood quickly.",
+        "Review targeting and urgency before saving or sending.",
+        "Check whether the announcement should also act as a parent notification trigger."
       ],
       "note": "Use simple titles so recipients can scan updates quickly."
     },
@@ -846,16 +1012,20 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "How do I send school announcements?",
+        "When will parent app notifications be triggered?",
+        "What should I check if parent notifications are not reaching the phone?",
+        "How should I use pending actions on the dashboard?",
         "Choose audience in announcements",
         "Parent or class announcement?",
         "Who should receive the update?"
       ],
-      "answer": "Audience should match the real communication goal. Some notices belong to one class, while some belong to the entire school or parent group.",
+      "answer": "Choose the audience based on who truly needs the message. Whole-school notices should stay broad, class notices should stay class-specific, and parent-facing notices should be used only when the communication is meant for guardians rather than internal staff workflow.",
       "steps": [
-        "Decide whether the update is class-specific or school-wide.",
-        "Select the target audience carefully.",
-        "Preview the wording before sending.",
-        "Save or publish once confirmed."
+        "Use school-wide audience only for notices relevant to the whole institution.",
+        "Use class or section audience for academic or operational notices limited to one group.",
+        "Use parent audience when guardians must be informed or act on the update.",
+        "Recheck targeting before sending so the wrong audience does not receive the message."
       ],
       "note": "Wrong audience selection can create confusion quickly."
     },
@@ -868,12 +1038,16 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "What is Fee and Plan Configuration in Settings?",
+        "Where do I find the teacher and student public form links?",
+        "What is the correct school-admin setup order in Settings?",
+        "How does the active academic year work?",
+        "How do I create a new academic year?",
+        "What student data should be transferred to a new year?",
         "Role permissions help",
-        "Assign accountant",
-        "Class teacher permissions",
-        "Admin access setup"
+        "Assign accountant"
       ],
-      "answer": "Roles and permissions determine who can manage students, attendance, marks, fees, announcements, and settings. The school admin controls this in Settings.",
+      "answer": "Roles and permissions decide who can view, create, edit, finalize, or manage key school records. The school admin should use Settings to define clear responsibility for admin, teacher, class teacher, accountant, and other roles so daily work is controlled properly.",
       "steps": [
         "Open Settings.",
         "Go to Staff Role Builder.",
@@ -892,11 +1066,16 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "How do roles and permissions work?",
+        "Where do I find the teacher and student public form links?",
+        "What is the correct school-admin setup order in Settings?",
+        "How does the active academic year work?",
+        "How do I create a new academic year?",
+        "What student data should be transferred to a new year?",
         "Plan configuration help",
-        "School payment plan",
-        "What is plan setup in settings?"
+        "School payment plan"
       ],
-      "answer": "Fee and Plan Configuration is used to manage school-level payment plan rules and related setup values that affect student payment flow.",
+      "answer": "Fee and Plan Configuration is the school-level setup area for financial rules and plan behavior that affect how the fee module operates. It should be reviewed before daily fee collection starts so templates and ledgers behave consistently.",
       "steps": [
         "Open Settings.",
         "Go to Fee and Plan Configuration.",
@@ -915,11 +1094,16 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
-        "Teacher form link",
-        "Student form link",
-        "Public intake link"
+        "How do roles and permissions work?",
+        "What is Fee and Plan Configuration in Settings?",
+        "What is the correct school-admin setup order in Settings?",
+        "What is the school-admin dashboard for?",
+        "How should I use pending actions on the dashboard?",
+        "Where are the student and teacher form links on dashboard?",
+        "How does the active academic year work?",
+        "Teacher form link"
       ],
-      "answer": "The public teacher and student form links are now available on the Dashboard home top-right cards for faster access.",
+      "answer": "The teacher and student public form links are available from the dashboard home top-right cards. That placement makes them easier to access during onboarding without forcing the school to search through sidebar sections.",
       "steps": [
         "Open Dashboard Home.",
         "Find Teacher Form and Student Form cards.",
@@ -936,11 +1120,16 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "How do roles and permissions work?",
+        "What is Fee and Plan Configuration in Settings?",
+        "Where do I find the teacher and student public form links?",
+        "How does the active academic year work?",
+        "How do I create a new academic year?",
+        "What student data should be transferred to a new year?",
         "Correct setup order",
-        "How should I configure school admin?",
-        "Settings setup logic"
+        "How should I configure school admin?"
       ],
-      "answer": "The recommended order is year workspace first, then staff roles, then fee and plan setup, and finally operational module use.",
+      "answer": "A clean Settings workflow is: create or confirm the academic year, verify roles and permissions, review fee and plan configuration, and only then allow staff to begin module-wise daily operations.",
       "steps": [
         "Set the active academic year.",
         "Create or review year workspace transfer rules.",
@@ -959,17 +1148,21 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "What should I check if parent notifications are not reaching the phone?",
+        "How do I mark attendance correctly?",
+        "What is the difference between Save Draft and Finalize Attendance?",
+        "How do bulk attendance actions work?",
+        "How do I send school announcements?",
+        "How do I set up an exam before entering marks?",
         "Parent notifications",
-        "Attendance notification",
-        "Marks notification",
-        "Announcement notification"
+        "Attendance notification"
       ],
-      "answer": "Parent notifications are expected when school-admin updates attendance, marks, or communication records and when the related parent device token exists correctly.",
+      "answer": "Parent app notifications are expected when school-admin saves or finalizes records that are connected to parent-facing updates such as attendance, marks, or announcements, provided the related parent account, device token, and student linkage are all available and valid.",
       "steps": [
-        "Save the attendance, marks, or announcement record.",
-        "Confirm the student-parent mapping is correct.",
-        "Confirm the parent app has registered a device token.",
-        "Check logs if the notification is not delivered."
+        "Save or finalize a parent-facing update such as attendance, marks, or announcement.",
+        "Ensure the student is linked correctly to the parent account in the active school context.",
+        "Ensure the parent device token exists and notification permission is granted on the phone.",
+        "Verify backend function logs if the notification is still not delivered."
       ],
       "note": "Notification delivery depends on valid device registration and correct mapping."
     },
@@ -982,16 +1175,21 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
+        "When will parent app notifications be triggered?",
+        "How do I mark attendance correctly?",
+        "What is the difference between Save Draft and Finalize Attendance?",
+        "How do bulk attendance actions work?",
+        "How do I send school announcements?",
+        "How do I set up an exam before entering marks?",
         "Notification not received",
-        "Why is parent not getting notification?",
-        "Push notification troubleshooting"
+        "Why is parent not getting notification?"
       ],
-      "answer": "If the parent does not receive notifications, the first checks should be device token registration, parent login correctness, backend function logs, and student-parent association.",
+      "answer": "If notifications are not reaching the phone, check parent login state, device token registration, app permission status, correct student-parent linkage, backend function activity, and whether the saved school-admin action is actually one that should trigger a push.",
       "steps": [
-        "Check whether the parent device token exists in the database.",
-        "Confirm the parent is logged in to the correct child context.",
-        "Check push function logs.",
-        "Verify that the student record and parent phone mapping are correct."
+        "Confirm the parent is logged into the correct account on the device.",
+        "Confirm notification permission is allowed and the device token was saved successfully.",
+        "Check that the student-parent-school linkage is correct for the update being triggered.",
+        "Review backend function logs and token collections for delivery failures or missing tokens."
       ],
       "note": "A working school-admin save alone does not guarantee notification delivery without token registration."
     },
@@ -1004,11 +1202,16 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
-        "Responsive help",
-        "Use school admin on mobile",
-        "Small screen admin tips"
+        "Why do some modules show empty data even though records exist?",
+        "What is the school-admin dashboard for?",
+        "How should I use pending actions on the dashboard?",
+        "Where are the student and teacher form links on dashboard?",
+        "What is the recommended complete working order for a school?",
+        "What should the school admin check at the end of the day?",
+        "How should a tuition-style school use school-admin logically?",
+        "What makes a school-admin workflow logically correct?"
       ],
-      "answer": "School-admin is responsive, but dense modules like Upload Students, Exam Marks, and Fee Management are easier to use on desktop or laptop because of tables and financial detail.",
+      "answer": "School-admin is responsive, but it is still an operations-heavy product. Use mobile or smaller screens for quick checking, light editing, and announcements, while keeping dense tasks like fee review, student upload, and exam entry primarily on desktop for accuracy.",
       "steps": [
         "Use mobile for quick review or light admin actions.",
         "Use laptop or desktop for bulk data entry modules.",
@@ -1025,11 +1228,16 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
-        "Why is module empty?",
-        "Existing data not visible",
-        "Data mismatch between pages"
+        "How should school-admin be used on smaller screens?",
+        "What is the school-admin dashboard for?",
+        "How should I use pending actions on the dashboard?",
+        "Where are the student and teacher form links on dashboard?",
+        "What is the recommended complete working order for a school?",
+        "What should the school admin check at the end of the day?",
+        "How should a tuition-style school use school-admin logically?",
+        "What makes a school-admin workflow logically correct?"
       ],
-      "answer": "This usually happens because of year mismatch, class naming mismatch, or because one page is reading the year enrollment view while another is still using a different source path.",
+      "answer": "This usually points to context mismatch rather than lost data. The most common reasons are active-year mismatch, class or section naming mismatch, different source collections between modules, or incomplete year-enrollment setup for the student or class.",
       "steps": [
         "Confirm the active academic year.",
         "Confirm class and section spelling.",
@@ -1047,11 +1255,16 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
-        "Best workflow",
-        "Recommended school-admin flow",
-        "What should I do first?"
+        "What should the school admin check at the end of the day?",
+        "How should a tuition-style school use school-admin logically?",
+        "What makes a school-admin workflow logically correct?",
+        "What is the school-admin dashboard for?",
+        "How should I use pending actions on the dashboard?",
+        "Where are the student and teacher form links on dashboard?",
+        "How should school-admin be used on smaller screens?",
+        "Why do some modules show empty data even though records exist?"
       ],
-      "answer": "A clean workflow usually starts with year setup, then class and student setup, then teacher and role setup, then fee structure, then daily attendance and announcements, then exam marks and reports.",
+      "answer": "A strong school-admin workflow starts with year setup, then class and section structure, then student enrollment, then teacher and role assignment, then fee setup, and only after that moves into attendance, announcements, homework, exam marks, reports, and daily follow-up.",
       "steps": [
         "Set the active academic year.",
         "Confirm classes and year enrollments.",
@@ -1072,11 +1285,16 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
-        "Day end checklist",
-        "What do I review daily?",
-        "Daily admin closing routine"
+        "What is the recommended complete working order for a school?",
+        "How should a tuition-style school use school-admin logically?",
+        "What makes a school-admin workflow logically correct?",
+        "What is the school-admin dashboard for?",
+        "How should I use pending actions on the dashboard?",
+        "Where are the student and teacher form links on dashboard?",
+        "How should school-admin be used on smaller screens?",
+        "Why do some modules show empty data even though records exist?"
       ],
-      "answer": "At the end of the day, the school admin should review drafts, fees requiring follow-up, announcements sent, and any missing academic entries for the active year.",
+      "answer": "At day end, the school admin should review unfinalized attendance, draft marks, overdue fee items, missed announcements, homework status, and any unresolved year or class setup issues so the next day starts from a clean operational state.",
       "steps": [
         "Open Dashboard and review pending actions.",
         "Check whether attendance sheets were finalized.",
@@ -1095,11 +1313,16 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
-        "Tuition school workflow",
-        "How can tuition center use this?",
-        "School or tuition logic"
+        "What is the recommended complete working order for a school?",
+        "What should the school admin check at the end of the day?",
+        "What makes a school-admin workflow logically correct?",
+        "What is the school-admin dashboard for?",
+        "How should I use pending actions on the dashboard?",
+        "Where are the student and teacher form links on dashboard?",
+        "How should school-admin be used on smaller screens?",
+        "Why do some modules show empty data even though records exist?"
       ],
-      "answer": "A tuition or coaching center can use the same structure by treating year as a batch cycle, classes as groups, and fee accounting as batch-specific collection tracking.",
+      "answer": "A tuition or coaching centre can use the same system by treating academic year as a batch cycle, classes as batch groups, attendance as session tracking, and fee management as batch-based collection control while keeping the same disciplined workflow logic.",
       "steps": [
         "Set a year or batch workspace.",
         "Create the group or class structure.",
@@ -1119,11 +1342,16 @@
       "audience": "school_admin",
       "active": true,
       "prompts": [
-        "What is correct admin logic?",
-        "How should school-admin be used properly?",
-        "Standard school workflow logic"
+        "What is the recommended complete working order for a school?",
+        "What should the school admin check at the end of the day?",
+        "How should a tuition-style school use school-admin logically?",
+        "What is the school-admin dashboard for?",
+        "How should I use pending actions on the dashboard?",
+        "Where are the student and teacher form links on dashboard?",
+        "How should school-admin be used on smaller screens?",
+        "Why do some modules show empty data even though records exist?"
       ],
-      "answer": "A correct workflow means setup is centralized, year scope is clear, students belong to a single working roster for that year, and attendance, marks, fees, and communication all follow that same operational master.",
+      "answer": "A school-admin workflow is logically correct when master setup is clear, the active year controls all operational modules, student identity and year enrollment are not mixed, and every daily action in attendance, academics, fees, and communication follows the same shared structure.",
       "steps": [
         "Use Settings for year, role, and plan setup.",
         "Use Students for the active-year roster.",

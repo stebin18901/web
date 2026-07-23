@@ -1,6 +1,7 @@
 import React from "react";
 import { EXAM_TYPES, getAcademicYearOptions } from "./academicUtils";
 import { Plus, Trash2 } from "lucide-react";
+import SchoolAdminQuickLinkHint from "./SchoolAdminQuickLinkHint";
 
 const ExamSetupPanel = ({
   classes = [],
@@ -54,6 +55,15 @@ const ExamSetupPanel = ({
               <option key={className} value={className}>{className}</option>
             ))}
           </select>
+          {!classes.length ? (
+            <SchoolAdminQuickLinkHint
+              title="No classes created yet"
+              description="Create classes before setting up exams, because marks entry needs a class roster."
+              links={[
+                { label: "Open Dashboard > Class", to: "/school-admin/home?tab=classes" },
+              ]}
+            />
+          ) : null}
         </div>
       </div>
 

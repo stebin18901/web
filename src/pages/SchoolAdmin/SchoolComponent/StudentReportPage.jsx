@@ -11,6 +11,7 @@ import {
   splitClassAndDivision,
 } from "./academicUtils";
 import { normalizeAcademicYear } from "./schoolYearUtils";
+import SchoolAdminQuickLinkHint from "./SchoolAdminQuickLinkHint";
 import "./StudentReportPage.css";
 
 const safeText = (value, fallback = "N/A") => {
@@ -331,9 +332,28 @@ const StudentReportPage = ({ schoolId, academicYear = "" }) => {
         {loadingList ? (
           <div className="student-report-state">Loading students...</div>
         ) : !selectedClass ? (
-          <div className="student-report-state">No classes found for this school yet.</div>
+          <div className="student-report-state">
+            No classes found for this school yet.
+            <SchoolAdminQuickLinkHint
+              title="Create classes before opening reports"
+              description="Student Report needs classes first, so the school can load each class roster correctly."
+              links={[
+                { label: "Open Dashboard > Class", to: "/school-admin/home?tab=classes" },
+              ]}
+            />
+          </div>
         ) : !filteredStudents.length ? (
-          <div className="student-report-state">No students match this class filter.</div>
+          <div className="student-report-state">
+            No students match this class filter.
+            <SchoolAdminQuickLinkHint
+              title="No students in this class yet"
+              description="Add or review students for this class, then return to Student Report."
+              links={[
+                { label: "Open Upload Students", to: "/school-admin/students/upload" },
+                { label: "Open Dashboard > Class", to: "/school-admin/home?tab=classes" },
+              ]}
+            />
+          </div>
         ) : (
           <div className="student-report-table-wrap">
             <table className="student-report-table">

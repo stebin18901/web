@@ -32,6 +32,7 @@ import {
   resolveSchoolClasses,
 } from "./academicUtils";
 import { normalizeAcademicYear } from "./schoolYearUtils";
+import SchoolAdminQuickLinkHint from "./SchoolAdminQuickLinkHint";
 import "./AnnouncementGmailView.css";
 
 const TARGET_TABS = [
@@ -534,6 +535,15 @@ export default function AnnouncementGmailView({ schoolId, academicYear = "" }) {
                       </option>
                     ))}
                   </select>
+                  {!classOptions.length ? (
+                    <SchoolAdminQuickLinkHint
+                      title="No classes available yet"
+                      description="Create classes first so announcements can target a class or the parents linked to that class roster."
+                      links={[
+                        { label: "Open Dashboard > Class", to: "/school-admin/home?tab=classes" },
+                      ]}
+                    />
+                  ) : null}
                 </div>
               )}
 
@@ -568,6 +578,14 @@ export default function AnnouncementGmailView({ schoolId, academicYear = "" }) {
                   ) : !classStudents.length ? (
                     <div className="ann-target-empty">
                       No students found in this class yet.
+                      <SchoolAdminQuickLinkHint
+                        title="This class has no student roster yet"
+                        description="Add students into this class before targeting parent announcements."
+                        links={[
+                          { label: "Open Upload Students", to: "/school-admin/students/upload" },
+                          { label: "Open Student Report", to: "/school-admin/students/student-report" },
+                        ]}
+                      />
                     </div>
                   ) : (
                     <>
