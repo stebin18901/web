@@ -40,6 +40,7 @@ const NotesViewer = lazy(() => import("./pages/NotesViewer"));
 const ClassIntakeForm = lazy(() => import("./pages/SchoolAdmin/SchoolComponent/ClassIntakeForm"));
 const QuizAttemptReport = lazy(() => import("./pages/QuizAttemptReport"));
 const PaymentSuccess = lazy(() => import("./pages/PaymentSuccess"));
+const Payment = lazy(() => import("./pages/Payment"));
 const PlanSelection = lazy(() => import("./pages/PlanSelection"));
 const SchoolRegistrationSuccess = lazy(() => import("./pages/SchoolRegistrationSuccess"));
 const QuizDemoSharePage = lazy(() => import("./pages/QuizDemoSharePage"));
@@ -175,6 +176,7 @@ const AppContent = () => {
           <Route path="/pricing" element={<RouteLoader><PricingNew /></RouteLoader>} />
           <Route path="/subscribe" element={<RouteLoader><FirebaseSubscriptionRoute element={<SubscriptionCheckout />} /></RouteLoader>} />
           <Route path="/subscription-status" element={<RouteLoader><FirebaseSubscriptionRoute element={<SubscriptionStatus />} /></RouteLoader>} />
+          <Route path="/payment" element={<RouteLoader><Payment /></RouteLoader>} />
           <Route path="/plan-selection" element={<RouteLoader><PlanSelection /></RouteLoader>} />
           <Route path="/payment-success" element={<RouteLoader><PaymentSuccess /></RouteLoader>} />
           <Route path="/school-registration-success" element={<RouteLoader><SchoolRegistrationSuccess /></RouteLoader>} />

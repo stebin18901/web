@@ -12,6 +12,7 @@ import { RecaptchaVerifier, signInWithPhoneNumber, signOut } from "firebase/auth
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { auth } from "../firebase/firebaseConfig";
 import { db } from "../firebase/firebaseConfig";
+import { login, loginWithGoogle } from "../firebase/auth";
 import {
   buildAvailableClasses,
   CREATE_PAYMENT_LINK_URL,
@@ -212,6 +213,13 @@ const Login = () => {
   const [selectedLinkedAccountId, setSelectedLinkedAccountId] = useState("");
   const [demoTitle, setDemoTitle] = useState("Demo");
   const [hasDemoContent, setHasDemoContent] = useState(false);
+  const [standardEmail, setStandardEmail] = useState("");
+  const [standardPassword, setStandardPassword] = useState("");
+  const [schoolAuthVisible, setSchoolAuthVisible] = useState(false);
+  const [schoolAuthEmail, setSchoolAuthEmail] = useState("");
+  const [schoolAuthPassword, setSchoolAuthPassword] = useState("");
+  const [schoolAuthSchoolId, setSchoolAuthSchoolId] = useState("");
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   const navigate = useNavigate();
   const location = useLocation();
@@ -284,6 +292,114 @@ const Login = () => {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
+
+  const checkSchoolPaymentStatus = async (uid, schoolId) => {
+    if (!uid) return false;
+
+    try {
+      const userSnap = await getDoc(doc(db, "users", uid));
+      if (!userSnap.exists()) return false;
+
+      const userData = userSnap.data() || {};
+      const paymentStatus = String(userData.paymentStatus || "").trim().toLowerCase();
+      const registrationStatus = String(userData.registrationStatus || "").trim().toLowerCase();
+      const isPaid =
+        userData.isPaid === true ||
+        userData.isPremium === true ||
+        paymentStatus === "paid" ||
+        registrationStatus === "active";
+
+      if (isPaid) return true;
+
+      if (schoolId) {
+        const schoolSnap = await getDoc(doc(db, "schools", normalizeSchoolId(schoolId)));
+        if (schoolSnap.exists()) {
+          const schoolData = schoolSnap.data() || {};
+          const schoolPaymentStatus = String(schoolData.paymentStatus || "").trim().toLowerCase();
+          const schoolRegistrationStatus = String(schoolData.registrationStatus || "").trim().toLowerCase();
+          return (
+            schoolData.isPaid === true ||
+            schoolData.isPremium === true ||
+            schoolPaymentStatus === "paid" ||
+            schoolRegistrationStatus === "active"
+          );
+        }
+      }
+
+      return false;
+    } catch {
+      return false;
+    }
+  };
+
+  const handlePostLoginRedirect = async (authPayload) => {
+    const resolvedAuthType = authPayload?.authType || "standard";
+
+    if (resolvedAuthType === "standard") {
+      navigate("/dashboard", { replace: true });
+      return;
+    }
+
+    const normalizedSchoolId = normalizeSchoolId(authPayload?.schoolId || schoolAuthSchoolId || "");
+    const isPaid = await checkSchoolPaymentStatus(authPayload?.uid, normalizedSchoolId);
+    navigate(isPaid ? "/dashboard" : "/payment", { replace: true });
+  };
+
+  const handleStandardLogin = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError("");
+
+    try {
+      const payload = await login(
+        {
+          email: standardEmail.trim(),
+          password: standardPassword,
+          authType: "standard",
+        },
+        null
+      );
+      await handlePostLoginRedirect(payload);
+    } catch (err) {
+      setError(err.message || "Unable to sign in.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setIsGoogleLoading(true);
+    setError("");
+
+    try {
+      const payload = await loginWithGoogle("standard");
+      await handlePostLoginRedirect(payload);
+    } catch (err) {
+      setError(err.message || "Google sign-in failed.");
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
+
+  const handleSchoolLogin = async (e) => {
+    e.preventDefault();
+    setIsSubmitting(true);
+    setError("");
+
+    try {
+      const payload = await login({
+        schoolId: schoolAuthSchoolId.trim(),
+        email: schoolAuthEmail.trim(),
+        password: schoolAuthPassword,
+        authType: "school",
+      });
+      await handlePostLoginRedirect(payload);
+    } catch (err) {
+      setError(err.message || "Unable to sign in with school credentials.");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   // -------------------------------------------------------------------------
   // reCAPTCHA cleanup on unmount
@@ -1150,10 +1266,10 @@ const Login = () => {
         )}
       </section>
 
-      <form className="login-form" onSubmit={handleSubmit}>
-        <h1 className="login-title">Student Login</h1>
+      <div className="login-form">
+        <h1 className="login-title">Welcome Back</h1>
         <p className="login-subtitle">
-          Access quizzes, notes, and subscriptions for your school account.
+          Sign in with your standard account or choose the school path for school-based access and payment checks.
         </p>
         <div className="login-public-actions">
           <Link to="/pricing" className="login-link-button primary">
@@ -1184,256 +1300,114 @@ const Login = () => {
           <div className="login-otp-notice">{otpNotice}</div>
         )}
 
-        {!schoolContext ? (
-          <div className="school-lock-card">
-            <p className="school-lock-title">Student Access Not Enabled</p>
-            <p className="school-lock-subtitle">
-              Admin can select a default school from{" "}
-              <strong>/admin189201</strong> - Schools.
-            </p>
-          </div>
-        ) : schoolContext.accessMode === "default-school" ? (
-          <>
-            <div className="school-context-row">
-              <p className="school-context-text">
-                Default School Access: <strong>{schoolContext.schoolName}</strong>
-              </p>
-            </div>
-            <p className="default-school-note">
-              One parent phone number can manage up to{" "}
-              <strong>{MAX_PARENT_ACCOUNTS_PER_PHONE}</strong> child accounts.
-              This area is for individual students and parents under this school.
-              Register each child once, then choose a plan for that child.
-            </p>
-
-            <div className="default-auth-tabs">
-              <button
-                type="button"
-                className={defaultAuthMode === "login" ? "active" : ""}
-                onClick={() => {
-                  setDefaultAuthMode("login");
-                  resetOtp();
-                  setError("");
-                }}
-              >
-                Login
-              </button>
-              <button
-                type="button"
-                className={defaultAuthMode === "register" ? "active" : ""}
-                onClick={() => {
-                  setDefaultAuthMode("register");
-                  resetOtp();
-                  setError("");
-                }}
-              >
-                Register
-              </button>
+        <div className="login-branch-layout">
+          <section className="login-panel login-panel-primary">
+            <div className="panel-heading">
+              <span className="panel-badge">Standard Access</span>
+              <h2>Sign In</h2>
             </div>
 
-            {defaultAuthMode === "register" && (
-              <>
+            <form className="auth-form" onSubmit={handleStandardLogin}>
+              <label className="auth-label">
+                <span>Email</span>
                 <input
-                  type="text"
                   className="login-input"
-                  placeholder="Student name"
-                  value={defaultName}
-                  onChange={(e) => setDefaultName(e.target.value)}
+                  type="email"
+                  placeholder="Email address"
+                  value={standardEmail}
+                  onChange={(e) => setStandardEmail(e.target.value)}
                   required
                 />
-                <select
-                  className="login-input"
-                  value={defaultClassName}
-                  onChange={(e) => setDefaultClassName(e.target.value)}
-                  disabled={
-                    loadingDefaultClasses ||
-                    availableDefaultClasses.length === 0
-                  }
-                  required
-                >
-                  {loadingDefaultClasses ? (
-                    <option value="">Loading classes...</option>
-                  ) : availableDefaultClasses.length ? (
-                    <>
-                      <option value="">Select your class</option>
-                      {availableDefaultClasses.map((cn) => (
-                        <option key={cn} value={cn}>
-                          Class {cn}
-                        </option>
-                      ))}
-                    </>
-                  ) : (
-                    <option value="">No classes available</option>
-                  )}
-                </select>
-              </>
-            )}
+              </label>
 
-            <input
-              type="tel"
-              className="login-input"
-              placeholder={PHONE_PLACEHOLDER}
-              value={phone}
-              onChange={(e) => {
-                setPhone(normalizePhone(e.target.value));
-                resetOtp();
-              }}
-              inputMode="numeric"
-              maxLength={10}
-              autoComplete="tel-national"
-              required
-            />
-
-            {otpSent && (
-              <>
+              <label className="auth-label">
+                <span>Password</span>
                 <input
-                  type="text"
                   className="login-input"
-                  placeholder="Enter OTP"
-                  value={otpCode}
-                  onChange={(e) => setOtpCode(e.target.value)}
+                  type="password"
+                  placeholder="Password"
+                  value={standardPassword}
+                  onChange={(e) => setStandardPassword(e.target.value)}
                   required
                 />
-                <button
-                  type="button"
-                  className="forgot-password-button"
-                  onClick={resendOtp}
-                  disabled={isSubmitting}
-                >
-                  {isSubmitting ? "Sending..." : "Resend OTP"}
+              </label>
+
+              <button className="login-button" type="submit" disabled={isSubmitting}>
+                {isSubmitting ? "Signing in..." : "Sign In"}
+              </button>
+            </form>
+
+            <button
+              type="button"
+              className="login-google-button"
+              onClick={handleGoogleLogin}
+              disabled={isGoogleLoading || isSubmitting}
+            >
+              {isGoogleLoading ? "Connecting..." : "Continue with Google"}
+            </button>
+          </section>
+
+          <aside className="login-panel login-panel-school">
+            <div className="panel-heading">
+              <span className="panel-badge panel-badge-school">School Access</span>
+              <h2>Login for School</h2>
+              <p>Use your School ID and school credentials to continue with payment-gated access.</p>
+            </div>
+
+            {!schoolAuthVisible ? (
+              <button
+                type="button"
+                className="school-toggle-button"
+                onClick={() => setSchoolAuthVisible(true)}
+              >
+                Open School Login
+              </button>
+            ) : (
+              <form className="auth-form" onSubmit={handleSchoolLogin}>
+                <label className="auth-label">
+                  <span>School ID</span>
+                  <input
+                    className="login-input"
+                    type="text"
+                    placeholder="Enter school ID"
+                    value={schoolAuthSchoolId}
+                    onChange={(e) => setSchoolAuthSchoolId(e.target.value)}
+                    required
+                  />
+                </label>
+
+                <label className="auth-label">
+                  <span>Email</span>
+                  <input
+                    className="login-input"
+                    type="email"
+                    placeholder="School email"
+                    value={schoolAuthEmail}
+                    onChange={(e) => setSchoolAuthEmail(e.target.value)}
+                    required
+                  />
+                </label>
+
+                <label className="auth-label">
+                  <span>Password</span>
+                  <input
+                    className="login-input"
+                    type="password"
+                    placeholder="Password"
+                    value={schoolAuthPassword}
+                    onChange={(e) => setSchoolAuthPassword(e.target.value)}
+                    required
+                  />
+                </label>
+
+                <button className="login-button" type="submit" disabled={isSubmitting}>
+                  {isSubmitting ? "Signing in..." : "Continue to School Access"}
                 </button>
-              </>
+              </form>
             )}
-
-            {defaultAuthMode === "login" &&
-              defaultPhoneVerified &&
-              linkedAccounts.length > 1 && (
-                <div className="linked-accounts-panel">
-                  <p className="linked-accounts-title">Choose Child Account</p>
-                  <div className="linked-accounts-list">
-                    {linkedAccounts.map((account) => (
-                      <button
-                        key={account.id}
-                        type="button"
-                        className={`linked-account-card ${
-                          selectedLinkedAccountId === account.id ? "active" : ""
-                        }`}
-                        onClick={() => {
-                          setSelectedLinkedAccountId(account.id);
-                          setError("");
-                        }}
-                      >
-                        <strong>{account.name || "Student"}</strong>
-                        <span>
-                          Class {account.className || "-"}
-                          {account.rollNumber ? ` • Roll ${account.rollNumber}` : ""}
-                        </span>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-            <button
-              className="login-button"
-              type="submit"
-              disabled={isSubmitting}
-            >
-              {isSubmitting
-                ? otpSent
-                  ? "Verifying..."
-                  : "Sending OTP..."
-                : defaultAuthMode === "login" &&
-                  defaultPhoneVerified &&
-                  linkedAccounts.length > 1
-                ? "Continue With Selected Child"
-                : otpSent
-                ? defaultAuthMode === "register"
-                  ? "Verify & Continue"
-                  : "Verify & Login"
-                : "Send OTP"}
-            </button>
-          </>
-        ) : (
-          <>
-            <div className="school-context-row">
-              <p className="school-context-text">
-                School: <strong>{schoolContext.schoolName}</strong>
-              </p>
-            </div>
-
-            <select
-              className="login-input"
-              value={selectedClassName}
-              onChange={(e) => setSelectedClassName(e.target.value)}
-              disabled={loadingStudents || classOptions.length === 0}
-              required
-            >
-              {loadingStudents ? (
-                <option value="">Loading classes...</option>
-              ) : classOptions.length === 0 ? (
-                <option value="">No classes found</option>
-              ) : (
-                <>
-                  <option value="">Select your class</option>
-                  {classOptions.map((cls) => (
-                    <option key={cls} value={cls}>
-                      Class {cls}
-                    </option>
-                  ))}
-                </>
-              )}
-            </select>
-
-            <select
-              className="login-input"
-              value={selectedRollNumber}
-              onChange={(e) => setSelectedRollNumber(e.target.value)}
-              disabled={loadingStudents || !selectedClassName || rollOptions.length === 0}
-              required
-            >
-              {loadingStudents ? (
-                <option value="">Loading roll numbers...</option>
-              ) : !selectedClassName ? (
-                <option value="">Select class first</option>
-              ) : rollOptions.length === 0 ? (
-                <option value="">No roll numbers found</option>
-              ) : (
-                <>
-                  <option value="">Select roll number</option>
-                  {rollOptions.map((roll) => (
-                    <option key={roll} value={roll}>
-                      Roll {roll}
-                    </option>
-                  ))}
-                </>
-              )}
-            </select>
-
-            <input
-              type="password"
-              className="login-input"
-              placeholder="PIN"
-              value={pin}
-              onChange={(e) => setPin(e.target.value)}
-              required
-            />
-
-            <button
-              className="login-button"
-              type="submit"
-              disabled={
-                isSubmitting ||
-                !selectedClassName ||
-                !selectedRollNumber ||
-                rollOptions.length === 0
-              }
-            >
-              {isSubmitting ? "Signing in..." : "Login"}
-            </button>
-          </>
-        )}
-      </form>
+          </aside>
+        </div>
+      </div>
 
       {/* Nested container to protect from overlapping reCAPTCHA instances */}
       <div id="default-school-recaptcha">
