@@ -1,0 +1,22 @@
+{
+  "name": "Hepsy Dashboard",
+  "short_name": "Dashboard",
+  "start_url": "/dashboard",
+  "orientation": "landscape",
+  "scope": "/dashboard",
+  "display": "standalone",
+  "theme_color": "#2563eb",
+  "background_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/icons/log.webp",
+      "sizes": "192x192",
+      "type": "image/webp"
+    },
+    {
+      "src": "/icons/log.webp",
+      "sizes": "512x512",
+      "type": "image/webp"
+    }
+  ]
+}

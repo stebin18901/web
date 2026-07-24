@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import Papa from "papaparse";
 import { db } from "../../../firebase/firebaseConfig";
 import { collection, doc, getDoc, getDocs, limit, query, where, writeBatch } from "firebase/firestore";
-import { Eye, EyeOff, Info, Pencil, Plus, Trash2, Upload, Users } from "lucide-react";
+import { Download, Eye, EyeOff, Info, Pencil, Plus, Trash2, Upload, Users } from "lucide-react";
 import { buildYearScopedStudentId, normalizeAcademicYear } from "./schoolYearUtils";
 import { loadStudentsForClass, resolveSchoolClasses, splitClassAndDivision } from "./academicUtils";
 import SchoolAdminQuickLinkHint from "./SchoolAdminQuickLinkHint";
@@ -46,6 +46,9 @@ const DEFAULT_SHEET_COLUMNS = [
   { key: "phone", label: "Phone", locked: true, required: false },
   { key: "email", label: "Email", locked: true, required: false },
 ];
+
+const CSV_TEMPLATE_HEADERS = ["fullName", "className", "section", "rollNumber", "pin", "phone", "email"];
+const CSV_TEMPLATE_EXAMPLE = ["Aarav Sharma", "10", "A", "1", "1234", "9876543210", "aarav.parent@example.com"];
 
 const buildCustomColumnKey = (label, fallbackIndex = 0) => {
   const base = normalize(label)
@@ -143,6 +146,18 @@ const UploadStudents = ({ school, schoolId, forcePaidAccess = false, academicYea
   const normalizedAcademicYear = useMemo(() => normalizeAcademicYear(academicYear), [academicYear]);
   const rawSchoolId = useMemo(() => normalize(schoolId), [schoolId]);
   const propSchoolIsPaid = useMemo(() => forcePaidAccess || hasPaidSchoolAccess(school), [forcePaidAccess, school]);
+
+  const downloadCsvTemplate = () => {
+    const csv = [CSV_TEMPLATE_HEADERS, CSV_TEMPLATE_EXAMPLE]
+      .map((row) => row.map((value) => `"${String(value).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = "student-upload-template.csv";
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   useEffect(() => {
     setResolvedSchool(school || null);
@@ -912,6 +927,28 @@ const UploadStudents = ({ school, schoolId, forcePaidAccess = false, academicYea
               <span>Select CSV File</span>
               <input type="file" accept=".csv" onChange={handleFileUpload} />
             </label>
+            <div className="upload-students-csv-guide">
+              <div className="upload-students-csv-guide-head">
+                <div>
+                  <strong>CSV file format</strong>
+                  <p>Use this header row exactly. Full Name, Class, Roll No and PIN are required.</p>
+                </div>
+                <button type="button" className="upload-students-template-btn" onClick={downloadCsvTemplate}>
+                  <Download size={14} /> Download template
+                </button>
+              </div>
+              <div className="upload-students-csv-table-wrap" role="region" aria-label="CSV format example" tabIndex="0">
+                <table className="upload-students-csv-table">
+                  <thead>
+                    <tr>{CSV_TEMPLATE_HEADERS.map((header) => <th key={header}>{header}</th>)}</tr>
+                  </thead>
+                  <tbody>
+                    <tr>{CSV_TEMPLATE_EXAMPLE.map((value, index) => <td key={`${value}-${index}`}>{value}</td>)}</tr>
+                  </tbody>
+                </table>
+              </div>
+              <p className="upload-students-csv-note">Phone and email are optional. Save the file as a comma-separated <code>.csv</code> file before uploading.</p>
+            </div>
           </section>
         ) : (
           <section className="upload-students-tab-panel upload-students-sheet-panel">
