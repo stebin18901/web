@@ -43,6 +43,28 @@ We believe in empowering teachers, motivating students, and supporting parents t
 
   gtag('config', 'G-SYDBF9SC4P');
 </script>
+<script>
+  const path = window.location.pathname.toLowerCase();
+  let manifest = "%PUBLIC_URL%/manifest.json";
+
+  if (path.startsWith("/school-admin")) {
+    manifest = "%PUBLIC_URL%/SchoolAdmin/manifest-school.json";
+  } else if (path.startsWith("/parent")) {
+    manifest = "%PUBLIC_URL%/ParentApp/manifest-parent.json";
+  } else if (path.startsWith("/dashboard")) {
+    manifest = "%PUBLIC_URL%/Dashboard/manifest-dashboard.json";
+  }
+
+  const existingLink = document.querySelector('link[rel="manifest"]');
+  if (existingLink) {
+    existingLink.href = manifest;
+  } else {
+    const link = document.createElement("link");
+    link.rel = "manifest";
+    link.href = manifest;
+    document.head.appendChild(link);
+  }
+</script>
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
